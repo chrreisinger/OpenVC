@@ -1,0 +1,18 @@
+Open VHDL compiler (OpenVC)
+Copyright 2010 Christian Reisinger
+Licensed under GPL3 license (see LICENSE)
+
+
+Portions based on the ASM library
+Copyright (c) 2000-2005 INRIA, France Telecom
+Licensed under BSD-style license (see licenses/LICENSE_Asm.txt)
+
+
+Portions based on the Antlr runtime library
+Copyright (c) 2003-2008, Terence Parr
+Licensed under the BSD license (see licenses/LICENSE_Antlr.txt)
+
+
+Portions based on the Scala library
+Copyright (c) 2002-2010 EPFL, Lausanne, unless otherwise specified.
+Licensed under the BSD license (see licenses/LICENSE_Scala.txt)
