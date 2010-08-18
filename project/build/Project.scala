@@ -12,16 +12,6 @@ class Project(info: ProjectInfo) extends DefaultProject(info) with Eclipsify wit
 
   override val mainResources = super.mainResources +++ "NOTICE.txt" +++ "LICENSE.txt" +++ (path("licenses") * "*")
 
-  //work around for ProguardProject bug with spaces in paths
-  private implicit def pathEscape(p: Path) = new {
-    def escaped: String = '"' + p.absolutePath.replaceAll("\\s", "\\ ") + '"'
-  }
-
-  override val proguardLibJarsArg = {
-    val libPaths = proguardLibraryJars.get.foldLeft(Map.empty[String, Path])((m, p) => m + (p.asFile.getName -> p)).values
-    if (libPaths.hasNext) "-libraryjars" :: libPaths.map(_.escaped).mkString(java.io.File.pathSeparator) :: Nil else Nil
-  }
-
   override val proguardInJars = super.proguardInJars.filter(!_.asFile.getName.contains("scalatest")) +++ Path.fromFile(scalaLibraryJar)
   
   //override val minJarName = artifactBaseName + ".min.jar"
