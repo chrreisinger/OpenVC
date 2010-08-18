@@ -36,6 +36,18 @@ final class TypeDefinitionTests extends GenericTest {
     """
   }
 
+    compileCodeInPackageAndLoad("array type declaration") {
+    """
+      — Examples of constrained array declarations:
+      type MY_WORD is array (0 to 31) of BIT ;
+      -- A memory word type with an ascending range.
+      type DATA_IN is array (7 downto 0) of FIVE_LEVEL_LOGIC ;
+      -- An input port type with a descending range.
+      — Example of unconstrained array declarations:
+      type MEMORY is array (INTEGER range <>) of MY_WORD ;
+    """
+  }
+
   compileCodeInPackageAndLoad("record type delcaration") {
     """
     type MONTH_NAME is range 1 to 12;
