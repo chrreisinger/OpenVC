@@ -1580,7 +1580,85 @@ object CodeGenerator {
             }
             RETURN
             endMethod
-
+          }
+          //generates code for canEqual and equals as described by M. Odersky in this article http://www.artima.com/lejava/articles/equality.html
+          {
+            /*
+            generates this code:
+                public boolean canEqual(Object other) {
+                    return (other instanceof ClassName);
+                }
+             */
+            val mv = cw.createMethod(name = "canEqual", parameters = "Ljava/lang/Object;", returnType = "Z")
+            val startLabel = RichLabel(mv)
+            startLabel()
+            mv.ALOAD(1)
+            mv.INSTANCEOF(record.fullName())
+            mv.IRETURN
+            val endLabel = RichLabel(mv)
+            endLabel()
+            mv.visitLocalVariable("this", record.fullName(), null, startLabel, startLabel, 0)
+            mv.visitLocalVariable("other", "Ljava/lang/Object;", null, startLabel, endLabel, 1)
+            mv.endMethod
+          }
+          {
+            /*
+              generates this code:
+            	public boolean equals(Object other){
+                if (other instanceof ClassName){
+                  ClassName that=(ClassName)other;
+                  return that.canEqual(this) && that.field1==this.field1 && that.field2==this.field2;
+                }
+                return false;
+              }
+             */
+            val mv = cw.createMethod(name = "equals", parameters = "Ljava/lang/Object;", returnType = "Z")
+            val startLabel = new RichLabel(mv)
+            startLabel()
+            mv.ALOAD(1)
+            mv.INSTANCEOF(record.fullName())
+            val afterIfStmtLabel = new RichLabel(mv)
+            mv.IFEQ(afterIfStmtLabel)
+            mv.ALOAD(1)
+            mv.CHECKCAST(record.fullName())
+            mv.ASTORE(2)
+            val thatScopeLabel = new RichLabel(mv)
+            thatScopeLabel()
+            mv.ALOAD(2)
+            mv.ALOAD(0)
+            mv.INVOKEVIRTUAL(record.fullName(), "canEqual", "(Ljava/lang/Object;)Z")
+            val falseLabel = new RichLabel(mv)
+            mv.IFEQ(falseLabel)
+            for ((fieldName, fieldType) <- record.elements) {
+              mv.ALOAD(2)
+              mv.GETFIELD(record.fullName(), fieldName, getJVMDataType(fieldType))
+              mv.ALOAD(0)
+              mv.GETFIELD(record.fullName(), fieldName, getJVMDataType(fieldType))
+              fieldType match {
+                case _: IntegerType => mv.IF_ICMPNE(falseLabel)
+                case _: RealType =>
+                  mv.DCMPL
+                  mv.IFNE(falseLabel)
+                case _: PhysicalType =>
+                  mv.LCMP
+                  mv.IFNE(falseLabel)
+                case _: AccessType => mv.IF_ACMPNE(falseLabel)
+              }
+            }
+            mv.ICONST_1
+            mv.IRETURN
+            falseLabel()
+            mv.ICONST_0
+            mv.IRETURN
+            afterIfStmtLabel()
+            mv.ICONST_0
+            mv.IRETURN
+            val endLabel = new RichLabel(mv)
+            endLabel()
+            mv.visitLocalVariable("this", record.fullName(), null, startLabel, endLabel, 0)
+            mv.visitLocalVariable("other", "Ljava/lang/Object;", null, startLabel, endLabel, 1)
+            mv.visitLocalVariable("that", record.fullName(), null, thatScopeLabel, afterIfStmtLabel, 2)
+            mv.endMethod
           }
           cw.writeToFile
         case enumType: EnumerationType =>
