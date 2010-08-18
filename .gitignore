@@ -10,5 +10,6 @@ target/
 vhdlLibs/*
 vhdlSrc/*
 *.swp
+*.iws
 *~
 ! .gitkeep
