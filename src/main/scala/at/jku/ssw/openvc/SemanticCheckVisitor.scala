@@ -551,7 +551,9 @@ object SemanticCheckVisitor {
                 Literal(literal.position, ((Integer.parseInt(values, base) + fraction) * exponent).toString, REAL_LITERAL, SymbolTable.realType)
               }
           }
-        case NULL_LITERAL => literal.copy(dataType = NullType)
+        case NULL_LITERAL =>
+          if (!expectedType.isInstanceOf[AccessType]) addError(literal, SemanticMessage.NOT_A, expectedType.name, "access type")
+          literal.copy(dataType = expectedType)
       }
     }
     /*def createFunctionCallExpression(dataType: DataType, leftExpression: Expression, rightExpression: Expression): Expression = {
@@ -1706,6 +1708,7 @@ object SemanticCheckVisitor {
 
   def visitSignalDeclaration(signalDeclaration: SignalDeclaration, parentSymbol: Symbol, context: Context): ReturnType = {
     val dataType = createType(context, signalDeclaration.subType)
+    checkIfNotFileProtectedAccessType(signalDeclaration.subType, dataType)
     val defaultExpression = checkExpressionOption(context, signalDeclaration.defaultExpression, dataType)
     val symbols = signalDeclaration.identifierList.zipWithIndex.map {
       case (identifier, i) => new SignalSymbol(identifier, dataType, RuntimeSymbol.Modifier.IN_OUT, signalDeclaration.signalType, context.varIndex + i, parentSymbol)
@@ -1750,6 +1753,15 @@ object SemanticCheckVisitor {
       case _: AccessType => addError(location, SemanticMessage.INVALID_TYPE, "access")
       case recordType: RecordType => recordType.elements.valuesIterator.foreach(checkIfNotFileProtectedAccessType(location, _))
       case arrayType: ArrayType => checkIfNotFileProtectedAccessType(location, arrayType.elementType)
+      case _ =>
+    }
+
+  def checkIfNotFileProtectedType(location: Locatable, dataType: DataType): Unit =
+    dataType match {
+      case _: FileType => addError(location, SemanticMessage.INVALID_TYPE, "file")
+      case _: ProtectedType => addError(location, SemanticMessage.INVALID_TYPE, "protected")
+      case recordType: RecordType => recordType.elements.valuesIterator.foreach(checkIfNotFileProtectedType(location, _))
+      case arrayType: ArrayType => checkIfNotFileProtectedType(location, arrayType.elementType)
       case _ =>
     }
 
@@ -1828,7 +1840,17 @@ object SemanticCheckVisitor {
             element.identifierList.map(id => id.text -> dataType)
         }
         (recordType.copy(dataType = new RecordType(name, Map(elements: _*), parentSymbol)), Seq())
-      case accessType: AccessTypeDefinition => (accessType.copy(dataType = new AccessType(name, createType(context, accessType.subType))), Seq())
+      case accessType: AccessTypeDefinition =>
+        val dataType = createType(context, accessType.subType)
+        checkIfNotFileProtectedType(accessType.subType, dataType)
+        accessType.subType.constraint.foreach {
+          constraint => constraint match {
+          //The only form of constraint that is allowed after the name of an access type in a subtype indication is an index constraint
+            case Left(rangeConstraint) => addError(rangeConstraint, SemanticMessage.NOT_ALLOWED, "range constraint")
+            case Right(_) =>
+          }
+        }
+        (accessType.copy(dataType = new AccessType(name, dataType)), Seq())
       case fileTypeDefinition: FileTypeDefinition =>
         val dataType = context.findType(fileTypeDefinition.typeName)
         checkIfNotFileProtectedAccessType(fileTypeDefinition.typeName, dataType)

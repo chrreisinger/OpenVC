@@ -39,6 +39,8 @@ object VHDLRuntime {
 
   final class MutableReal(@BeanProperty var value: Double)
 
+  final class MutableLong(@BeanProperty var value: Long)
+
   abstract sealed class RuntimeArray1D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double) T]
   (val data: Array[T], private[this] val length: Int, val left: Int, val right: Int)(implicit m: scala.reflect.Manifest[T]) {
     val low = math.min(left, right)

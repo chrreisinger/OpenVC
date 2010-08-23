@@ -60,6 +60,14 @@ final class TypeDefinitionTests extends GenericTest {
     """
   }
 
+  compileCodeInPackageAndLoad("access type delcaration") {
+    """
+    subtype BYTE is bit_vector (7 downto 0);
+    type    MEMORY is array (natural range <>) of BYTE;
+    type    ADDRESS is access MEMORY;
+    type    INTEGER_PTR is access integer;
+    """
+  }
   compileCodeInPackageAndRun("physical type delcaration") {
     """
       type DURATION is range -1E18 to 1E18

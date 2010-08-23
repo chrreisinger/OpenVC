@@ -123,6 +123,16 @@ object CodeGenerator {
       case _: UnconstrainedArrayType => "L" + getJVMName(dataType) + ";"
       case record: RecordType => "L" + record.fullName() + ";"
       case fileType: FileType => "L" + getJVMName(dataType) + ";"
+      case accessType: AccessType => accessType.pointerType match {
+        case _: IntegerType => ci(classOf[MutableInteger])
+        case _: RealType => ci(classOf[MutableReal])
+        case _: PhysicalType => ci(classOf[MutableLong])
+        case enumeration: EnumerationType =>
+          if (enumeration.name == "boolean" || enumeration.name == "bit") ci(classOf[MutableBoolean])
+          else if (enumeration.elements.size <= Byte.MaxValue) ci(classOf[MutableByte])
+          else ci(classOf[MutableCharacter])
+        case otherType => getJVMDataType(otherType)
+      }
     }
 
   def getJVMName(symbol: RuntimeSymbol): String =
