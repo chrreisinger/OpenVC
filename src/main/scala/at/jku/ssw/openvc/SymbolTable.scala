@@ -78,6 +78,14 @@ final class SymbolTable(private val scopes: Seq[SymbolTable.Scope]) {
     None
   }
 
+  def findInCurrentScope[T <: Symbol](name: String, clazz: Class[T]): Option[T] =
+    currentScope.get(name).flatMap {
+      symbol =>
+        if (symbol.getClass ne clazz)
+          None
+        else Some(symbol.asInstanceOf[T])
+    }
+
   def insertWithoutCheck(list: Seq[Symbol]) = {
     val newHead = list.map(x => x.name -> x).toMap ++ this.scopes.head
     new SymbolTable(newHead +: this.scopes.tail)
@@ -172,13 +180,22 @@ case object NoType extends DataType {
   val name = "NoType"
 }
 
+@SerialVersionUID(6716628440174747960L)
+case object IncompleteType extends DataType {
+  val name = "IncompleteType"
+}
+
 @SerialVersionUID(3501831035118009139L)
 case object NullType extends DataType {
   val name = "NullType"
 }
 
 @SerialVersionUID(7611073448233675364L)
-final case class AccessType(name: String, pointerType: DataType) extends DataType
+final case class AccessType(name: String, var pointerType: DataType) extends DataType { //var is needed for incomplete type declarations
+  override def fullName(separator: String = "$"): String = pointerType.fullName(separator)
+  //override toString, so that we don't get a StackOverflowError Exception, because when an access type points to record type which contains a field of the same access type, we've got a cycle
+  override def toString = "AccessType(" + name + "," + pointerType.name + ")"
+}
 
 abstract sealed class RangeType extends DataType {
   val elementType: DataType

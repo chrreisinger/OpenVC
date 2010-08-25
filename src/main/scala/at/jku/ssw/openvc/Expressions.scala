@@ -140,7 +140,7 @@ final case class SimpleExpression(position: Position, signOperator: Option[Simpl
   val right = rightOption.getOrElse(null)
 }
 
-final case class NewExpression(position: Position, qualifiedExpressionOrSubTypeIndication: Either[QualifiedExpression, SubTypeIndication], dataType: DataType = null) extends Expression
+final case class NewExpression(position: Position, qualifiedExpressionOrSubTypeIndication: Either[Expression, SubTypeIndication], dataType: DataType = null) extends Expression
 
 object Literal {
   type Type = Type.Value

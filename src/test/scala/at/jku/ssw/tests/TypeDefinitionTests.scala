@@ -36,14 +36,14 @@ final class TypeDefinitionTests extends GenericTest {
     """
   }
 
-    compileCodeInPackageAndLoad("array type declaration") {
+  compileCodeInPackageAndLoad("array type declaration") {
     """
-      — Examples of constrained array declarations:
+      -- Examples of constrained array declarations:
       type MY_WORD is array (0 to 31) of BIT ;
       -- A memory word type with an ascending range.
       type DATA_IN is array (7 downto 0) of FIVE_LEVEL_LOGIC ;
       -- An input port type with a descending range.
-      — Example of unconstrained array declarations:
+      -- Example of unconstrained array declarations:
       type MEMORY is array (INTEGER range <>) of MY_WORD ;
     """
   }
@@ -62,12 +62,49 @@ final class TypeDefinitionTests extends GenericTest {
 
   compileCodeInPackageAndLoad("access type delcaration") {
     """
-    subtype BYTE is bit_vector (7 downto 0);
-    type    MEMORY is array (natural range <>) of BYTE;
-    type    ADDRESS is access MEMORY;
-    type    INTEGER_PTR is access integer;
+      subtype BYTE is bit_vector (7 downto 0);
+      type    MEMORY is array (natural range <>) of BYTE;
+      type    ADDRESS is access MEMORY;
+      type    INTEGER_PTR is access integer;
     """
   }
+
+  compileCodeInPackageAndLoad("incomplete type delcaration") {
+    """
+      type CELL; -- An incomplete type declaration.
+      type LINK is access CELL;
+      type CELL is
+        record
+          VALUE : INTEGER;
+          SUCC : LINK;
+          PRED : LINK;
+        end record CELL;
+    """
+  }
+
+  compileCodeInPackageAndLoad("mutually dependent access types") {
+    """
+      type PART; -- Incomplete type declarations.
+      type WIRE;
+      type PART_PTR is access PART;
+      type WIRE_PTR is access WIRE;
+      type PART_LIST is array (POSITIVE range <>) of PART_PTR;
+      type WIRE_LIST is array (POSITIVE range <>) of WIRE_PTR;
+      type PART_LIST_PTR is access PART_LIST;
+      type WIRE_LIST_PTR is access WIRE_LIST;
+      type PART is
+        record
+          PART_NAME : STRING (1 to MAX_STRING_LEN);
+          CONNECTIONS : WIRE_LIST_PTR;
+        end record;
+      type WIRE is
+        record
+          WIRE_NAME : STRING (1 to MAX_STRING_LEN);
+          CONNECTS : PART_LIST_PTR;
+        end record;
+    """
+  }
+
   compileCodeInPackageAndRun("physical type delcaration") {
     """
       type DURATION is range -1E18 to 1E18
@@ -115,6 +152,7 @@ final class TypeDefinitionTests extends GenericTest {
         end;
     """
   }
+
   compileAndLoad("protected type declaration") {
     """
     package dummy is

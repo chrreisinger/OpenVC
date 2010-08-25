@@ -157,13 +157,15 @@ object SemanticCheckVisitor {
           } else Some(symbol.asInstanceOf[T])
       }
 
-    def findType(dataType: SelectedName): DataType =
+    def findType(dataType: SelectedName, isAccessTypeDefinition: Boolean = false): DataType =
       find(dataType) match {
         case None =>
           addError(dataType, SemanticMessage.NOT_FOUND, "type", dataType.toString)
           NoType
         case Some(symbol) => symbol match {
-          case typeSymbol: TypeSymbol => typeSymbol.dataType
+          case typeSymbol: TypeSymbol =>
+            if (!isAccessTypeDefinition && typeSymbol.dataType == IncompleteType) addError(dataType, "can not use incomplete type %s", typeSymbol.name)
+            typeSymbol.dataType
           case _ =>
             addError(dataType, SemanticMessage.NOT_A, dataType.toString, "type");
             NoType
@@ -273,6 +275,14 @@ object SemanticCheckVisitor {
 
   type ReturnType = (ASTNode, Context)
 
+  def acceptDeclarativeItems(n: Seq[DeclarativeItem], parentSymbol: Symbol, context: Context): (Seq[DeclarativeItem], Context) = {
+    val (list, newContext) = acceptList(n, parentSymbol, context)
+    //For each incomplete type declaration there must be a corresponding full type declaration with the same identifier.
+    // This full type declaration must occur later and immediately within the same declarative part as the incomplete type declaration to which it corresponds.
+    newContext.symbolTable.currentScope.values.collect(_ match {case typeSymbol: TypeSymbol if (typeSymbol.dataType == IncompleteType) => typeSymbol}).foreach(typeSymbol => addError(typeSymbol, SemanticMessage.INCOMPLETE_TYPE_NOT_DEFINED, typeSymbol.name))
+    (list, newContext)
+  }
+
   def acceptList[T <: ASTNode](n: Seq[T], parentSymbol: Symbol, context: Context): (Seq[T], Context) = {
     @tailrec
     def acceptListInner(nodes: Seq[T], listBuffer: mutable.ListBuffer[T], contextInner: Context): (Seq[T], Context) =
@@ -347,17 +357,22 @@ object SemanticCheckVisitor {
       // TODO Auto-generated method stub
       //require(aggregateExpression.aggregate.elements.size == 1,aggregateExpression.position)
       //println(aggregateExpression.aggregate.elements)
-      val dataType = expectedType match {
-        case arrayType: ConstrainedArrayType => arrayType.dimensions.size match {
-          case 1 => arrayType.elementType
-          case size => ConstrainedArrayType(arrayType.name, arrayType.elementType, arrayType.dimensions.tail) //TODO check if for each dimension is a row
+      val elements = expectedType match {
+        case arrayType: ConstrainedArrayType =>
+          val dataType = arrayType.dimensions.size match {
+            case 1 => arrayType.elementType
+            case size => ConstrainedArrayType(arrayType.name, arrayType.elementType, arrayType.dimensions.tail) //TODO check if for each dimension is a row
+          }
+          aggregateExpression.aggregate.elements.map {
+            element =>
+              val expression = checkExpression(context, element.expression, dataType) //TODO
+              new Aggregate.ElementAssociation(choices = element.choices, expression = expression)
+          }
+        case recordType: RecordType => aggregateExpression.aggregate.elements.zip(recordType.elements.values).map {
+          case (element, dataType) =>
+            val expression = checkExpression(context, element.expression, dataType) //TODO
+            new Aggregate.ElementAssociation(choices = element.choices, expression = expression)
         }
-        case _ => expectedType
-      }
-      val elements = aggregateExpression.aggregate.elements.map {
-        element =>
-          val expression = checkExpression(context, element.expression, dataType) //TODO
-          new Aggregate.ElementAssociation(choices = element.choices, expression = expression)
       }
       new AggregateExpression(aggregate = new Aggregate(elements = elements), dataType = expectedType)
     }
@@ -632,8 +647,11 @@ object SemanticCheckVisitor {
                 }
               case Name.SelectedPart(identifier) =>
                 symbol match {
-                  case r: RuntimeSymbol if (r.dataType.isInstanceOf[RecordType]) =>
-                    val record = r.dataType.asInstanceOf[RecordType]
+                  case r: RuntimeSymbol if (r.dataType.isInstanceOf[RecordType] || (r.dataType.isInstanceOf[AccessType] && r.dataType.asInstanceOf[AccessType].pointerType.isInstanceOf[RecordType])) =>
+                    val record = r.dataType match {
+                      case recordType: RecordType => recordType
+                      case accessType: AccessType => accessType.pointerType.asInstanceOf[RecordType]
+                    }
                     record.elements.get(identifier.text) match {
                       case None =>
                         addError(part, SemanticMessage.NOT_FOUND, "field", identifier.text)
@@ -675,15 +693,27 @@ object SemanticCheckVisitor {
       }
     }
 
-    def visitNewExpression(newExpression: NewExpression): Expression = {
-      // TODO Auto-generated method stub
-      newExpression
-    }
+    def visitNewExpression(newExpression: NewExpression): Expression =
+    // TODO Auto-generated method stub
+      newExpression.qualifiedExpressionOrSubTypeIndication match {
+        case Left(qualifiedExpression) =>
+          expectedType match {
+            case accessType: AccessType =>
+              val expression = checkExpression(context, qualifiedExpression, accessType.pointerType)
+              NewExpression(newExpression.position, Left(expression), accessType)
+            case otherType =>
+              addError(qualifiedExpression, SemanticMessage.NOT_A, "access type", otherType.name)
+              EmptyExpression
+          }
+        case Right(subType) =>
+          val dataType = createType(context, subType)
+          NewExpression(newExpression.position, Right(subType), dataType)
+      }
 
     def visitQualifiedExpression(qualifiedExpression: QualifiedExpression): Expression = {
       // TODO Auto-generated method stub
-      val q = new QualifiedExpression(qualifiedExpression.typeName, checkExpression(context, qualifiedExpression.expression, NoType))
-      q.copy(dataType = context.findType(qualifiedExpression.typeName))
+      val dataType = context.findType(qualifiedExpression.typeName)
+      new QualifiedExpression(qualifiedExpression.typeName, checkExpression(context, qualifiedExpression.expression, dataType), dataType)
     }
 
     def visitRelation(relation: Relation): Expression = {
@@ -966,7 +996,7 @@ object SemanticCheckVisitor {
     }
   }
 
-  def createType(context: Context, subtypeIndication: SubTypeIndication, subTypeName: String = "SubTypeName"): DataType = {
+  def createType(context: Context, subtypeIndication: SubTypeIndication, subTypeName: String = "SubTypeName", isAccessTypeDefinition: Boolean = false): DataType = {
     def createEnumerationType(range: Range, name: String, baseType: EnumerationType): DataType = {
       def getEnumEntry(expr: Expression, elem: Map[String, Int]): Int = {
         val text = acceptExpression(expr, baseType, context) match {
@@ -987,23 +1017,32 @@ object SemanticCheckVisitor {
       new EnumerationType(name, newList, Option(baseType.baseType.getOrElse(baseType)), baseType.parent)
     }
     // TODO subtypeIndication.resolutionFunction
-    val baseType = context.findType(subtypeIndication.typeName)
-    val dataType = subtypeIndication.constraint match {
-      case None => baseType
-      case Some(constraint) =>
-        constraint match {
-          case Left(range) =>
-            baseType match {
-              case _: IntegerType | _: RealType => createIntegerOrRealType(context, range, subTypeName, Some(baseType))
-              case e: EnumerationType => createEnumerationType(range, subTypeName, e)
-              case _ =>
-                addError(subtypeIndication.typeName, SemanticMessage.EXPECTED_TYPE, "integer, real or enumeration")
-                NoType
+    val baseType = context.findType(subtypeIndication.typeName, isAccessTypeDefinition)
+    baseType match {
+      case IncompleteType =>
+        if (isAccessTypeDefinition) subtypeIndication.constraint.foreach(constraint => addError(subtypeIndication.typeName, "can not use an incomplete type with constraints"))
+        baseType
+      case _ =>
+        subtypeIndication.constraint match {
+          case None => baseType
+          case Some(constraint) =>
+            constraint match {
+              case Left(range) =>
+                baseType match {
+                  case _: IntegerType | _: RealType => createIntegerOrRealType(context, range, subTypeName, Some(baseType))
+                  case e: EnumerationType => createEnumerationType(range, subTypeName, e)
+                  case _: AccessType =>
+                    //The only form of constraint that is allowed after the name of an access type in a subtype indication is an index constraint
+                    addError(range, SemanticMessage.NOT_ALLOWED, "access subtype with a range constraint")
+                    NoType
+                  case _ =>
+                    addError(subtypeIndication.typeName, SemanticMessage.EXPECTED_TYPE, "integer, real or enumeration")
+                    NoType
+                }
+              case Right(arrayConstraint) => error("not implemented")
             }
-          case Right(arrayConstraint) => error("not implemented")
         }
     }
-    dataType
   }
 
   def setUpTypes(context: Context): Unit = {
@@ -1067,7 +1106,7 @@ object SemanticCheckVisitor {
     val newContext = context.copy(symbolTable = newSymbolTable)
     setUpTypes(newContext)
 
-    val (declarativeItems, c1) = acceptList(architectureDeclaration.declarativeItems, symbol, newContext)
+    val (declarativeItems, c1) = acceptDeclarativeItems(architectureDeclaration.declarativeItems, symbol, newContext)
     val (statementList, c2) = acceptList(architectureDeclaration.statementList, symbol, c1)
     c2.closeScope()
     (architectureDeclaration.copy(declarativeItems = declarativeItems, statementList = statementList,
@@ -1112,7 +1151,7 @@ object SemanticCheckVisitor {
     val portsList = checkAssociationList(newContext, blockStmt.portAssociationList, ports, blockStmt)
     val guardExpression = checkExpressionOption(newContext, blockStmt.guardExpression, SymbolTable.booleanType)
 
-    val (declarativeItems, c) = acceptList(blockStmt.declarativeItems, parentSymbol, newContext.copy(varIndex = lastPortIndex))
+    val (declarativeItems, c) = acceptDeclarativeItems(blockStmt.declarativeItems, parentSymbol, newContext.copy(varIndex = lastPortIndex))
     val (statementList, _) = acceptList(blockStmt.statementList, parentSymbol, c)
 
     (blockStmt.copy(generics = genericsList, ports = portsList, guardExpression = guardExpression,
@@ -1353,7 +1392,7 @@ object SemanticCheckVisitor {
     generics.foreach(generic => generic.owner = symbol)
 
     // TODO check if concurrentStatements are passive TDGTV page 182
-    val (declarativeItems, c) = acceptList(entityDeclaration.declarativeItems, symbol, context.openScope.insertSymbols(generics).insertSymbols(ports).insertSymbol(symbol))
+    val (declarativeItems, c) = acceptDeclarativeItems(entityDeclaration.declarativeItems, symbol, context.openScope.insertSymbols(generics).insertSymbols(ports).insertSymbol(symbol))
     val (concurrentStatements, c2) = acceptList(entityDeclaration.concurrentStatements, symbol, c)
     concurrentStatements.foreach {
       node =>
@@ -1393,9 +1432,9 @@ object SemanticCheckVisitor {
     val symbol = new ConstantSymbol(forGenerateStmt.loopIdentifier, discreteRange.dataType.elementType, -1, parentSymbol)
     context.insertSymbol(symbol)
     // TODO symbolTable.remove(symbol)
-    val (blockDeclarativeItems, c1) = acceptList(forGenerateStmt.blockDeclarativeItems, parentSymbol, context)
+    val (declarativeItems, c1) = acceptDeclarativeItems(forGenerateStmt.declarativeItems, parentSymbol, context)
     val (statementList, _) = acceptList(forGenerateStmt.statementList, parentSymbol, c1)
-    (forGenerateStmt.copy(blockDeclarativeItems = blockDeclarativeItems, statementList = statementList), context)
+    (forGenerateStmt.copy(declarativeItems = declarativeItems, statementList = statementList), context)
   }
 
   def visitForStatement(forStmt: ForStatement, parentSymbol: Symbol, context: Context): ReturnType = {
@@ -1432,7 +1471,7 @@ object SemanticCheckVisitor {
     }
     parameters.foreach(s => s.owner = symbol)
     val newContext = tmpContext.openScope.insertSymbols(parameters)
-    val (declarativeItems, c1) = acceptList(functionDefinition.declarativeItems, symbol, newContext.copy(varIndex = lastIndex))
+    val (declarativeItems, c1) = acceptDeclarativeItems(functionDefinition.declarativeItems, symbol, newContext.copy(varIndex = lastIndex))
     val (sequentialStatementList, c2) = acceptList(functionDefinition.sequentialStatementList, symbol, c1)
     val newSequentialStatementList = sequentialStatementList match {
       case Seq(AssertStatement(pos, _, _, _, _)) =>
@@ -1469,9 +1508,9 @@ object SemanticCheckVisitor {
     checkIdentifiersOption(ifGenerateStmt.label, ifGenerateStmt.endLabel)
     val condition = checkExpression(context, ifGenerateStmt.condition, SymbolTable.booleanType)
     //TODO ifGenerateStmt.value=StaticExpressionCalculator.calcBooleanValue(condition)
-    val (blockDeclarativeItems, c1) = acceptList(ifGenerateStmt.blockDeclarativeItems, parentSymbol, context)
+    val (declarativeItems, c1) = acceptDeclarativeItems(ifGenerateStmt.declarativeItems, parentSymbol, context)
     val (statementList, _) = acceptList(ifGenerateStmt.statementList, parentSymbol, c1)
-    (ifGenerateStmt.copy(blockDeclarativeItems = blockDeclarativeItems, statementList = statementList), context)
+    (ifGenerateStmt.copy(declarativeItems = declarativeItems, statementList = statementList), context)
   }
 
   def visitIfStatement(ifStmt: IfStatement, parentSymbol: Symbol, context: Context): ReturnType = {
@@ -1508,14 +1547,14 @@ object SemanticCheckVisitor {
         addError(packageBodyDeclaration, SemanticMessage.NOT_FOUND, "package", packageName)
         context.symbolTable
     }
-    val (declarativeItems, c1) = acceptList(packageBodyDeclaration.declarativeItems, symbol, context.copy(symbolTable = newSymbolTable))
+    val (declarativeItems, c1) = acceptDeclarativeItems(packageBodyDeclaration.declarativeItems, symbol, context.copy(symbolTable = newSymbolTable))
     c1.closeScope().collect {_ match {case c: ConstantSymbol if (!c.isDefined) => c}}.foreach(symbol => addError(packageBodyDeclaration, SemanticMessage.DEFERRED_CONSTANT_NOT_DECLARED, symbol.name))
     (packageBodyDeclaration.copy(declarativeItems = declarativeItems, symbol = symbol), context)
   }
 
   def visitPackageDeclaration(packageDeclaration: PackageDeclaration, context: Context): ReturnType = {
     val symbol = new PackageHeaderSymbol(packageDeclaration.identifier, Map())
-    val (declarativeItems, newContext) = acceptList(packageDeclaration.declarativeItems, symbol, context.openScope.insertSymbol(symbol))
+    val (declarativeItems, newContext) = acceptDeclarativeItems(packageDeclaration.declarativeItems, symbol, context.openScope.insertSymbol(symbol))
     try {
       val fileName = configuration.designLibrary + File.separator + "package_" + packageDeclaration.identifier.text + ".sym"
       newContext.symbolTable.writeToFile(fileName)
@@ -1559,7 +1598,7 @@ object SemanticCheckVisitor {
     }
     parameters.foreach(s => s.owner = symbol)
     val newContext = context.openScope.insertSymbols(parameters)
-    val (declarativeItems, c1) = acceptList(procedureDefinition.declarativeItems, symbol, newContext.copy(varIndex = lastIndex))
+    val (declarativeItems, c1) = acceptDeclarativeItems(procedureDefinition.declarativeItems, symbol, newContext.copy(varIndex = lastIndex))
     val (sequentialStatementList, c2) = acceptList(procedureDefinition.sequentialStatementList, symbol, c1)
     symbol.isPassive = isPassive(sequentialStatementList)
     val localSymbols = c2.closeScope()
@@ -1609,7 +1648,7 @@ object SemanticCheckVisitor {
     val name = processStatement.label.getOrElse(Identifier(processStatement.position, "process_" + processStatement.position.line))
     val symbol = new ProcessSymbol(name, parentSymbol.asInstanceOf[ArchitectureSymbol], false)
 
-    val (declarativeItems, newContext) = acceptList(processStatement.declarativeItems, symbol, context.copy(symbolTable = newSymbolTable))
+    val (declarativeItems, newContext) = acceptDeclarativeItems(processStatement.declarativeItems, symbol, context.copy(symbolTable = newSymbolTable))
     val (newSequentialStatementList, c2) = acceptList(processStatement.sequentialStatementList, symbol, newContext)
 
     val sequentialStatementList = newSequentialStatementList ++ processStatement.sensitivityList.map {
@@ -1841,16 +1880,12 @@ object SemanticCheckVisitor {
         }
         (recordType.copy(dataType = new RecordType(name, Map(elements: _*), parentSymbol)), Seq())
       case accessType: AccessTypeDefinition =>
-        val dataType = createType(context, accessType.subType)
+        val dataType = createType(context, accessType.subType, isAccessTypeDefinition = true)
         checkIfNotFileProtectedType(accessType.subType, dataType)
-        accessType.subType.constraint.foreach {
-          constraint => constraint match {
-          //The only form of constraint that is allowed after the name of an access type in a subtype indication is an index constraint
-            case Left(rangeConstraint) => addError(rangeConstraint, SemanticMessage.NOT_ALLOWED, "range constraint")
-            case Right(_) =>
-          }
-        }
-        (accessType.copy(dataType = new AccessType(name, dataType)), Seq())
+        val deallocateSymbol = if (dataType != IncompleteType)
+          new Some(ProcedureSymbol(Identifier("deallocate"), Seq(VariableSymbol(Identifier("p"), new AccessType(name, dataType), RuntimeSymbol.Modifier.IN_OUT, 0, null)), Runtime, BitSet(SubProgramFlags.Static), true))
+        else None
+        (accessType.copy(dataType = new AccessType(name, dataType)), deallocateSymbol.toList)
       case fileTypeDefinition: FileTypeDefinition =>
         val dataType = context.findType(fileTypeDefinition.typeName)
         checkIfNotFileProtectedAccessType(fileTypeDefinition.typeName, dataType)
@@ -1877,7 +1912,7 @@ object SemanticCheckVisitor {
         (fileTypeDefinition.copy(dataType = fileType), Seq(file_open1, file_open2, file_close, read, write, endfile))
       case protectedType: ProtectedTypeDeclaration =>
         checkIdentifiers(protectedType.identifier, protectedType.endIdentifier)
-        val (declarativeItems, _) = acceptList(protectedType.declarativeItems, parentSymbol, context)
+        val (declarativeItems, _) = acceptDeclarativeItems(protectedType.declarativeItems, parentSymbol, context)
         (protectedType.copy(declarativeItems = declarativeItems, dataType = new ProtectedType(name, Seq())), Seq())
       case protectedTypeBody: ProtectedTypeBodyDeclaration =>
         if (parentSymbol.isInstanceOf[PackageHeaderSymbol]) addError(protectedTypeBody, SemanticMessage.PROTECTED_TYPE_BODY_IN_PACKAGE)
@@ -1885,12 +1920,22 @@ object SemanticCheckVisitor {
 
         val declarativeItems = context.findSymbol(protectedTypeBody.identifier, classOf[TypeSymbol]) match {
           case None => protectedTypeBody.declarativeItems
-          case Some(typeSymbol) => acceptList(protectedTypeBody.declarativeItems, typeSymbol, context)._1
+          case Some(typeSymbol) => acceptDeclarativeItems(protectedTypeBody.declarativeItems, typeSymbol, context)._1
         }
         (protectedTypeBody.copy(declarativeItems = declarativeItems), Seq())
-      case typeDef: IncompleteTypeDeclaration => error("not implemented") // TODO incomplete type declaration
+      case typeDef: IncompleteTypeDeclaration => (typeDef.copy(dataType = IncompleteType), Seq())
     }
-    (newTypeDeclaration, if (newTypeDeclaration.dataType == null) context else context.insertSymbols(new TypeSymbol(typeDeclaration.identifier, newTypeDeclaration.dataType) +: newSymbols))
+    context.symbolTable.findInCurrentScope(typeDeclaration.identifier.text, classOf[TypeSymbol]) match {
+      case Some(symbol) if (symbol.dataType == IncompleteType) =>
+        //we found an incomplete type declaration (TypeSymbol where dataType == IncompleteType), now we must update all access types where this incomplete type is used, so that the point to the new defined type
+        val accessTypes = context.symbolTable.currentScope.values.collect(_ match {case typeSymbol: TypeSymbol if (typeSymbol.dataType.isInstanceOf[AccessType] && typeSymbol.dataType.asInstanceOf[AccessType].pointerType == IncompleteType) => typeSymbol.dataType.asInstanceOf[AccessType]}).toSeq
+        accessTypes.foreach(accessType => accessType.pointerType = newTypeDeclaration.dataType)
+        //we can now add the deallocate procedure, as the type is now defined
+        val deallocateProcedures = accessTypes.map(accessType => new ProcedureSymbol(Identifier("deallocate"), Seq(VariableSymbol(Identifier("p"), accessType, RuntimeSymbol.Modifier.IN_OUT, 0, null)), Runtime, BitSet(SubProgramFlags.Static), true))
+        (newTypeDeclaration, context.copy(symbolTable = context.insertSymbols(deallocateProcedures).symbolTable.insert(new TypeSymbol(typeDeclaration.identifier, newTypeDeclaration.dataType))))
+      case _ =>
+        (newTypeDeclaration, if (newTypeDeclaration.dataType == null) context else context.insertSymbols(new TypeSymbol(typeDeclaration.identifier, newTypeDeclaration.dataType) +: newSymbols))
+    }
   }
 
   def visitSubTypeDeclaration(subTypeDeclaration: SubTypeDeclaration, context: Context): ReturnType = {

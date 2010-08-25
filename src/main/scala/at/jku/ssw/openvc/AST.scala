@@ -298,10 +298,10 @@ final case class ConcurrentProcedureCallStatement(label: Option[Identifier], pos
 
 final case class ConcurrentAssertionStatement(position: Position, label: Option[Identifier], postponed: Boolean, condition: Expression, reportExpression: Option[Expression], severityExpression: Option[Expression]) extends ConcurrentStatement
 
-final case class IfGenerateStatement(position: Position, label: Option[Identifier], condition: Expression, blockDeclarativeItems: Seq[DeclarativeItem], statementList: Seq[ConcurrentStatement], endLabel: Option[Identifier],
+final case class IfGenerateStatement(position: Position, label: Option[Identifier], condition: Expression, declarativeItems: Seq[DeclarativeItem], statementList: Seq[ConcurrentStatement], endLabel: Option[Identifier],
                                      value: Boolean = true) extends ConcurrentStatement
 
-final case class ForGenerateStatement(position: Position, label: Option[Identifier], loopIdentifier: Identifier, discreteRange: DiscreteRange, blockDeclarativeItems: Seq[DeclarativeItem],
+final case class ForGenerateStatement(position: Position, label: Option[Identifier], loopIdentifier: Identifier, discreteRange: DiscreteRange, declarativeItems: Seq[DeclarativeItem],
                                       statementList: Seq[ConcurrentStatement], endLabel: Option[Identifier]) extends ConcurrentStatement
 
 object ComponentInstantiationStatement {

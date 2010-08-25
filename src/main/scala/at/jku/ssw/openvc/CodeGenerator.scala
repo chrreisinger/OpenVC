@@ -104,6 +104,19 @@ object CodeGenerator {
         else p(classOf[java.lang.Character])
     }
 
+  def getMutableScalarAccessType(scalarType: ScalarType): String = "L" + getMutableScalarAccessName(scalarType) + ";"
+
+  def getMutableScalarAccessName(scalarType: ScalarType): String =
+    scalarType match {
+      case _: IntegerType => p(classOf[MutableInteger])
+      case _: RealType => p(classOf[MutableReal])
+      case _: PhysicalType => ci(classOf[MutableLong])
+      case enumeration: EnumerationType =>
+        if (enumeration.name == "boolean" || enumeration.name == "bit") p(classOf[MutableBoolean])
+        else if (enumeration.elements.size <= Byte.MaxValue) p(classOf[MutableByte])
+        else p(classOf[MutableCharacter])
+    }
+
   def getJVMDataType(symbol: RuntimeSymbol): String =
     symbol match {
       case signal: SignalSymbol => ci(classOf[AbstractSignal[_]])
@@ -124,13 +137,7 @@ object CodeGenerator {
       case record: RecordType => "L" + record.fullName() + ";"
       case fileType: FileType => "L" + getJVMName(dataType) + ";"
       case accessType: AccessType => accessType.pointerType match {
-        case _: IntegerType => ci(classOf[MutableInteger])
-        case _: RealType => ci(classOf[MutableReal])
-        case _: PhysicalType => ci(classOf[MutableLong])
-        case enumeration: EnumerationType =>
-          if (enumeration.name == "boolean" || enumeration.name == "bit") ci(classOf[MutableBoolean])
-          else if (enumeration.elements.size <= Byte.MaxValue) ci(classOf[MutableByte])
-          else ci(classOf[MutableCharacter])
+        case scalarType: ScalarType => getMutableScalarAccessType(scalarType)
         case otherType => getJVMDataType(otherType)
       }
     }
@@ -147,7 +154,7 @@ object CodeGenerator {
         if (dataType.name == "string") "java/lang/String"
         else OPENVS + "VHDLRuntime$RuntimeArray" + arrayType.dimensions.size + "D" + {
           arrayType.elementType match {
-            case _: RecordType => "AnyRef"
+            case _: RecordType | _: AccessType => "AnyRef"
             case _: IntegerType => "Int"
             case _: RealType => "Double"
             case enumeration: EnumerationType =>
@@ -466,21 +473,16 @@ object CodeGenerator {
         }
       }
 
-      def visitNewExpression(newExpression: NewExpression): Unit = {
-        import mv._
-
+      def visitNewExpression(newExpression: NewExpression): Unit =
         newExpression.qualifiedExpressionOrSubTypeIndication match {
-          case Left(qualifiedExpression) => error("not implemented")
+          case Left(qualifiedExpression) => acceptExpression(qualifiedExpression, mv)
           case Right(subTypeIndication) =>
-            val className = newExpression.dataType match {
-              case _: IntegerType => ci(classOf[MutableInteger])
-              case _: RealType => ci(classOf[MutableReal])
-            }
-            NEW(className)
+            import mv._
+            val dataTypeName = getMutableScalarAccessName(newExpression.dataType.asInstanceOf[ScalarType])
+            NEW(dataTypeName)
             DUP
-            INVOKESPECIAL(className, "<init>", "()V")
+            INVOKESPECIAL(dataTypeName, "<init>", "()V")
         }
-      }
 
       def visitQualifiedExpression(qualifiedExpression: QualifiedExpression): Unit = {
         import mv._
@@ -778,7 +780,7 @@ object CodeGenerator {
     def visitIfGenerateStatement(ifGenerateStmt: IfGenerateStatement, context: Context): Unit = {
       if (ifGenerateStmt.value) {
         //skip it
-        acceptList(ifGenerateStmt.blockDeclarativeItems, context)
+        acceptList(ifGenerateStmt.declarativeItems, context)
         acceptList(ifGenerateStmt.statementList, context)
       }
     }
@@ -1124,67 +1126,69 @@ object CodeGenerator {
       }
     }
 
+    def storeSymbol(mv: RichMethodVisitor, symbol: RuntimeSymbol, targetType: DataType): Unit =
+      symbol.owner match {
+        case _: ArchitectureSymbol => mv.PUTFIELD(symbol.owner.name, symbol.name, getJVMDataType(symbol))
+        case typeSymbol: TypeSymbol =>
+          mv.ALOAD(0)
+          mv.PUTFIELD("alu_tb$sharedcounter", symbol.name, getJVMDataType(symbol))
+        case _: PackageHeaderSymbol | _: PackageBodySymbol | _: ProcessSymbol => mv.PUTSTATIC(symbol.owner.name, symbol.name, getJVMDataType(symbol))
+        case _: SubprogramSymbol => mv.storeInstruction(symbol)
+        case r: RuntimeSymbol => symbol.dataType match {
+          case record: RecordType =>
+            mv.PUTFIELD(record.fullName(), symbol.name, getJVMDataType(targetType))
+          case accessType: AccessType =>
+            mv.PUTFIELD(getJVMName(accessType.pointerType), symbol.name, getJVMDataType(targetType))
+          case constraintArray: ConstrainedArrayType =>
+            mv.arrayStoreInstruction(constraintArray.elementType)
+          case unconstrainedArrayType: UnconstrainedArrayType =>
+            mv.INVOKEVIRTUAL(getJVMName(unconstrainedArrayType), "setValue", "(" + ("I" * unconstrainedArrayType.dimensions.size) + getJVMDataType(unconstrainedArrayType.elementType) + ")V")
+        }
+      }
+
+    def loadTarget(mv: RichMethodVisitor, expression: Expression): (RuntimeSymbol, DataType) =
+      (expression: @unchecked) match {
+        case ItemExpression(_, symbol) => (symbol, symbol.dataType)
+        case ArrayAccessExpression(symbol, _, dataType, EmptyExpression) =>
+          (symbol, dataType)
+        case ArrayAccessExpression(symbol, indexes, dataType, expression) =>
+          mv.loadSymbol(symbol)
+          symbol.dataType match {
+            case constraintArray: ConstrainedArrayType =>
+              indexes.zipWithIndex.zip(constraintArray.dimensions).foreach {
+                case ((expr, i), dim) =>
+                  acceptExpression(expr, mv)
+                  if (dim.from != 0) {
+                    mv.pushInt(dim.from)
+                    mv.pushInt(dim.to)
+                    mv.INVOKESTATIC(RUNTIME, "getArrayIndex1D", "(III)I")
+                  }
+                  i match {
+                    case 1 => mv.arrayLoadInstruction(constraintArray.elementType)
+                    case _ => mv.AALOAD
+                  }
+              }
+            case unconstrainedArrayType: UnconstrainedArrayType =>
+              indexes.foreach(acceptExpression(_, mv))
+              unconstrainedArrayType.elementType match {
+                case _: RecordType =>
+                  mv.INVOKEVIRTUAL(getJVMName(symbol), "getValue", "(" + ("I" * indexes.size) + ")" + "Ljava/lang/Object;")
+                  mv.CHECKCAST(getJVMName(unconstrainedArrayType.elementType))
+                case _ => mv.INVOKEVIRTUAL(getJVMName(symbol), "getValue", "(" + ("I" * indexes.size) + ")" + getJVMDataType(unconstrainedArrayType.elementType))
+              }
+          }
+          loadTarget(mv, expression)
+        case fieldExpr@FieldAccessExpression(owner, field, fieldDataType, _, EmptyExpression) =>
+          if (!owner.owner.isInstanceOf[RuntimeSymbol]) mv.loadSymbol(owner)
+          (owner.makeCopy(field, owner.dataType), fieldDataType)
+        case FieldAccessExpression(symbol, field, fieldDataType, _, expression) =>
+          if (!symbol.owner.isInstanceOf[RuntimeSymbol]) mv.loadSymbol(symbol)
+          mv.GETFIELD(symbol.dataType.fullName(), field.text, getJVMDataType(fieldDataType))
+          loadTarget(mv, expression)
+      }
+
     def visitVariableAssignmentStatement(varAssignStmt: VariableAssignmentStatement, context: Context): Unit = {
       import context._
-
-      def storeSymbol(symbol: RuntimeSymbol, targetType: DataType): Unit =
-        symbol.owner match {
-          case _: ArchitectureSymbol => mv.PUTFIELD(symbol.owner.name, symbol.name, getJVMDataType(symbol))
-          case typeSymbol: TypeSymbol =>
-            mv.ALOAD(0)
-            mv.PUTFIELD("alu_tb$sharedcounter", symbol.name, getJVMDataType(symbol))
-          case _: PackageHeaderSymbol | _: PackageBodySymbol | _: ProcessSymbol => mv.PUTSTATIC(symbol.owner.name, symbol.name, getJVMDataType(symbol))
-          case _: SubprogramSymbol => mv.storeInstruction(symbol)
-          case r: RuntimeSymbol => symbol.dataType match {
-            case record: RecordType =>
-              mv.PUTFIELD(record.fullName(), symbol.name, getJVMDataType(targetType))
-            case constraintArray: ConstrainedArrayType =>
-              mv.arrayStoreInstruction(constraintArray.elementType)
-            case unconstrainedArrayType: UnconstrainedArrayType =>
-              mv.INVOKEVIRTUAL(getJVMName(unconstrainedArrayType), "setValue", "(" + ("I" * unconstrainedArrayType.dimensions.size) + getJVMDataType(unconstrainedArrayType.elementType) + ")V")
-          }
-        }
-
-      def loadTarget(expression: Expression): (RuntimeSymbol, DataType) =
-        (expression: @unchecked) match {
-          case ItemExpression(_, symbol) => (symbol, symbol.dataType)
-          case ArrayAccessExpression(symbol, _, dataType, EmptyExpression) =>
-            (symbol, dataType)
-          case ArrayAccessExpression(symbol, indexes, dataType, expression) =>
-            mv.loadSymbol(symbol)
-            symbol.dataType match {
-              case constraintArray: ConstrainedArrayType =>
-                indexes.zipWithIndex.zip(constraintArray.dimensions).foreach {
-                  case ((expr, i), dim) =>
-                    acceptExpression(expr, mv)
-                    if (dim.from != 0) {
-                      mv.pushInt(dim.from)
-                      mv.pushInt(dim.to)
-                      mv.INVOKESTATIC(RUNTIME, "getArrayIndex1D", "(III)I")
-                    }
-                    i match {
-                      case 1 => mv.arrayLoadInstruction(constraintArray.elementType)
-                      case _ => mv.AALOAD
-                    }
-                }
-              case unconstrainedArrayType: UnconstrainedArrayType =>
-                indexes.foreach(acceptExpression(_, mv))
-                unconstrainedArrayType.elementType match {
-                  case _: RecordType =>
-                    mv.INVOKEVIRTUAL(getJVMName(symbol), "getValue", "(" + ("I" * indexes.size) + ")" + "Ljava/lang/Object;")
-                    mv.CHECKCAST(getJVMName(unconstrainedArrayType.elementType))
-                  case _ => mv.INVOKEVIRTUAL(getJVMName(symbol), "getValue", "(" + ("I" * indexes.size) + ")" + getJVMDataType(unconstrainedArrayType.elementType))
-                }
-            }
-            loadTarget(expression)
-          case fieldExpr@FieldAccessExpression(owner, field, fieldDataType, _, EmptyExpression) =>
-            if (!owner.owner.isInstanceOf[RuntimeSymbol]) mv.loadSymbol(owner)
-            (owner.makeCopy(field, owner.dataType), fieldDataType)
-          case FieldAccessExpression(symbol, field, fieldDataType, _, expression) =>
-            if (!symbol.owner.isInstanceOf[RuntimeSymbol]) mv.loadSymbol(symbol)
-            mv.GETFIELD(symbol.dataType.fullName(), field.text, getJVMDataType(fieldDataType))
-            loadTarget(expression)
-        }
 
       def checkIsInRange(dataType: DataType): Unit =
         dataType match {
@@ -1209,10 +1213,10 @@ object CodeGenerator {
         case stmt: SimpleVariableAssignmentStatement =>
           stmt.target.nameOrAggregate match {
             case Left(name) =>
-              val (target, targetType) = loadTarget(stmt.nameExpression)
+              val (target, targetType) = loadTarget(mv, stmt.nameExpression)
               acceptExpression(stmt.expression, mv)
               checkIsInRange(targetType)
-              storeSymbol(target, targetType)
+              storeSymbol(mv, target, targetType)
             case Right(aggregate) => error("not implemented")
           }
       }
@@ -1372,8 +1376,18 @@ object CodeGenerator {
           mv.ALOAD(0)
           Opcodes.INVOKEVIRTUAL
         }
-      loadParameters(procedureCallStmt.parameters, mv)
-      mv.visitMethodInsn(procedureCallType, procedureSymbol.parent.name, procedureSymbol.name, "(" + getJVMParameterList(procedureSymbol.parameters) + ")V")
+      procedureSymbol.parent match {
+      //implicitly declared procedures and functions
+        case Runtime if (procedureSymbol.name == "deallocate") =>
+          //converts a call to deallocate to a assignment with null => variable=null;
+          require(procedureCallStmt.parameters.size == 1)
+          val (target, targetType) = loadTarget(mv, procedureCallStmt.parameters.head)
+          mv.ACONST_NULL
+          storeSymbol(mv, target, targetType)
+        case _ =>
+          loadParameters(procedureCallStmt.parameters, mv)
+          mv.visitMethodInsn(procedureCallType, procedureSymbol.parent.name, procedureSymbol.name, "(" + getJVMParameterList(procedureSymbol.parameters) + ")V")
+      }
       if (procedureSymbol.needsCopyBack) {
         //TODO call checkIsInRange
         //it is similarly an error if, after applying any conversion function or type conversion present in the formal part of the applicable association element, the value of the formal parameter does not
@@ -1607,7 +1621,7 @@ object CodeGenerator {
             mv.IRETURN
             val endLabel = RichLabel(mv)
             endLabel()
-            mv.visitLocalVariable("this", record.fullName(), null, startLabel, startLabel, 0)
+            mv.visitLocalVariable("this", "L" + record.fullName() + ";", null, startLabel, startLabel, 0)
             mv.visitLocalVariable("other", "Ljava/lang/Object;", null, startLabel, endLabel, 1)
             mv.endMethod
           }
@@ -1665,9 +1679,9 @@ object CodeGenerator {
             mv.IRETURN
             val endLabel = new RichLabel(mv)
             endLabel()
-            mv.visitLocalVariable("this", record.fullName(), null, startLabel, endLabel, 0)
+            mv.visitLocalVariable("this", "L" + record.fullName() + ";", null, startLabel, endLabel, 0)
             mv.visitLocalVariable("other", "Ljava/lang/Object;", null, startLabel, endLabel, 1)
-            mv.visitLocalVariable("that", record.fullName(), null, thatScopeLabel, afterIfStmtLabel, 2)
+            mv.visitLocalVariable("that", "L" + record.fullName() + ";", null, thatScopeLabel, afterIfStmtLabel, 2)
             mv.endMethod
           }
           cw.writeToFile
