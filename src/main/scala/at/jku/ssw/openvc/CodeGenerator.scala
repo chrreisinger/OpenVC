@@ -590,6 +590,12 @@ object CodeGenerator {
             }
           case _ =>
             relation.left.dataType match {
+              case recordType: RecordType =>
+                INVOKEVIRTUAL(recordType.fullName(), "equals", "(Ljava/lang/Object;)Z")
+                relation.operator match {
+                  case EQ => if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)
+                  case NEQ => if (jumpInverted) IFNE(jumpLabel) else IFEQ(jumpLabel)
+                }
               case NullType =>
                 relation.operator match {
                   case EQ => if (jumpInverted) IFNONNULL(jumpLabel) else IFNULL(jumpLabel)
@@ -1631,7 +1637,7 @@ object CodeGenerator {
             	public boolean equals(Object other){
                 if (other instanceof ClassName){
                   ClassName that=(ClassName)other;
-                  return that.canEqual(this) && that.field1==this.field1 && that.field2==this.field2;
+                  return that.canEqual(this) && this.field1==that.field1 && this.field2==that.field2;
                 }
                 return false;
               }
@@ -1656,9 +1662,9 @@ object CodeGenerator {
             INVOKEVIRTUAL(record.fullName(), "canEqual", "(Ljava/lang/Object;)Z")
             IFEQ(falseLabel)
             for ((fieldName, fieldType) <- record.elements) {
-              ALOAD(2)
-              GETFIELD(record.fullName(), fieldName, getJVMDataType(fieldType))
               ALOAD(0)
+              GETFIELD(record.fullName(), fieldName, getJVMDataType(fieldType))
+              ALOAD(2)
               GETFIELD(record.fullName(), fieldName, getJVMDataType(fieldType))
               fieldType match {
                 case _: IntegerType => IF_ICMPNE(falseLabel)
@@ -1669,6 +1675,9 @@ object CodeGenerator {
                   LCMP
                   IFNE(falseLabel)
                 case _: AccessType => IF_ACMPNE(falseLabel)
+                case recordType: RecordType =>
+                  INVOKEVIRTUAL(recordType.fullName(), "equals", "(Ljava/lang/Object;)Z")
+                  IFEQ(falseLabel)
               }
             }
             ICONST_1
