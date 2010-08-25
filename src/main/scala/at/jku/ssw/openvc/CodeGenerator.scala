@@ -287,8 +287,8 @@ object CodeGenerator {
             import mv._
             loadSymbol(symbol)
             symbol.dataType match {
-              case constraintArray: ConstrainedArrayType =>
-                indexes.zipWithIndex.zip(constraintArray.dimensions).foreach {
+              case constrainedArrayType: ConstrainedArrayType =>
+                indexes.zipWithIndex.zip(constrainedArrayType.dimensions).foreach {
                   case ((expr, i), dim) =>
                     acceptExpressionInner(expr, innerContext)
                     if (dim.from != 0) {
@@ -297,7 +297,7 @@ object CodeGenerator {
                       INVOKESTATIC(RUNTIME, "getArrayIndex1D", "(III)I")
                     }
                     i match {
-                      case 1 => arrayLoadInstruction(constraintArray.elementType)
+                      case 1 => arrayLoadInstruction(constrainedArrayType.elementType)
                       case _ => AALOAD
                     }
                 }
@@ -1615,15 +1615,15 @@ object CodeGenerator {
              */
             val mv = cw.createMethod(name = "canEqual", parameters = "Ljava/lang/Object;", returnType = "Z")
             val startLabel = RichLabel(mv)
-            startLabel()
-            mv.ALOAD(1)
-            mv.INSTANCEOF(record.fullName())
-            mv.IRETURN
             val endLabel = RichLabel(mv)
-            endLabel()
-            mv.visitLocalVariable("this", "L" + record.fullName() + ";", null, startLabel, startLabel, 0)
-            mv.visitLocalVariable("other", "Ljava/lang/Object;", null, startLabel, endLabel, 1)
-            mv.endMethod
+            import mv._
+            startLabel()
+            ALOAD(1)
+            INSTANCEOF(record.fullName())
+            IRETURN
+            visitLocalVariable("this", "L" + record.fullName() + ";", null, startLabel, startLabel, 0)
+            visitLocalVariable("other", "Ljava/lang/Object;", null, startLabel, endLabel, 1)
+            endMethod
           }
           {
             /*
@@ -1638,51 +1638,52 @@ object CodeGenerator {
              */
             val mv = cw.createMethod(name = "equals", parameters = "Ljava/lang/Object;", returnType = "Z")
             val startLabel = new RichLabel(mv)
-            startLabel()
-            mv.ALOAD(1)
-            mv.INSTANCEOF(record.fullName())
-            val afterIfStmtLabel = new RichLabel(mv)
-            mv.IFEQ(afterIfStmtLabel)
-            mv.ALOAD(1)
-            mv.CHECKCAST(record.fullName())
-            mv.ASTORE(2)
             val thatScopeLabel = new RichLabel(mv)
-            thatScopeLabel()
-            mv.ALOAD(2)
-            mv.ALOAD(0)
-            mv.INVOKEVIRTUAL(record.fullName(), "canEqual", "(Ljava/lang/Object;)Z")
+            val afterIfStmtLabel = new RichLabel(mv)
             val falseLabel = new RichLabel(mv)
-            mv.IFEQ(falseLabel)
+            val endLabel = new RichLabel(mv)
+            import mv._
+            startLabel()
+            ALOAD(1)
+            INSTANCEOF(record.fullName())
+            IFEQ(afterIfStmtLabel)
+            ALOAD(1)
+            CHECKCAST(record.fullName())
+            ASTORE(2)
+            thatScopeLabel()
+            ALOAD(2)
+            ALOAD(0)
+            INVOKEVIRTUAL(record.fullName(), "canEqual", "(Ljava/lang/Object;)Z")
+            IFEQ(falseLabel)
             for ((fieldName, fieldType) <- record.elements) {
-              mv.ALOAD(2)
-              mv.GETFIELD(record.fullName(), fieldName, getJVMDataType(fieldType))
-              mv.ALOAD(0)
-              mv.GETFIELD(record.fullName(), fieldName, getJVMDataType(fieldType))
+              ALOAD(2)
+              GETFIELD(record.fullName(), fieldName, getJVMDataType(fieldType))
+              ALOAD(0)
+              GETFIELD(record.fullName(), fieldName, getJVMDataType(fieldType))
               fieldType match {
-                case _: IntegerType => mv.IF_ICMPNE(falseLabel)
+                case _: IntegerType => IF_ICMPNE(falseLabel)
                 case _: RealType =>
-                  mv.DCMPL
-                  mv.IFNE(falseLabel)
+                  DCMPL
+                  IFNE(falseLabel)
                 case _: PhysicalType =>
-                  mv.LCMP
-                  mv.IFNE(falseLabel)
-                case _: AccessType => mv.IF_ACMPNE(falseLabel)
+                  LCMP
+                  IFNE(falseLabel)
+                case _: AccessType => IF_ACMPNE(falseLabel)
               }
             }
-            mv.ICONST_1
-            mv.IRETURN
+            ICONST_1
+            IRETURN
             falseLabel()
-            mv.ICONST_0
-            mv.IRETURN
+            ICONST_0
+            IRETURN
             afterIfStmtLabel()
-            mv.ICONST_0
-            mv.IRETURN
-            val endLabel = new RichLabel(mv)
+            ICONST_0
+            IRETURN
             endLabel()
-            mv.visitLocalVariable("this", "L" + record.fullName() + ";", null, startLabel, endLabel, 0)
-            mv.visitLocalVariable("other", "Ljava/lang/Object;", null, startLabel, endLabel, 1)
-            mv.visitLocalVariable("that", "L" + record.fullName() + ";", null, thatScopeLabel, afterIfStmtLabel, 2)
-            mv.endMethod
+            visitLocalVariable("this", "L" + record.fullName() + ";", null, startLabel, endLabel, 0)
+            visitLocalVariable("other", "Ljava/lang/Object;", null, startLabel, endLabel, 1)
+            visitLocalVariable("that", "L" + record.fullName() + ";", null, thatScopeLabel, afterIfStmtLabel, 2)
+            endMethod
           }
           cw.writeToFile
         case enumType: EnumerationType =>
