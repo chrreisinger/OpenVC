@@ -499,7 +499,7 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
 
   def createDebugLineNumberInformation(position: Position): Unit = {
     val line = position.line
-    if (lastLine != line) {
+    if (lastLine != line && position != Position.Empty) {
       lastLine = line
       val label = RichLabel(this)
       label()
@@ -516,7 +516,5 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
   }
 
   def createDebugLocalVariableInformation(symbols: Seq[Symbol], startLabel: RichLabel, stopLabel: RichLabel): Unit =
-    symbols.collect(_ match {
-      case r: RuntimeSymbol => r
-    }).foreach(r => this.visitLocalVariable(r.name, CodeGenerator.getJVMDataType(r), null, startLabel, stopLabel, r.index))
+    symbols.collect(_ match {case r: RuntimeSymbol => r}).foreach(r => this.visitLocalVariable(r.name, CodeGenerator.getJVMDataType(r), null, startLabel, stopLabel, r.index))
 }

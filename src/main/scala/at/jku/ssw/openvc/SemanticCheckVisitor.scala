@@ -1890,17 +1890,20 @@ object SemanticCheckVisitor {
         val staticBitSet = BitSet(SubProgramFlags.Static)
 
         import RuntimeSymbol.Modifier._
-        val fileSymbol = ConstantSymbol(Identifier("f"), fileType, 0, null)
+        val fileSymbol = FileSymbol(Identifier("f"), fileType, 0, null)
         val file_open1 = new ProcedureSymbol(Identifier("file_open"),
-          Seq(fileSymbol, ConstantSymbol(Identifier("External_Name"), SymbolTable.stringType, 0, null), ConstantSymbol(Identifier("Open_Kind"), SymbolTable.fileOpenKind, 0, null, isOptional = true)),
+          Seq(fileSymbol, ConstantSymbol(Identifier("external_Name"), SymbolTable.stringType, 0, null), ConstantSymbol(Identifier("open_kind"), SymbolTable.fileOpenKind, 0, null, isOptional = true)),
           Runtime, staticBitSet, true)
 
         val file_open2 = new ProcedureSymbol(Identifier("file_open"),
-          Seq(VariableSymbol(Identifier("Status"), SymbolTable.fileOpenStatus, OUT, 0, null, isOptional = true), fileSymbol, ConstantSymbol(Identifier("External_Name"), SymbolTable.stringType, 0, null),
-            ConstantSymbol(Identifier("Open_Kind"), SymbolTable.fileOpenKind, 0, null, isOptional = true)), Runtime, staticBitSet, true)
+          Seq(VariableSymbol(Identifier("status"), SymbolTable.fileOpenStatus, OUT, 0, null, isOptional = true), fileSymbol, ConstantSymbol(Identifier("external_name"), SymbolTable.stringType, 0, null),
+            ConstantSymbol(Identifier("open_kind"), SymbolTable.fileOpenKind, 0, null, isOptional = true)), Runtime, staticBitSet, true)
 
         val file_close = new ProcedureSymbol(Identifier("file_close"), Seq(fileSymbol), Runtime, staticBitSet, true)
-        val read = new ProcedureSymbol(Identifier("read"), Seq(fileSymbol, VariableSymbol(Identifier("value"), dataType, OUT, 0, null)), Runtime, staticBitSet, true)
+        val read = if (dataType.isInstanceOf[ArrayType])
+          new ProcedureSymbol(Identifier("read"), Seq(fileSymbol, VariableSymbol(Identifier("value"), dataType, OUT, 0, null), VariableSymbol(Identifier("length"), SymbolTable.naturalType, OUT, 0, null)), Runtime, staticBitSet, true)
+        else new ProcedureSymbol(Identifier("read"), Seq(fileSymbol, VariableSymbol(Identifier("value"), dataType, OUT, 0, null)), Runtime, staticBitSet, true)
+        
         val write = new ProcedureSymbol(Identifier("write"), Seq(fileSymbol, ConstantSymbol(Identifier("value"), dataType, 0, null)), Runtime, staticBitSet, true)
         val endfile = new FunctionSymbol(Identifier("endfile"), Seq(fileSymbol), SymbolTable.booleanType, Runtime, staticBitSet, true)
 

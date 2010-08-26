@@ -67,36 +67,42 @@ object VHDLRuntime {
   (implicit m: scala.reflect.Manifest[T]) {
     private[this] val data = Array.ofDim[T](dim1Length, dim2Length)
 
+    @throws(classOf[VHDLRuntimeException])
     def ascending(dim: Int) = dim match {
       case 0 => dim1Left < dim1Right
       case 1 => dim2Left < dim2Right
       case _ => throw new VHDLRuntimeException("dimension:" + dim + " is out of range 0 to 1")
     }
 
+    @throws(classOf[VHDLRuntimeException])
     def left(dim: Int) = dim match {
       case 0 => dim1Left
       case 1 => dim2Left
       case _ => throw new VHDLRuntimeException("dimension:" + dim + " is out of range 0 to 1")
     }
 
+    @throws(classOf[VHDLRuntimeException])
     def right(dim: Int) = dim match {
       case 0 => dim1Right
       case 1 => dim2Right
       case _ => throw new VHDLRuntimeException("dimension:" + dim + " is out of range 0 to 1")
     }
 
+    @throws(classOf[VHDLRuntimeException])
     def low(dim: Int) = dim match {
       case 0 => math.min(dim1Left, dim1Right)
       case 1 => math.min(dim2Left, dim2Right)
       case _ => throw new VHDLRuntimeException("dimension:" + dim + " is out of range 0 to 1")
     }
 
+    @throws(classOf[VHDLRuntimeException])
     def high(dim: Int) = dim match {
       case 0 => math.max(dim1Left, dim1Right)
       case 1 => math.max(dim2Left, dim2Right)
       case _ => throw new VHDLRuntimeException("dimension:" + dim + " is out of range 0 to 1")
     }
 
+    @throws(classOf[VHDLRuntimeException])
     def length(dim: Int) = dim match {
       case 0 => dim1Length
       case 1 => dim2Length
@@ -177,16 +183,35 @@ object VHDLRuntime {
     def close: Unit = {
       if (inputStream != null) inputStream.close
       if (outputStream != null) outputStream.close
+      inputStream = null
+      outputStream = null
     }
 
-    def eof: Boolean =
+    def isOpen: Boolean = this.inputStream != null || this.outputStream != null
+
+    @throws(classOf[VHDLRuntimeException])
+    def writeChecks: Unit = {
+      if (!isOpen) throw new VHDLRuntimeException("file is not open")
+      if (readOnlyMode) throw new VHDLRuntimeException("file is in read mode")
+    }
+
+    @throws(classOf[VHDLRuntimeException])
+    def readChecks: Unit = {
+      if (!isOpen) throw new VHDLRuntimeException("file is not open")
+      if (!readOnlyMode) throw new VHDLRuntimeException("file is in write mode")
+    }
+
+    @throws(classOf[VHDLRuntimeException])
+    def eof: Boolean = {
+      if (!isOpen) throw new VHDLRuntimeException("file is not open")
       if (readOnlyMode) {
         inputStream.mark(1)
         val nextByte = inputStream.read()
         inputStream.reset()
         nextByte == -1
       } else
-        false
+        true
+    }
   }
 
   object FILE_OPEN_KIND extends Enumeration {
@@ -282,6 +307,7 @@ object VHDLRuntime {
       throw new VHDLRuntimeException("value:" + value + " is out of range " + low + " to " + high)
     else value
 
+  @throws(classOf[VHDLRuntimeException])
   def pow(base: Int, exponent: Int): Int =
     if (exponent < 0)
       throw new VHDLRuntimeException("exponent:" + exponent + " is negative, that is not allowed")
@@ -317,45 +343,101 @@ object VHDLRuntime {
   def booleanXNOR(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = left.zip(right).map(x => !(x._1 ^ x._2))
 
 
-  def file_open(file: RuntimeFile, external_Name: String): Unit = file_open(0, file, external_Name, FILE_OPEN_KIND.READ_MODE.id)
+  @throws(classOf[VHDLRuntimeException])
+  def file_open(file: RuntimeFile, external_Name: String): Unit = file_open(file, external_Name, FILE_OPEN_KIND.READ_MODE.id)
 
-  def file_open(file: RuntimeFile, external_Name: String, open_Kind: Int): Unit = file_open(0, file, external_Name, open_Kind)
-
-  def file_open(status: Int, file: RuntimeFile, external_Name: String): Int = file_open(status, file, external_Name, FILE_OPEN_KIND.READ_MODE.id)
-
-  def file_open(status: Int, file: RuntimeFile, external_Name: String, open_Kind: Int): Int =
+  @throws(classOf[VHDLRuntimeException])
+  def file_open(file: RuntimeFile, external_Name: String, open_Kind: Int): Unit =
     try {
+      if (file.isOpen) throw new VHDLRuntimeException("file is alreay open")
       FILE_OPEN_KIND(open_Kind) match {
         case FILE_OPEN_KIND.READ_MODE => file.openForReading(external_Name)
         case FILE_OPEN_KIND.WRITE_MODE => file.openForWriting(external_Name, append = false)
         case FILE_OPEN_KIND.APPEND_MODE => file.openForWriting(external_Name, append = true)
       }
-      status
     } catch {
       case fileNotFoundException: java.io.FileNotFoundException => throw new VHDLRuntimeException("file not found:" + fileNotFoundException.getMessage)
     }
 
+  //scala can not overload a method with only a different return type
+  def file_open_status(file: RuntimeFile, external_Name: String): Int = file_open_status(file, external_Name, FILE_OPEN_KIND.READ_MODE.id)
+
+  def file_open_status(file: RuntimeFile, external_Name: String, open_Kind: Int): Int =
+  //not used MODE_ERROR
+    try {
+      if (file.isOpen) return FILE_OPEN_STATUS.STATUS_ERROR.id
+      FILE_OPEN_KIND(open_Kind) match {
+        case FILE_OPEN_KIND.READ_MODE => file.openForReading(external_Name)
+        case FILE_OPEN_KIND.WRITE_MODE => file.openForWriting(external_Name, append = false)
+        case FILE_OPEN_KIND.APPEND_MODE => file.openForWriting(external_Name, append = true)
+      }
+      FILE_OPEN_STATUS.OPEN_OK.id
+    } catch {
+      case fileNotFoundException: java.io.FileNotFoundException => FILE_OPEN_STATUS.NAME_ERROR.id
+    }
+
   def file_close(file: RuntimeFile): Unit = file.close
 
-  def read(file: RuntimeFile): Byte = file.inputStream.readByte
+  //TODO read and write array types and record types
+  def readB(file: RuntimeFile): Byte = {
+    file.readChecks
+    file.inputStream.readByte
+  }
 
-  def write(file: RuntimeFile, value: Byte): Unit = file.outputStream.writeByte(value)
+  def write(file: RuntimeFile, value: Byte): Unit = {
+    file.writeChecks
+    file.outputStream.writeByte(value)
+  }
 
-  //def read(file: RuntimeFile): Boolean = file.inputStream.readBoolean
+  def readZ(file: RuntimeFile): Boolean = {
+    file.readChecks
+    file.inputStream.readBoolean
+  }
 
-  def write(file: RuntimeFile, value: Boolean): Unit = file.outputStream.writeBoolean(value)
+  def write(file: RuntimeFile, value: Boolean): Unit = {
+    file.writeChecks
+    file.outputStream.writeBoolean(value)
+  }
 
-  //def read(file: RuntimeFile): Char = file.inputStream.readChar
+  def readC(file: RuntimeFile): Char = {
+    file.readChecks
+    file.inputStream.readChar
+  }
 
-  def write(file: RuntimeFile, value: Char): Unit = file.outputStream.writeChar(value)
+  def write(file: RuntimeFile, value: Char): Unit = {
+    file.writeChecks
+    file.outputStream.writeChar(value)
+  }
 
-  //def read(file: RuntimeFile): Int = file.inputStream.readInt
+  def readI(file: RuntimeFile): Int = {
+    file.readChecks
+    file.inputStream.readInt
+  }
 
-  def write(file: RuntimeFile, value: Int): Unit = file.outputStream.writeInt(value)
+  def write(file: RuntimeFile, value: Int): Unit = {
+    file.writeChecks
+    file.outputStream.writeInt(value)
+  }
 
-  //def read(file: RuntimeFile): Double = file.inputStream.readDouble
+  def readD(file: RuntimeFile): Double = {
+    file.readChecks
+    file.inputStream.readDouble
+  }
 
-  def write(file: RuntimeFile, value: Double): Unit = file.outputStream.writeDouble(value)
+  def write(file: RuntimeFile, value: Double): Unit = {
+    file.writeChecks
+    file.outputStream.writeDouble(value)
+  }
+
+  def readJ(file: RuntimeFile): Long = {
+    file.readChecks
+    file.inputStream.readLong
+  }
+
+  def write(file: RuntimeFile, value: Long): Unit = {
+    file.writeChecks
+    file.outputStream.writeLong(value)
+  }
 
   def endfile(file: RuntimeFile): Boolean = file.eof
 
