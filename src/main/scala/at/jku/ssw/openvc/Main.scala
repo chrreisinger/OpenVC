@@ -90,9 +90,9 @@ object Main {
     } catch {
       case ex@(_: java.lang.reflect.InvocationTargetException | _: java.lang.ExceptionInInitializerError) =>
         ex.getCause match {
-          case vhdlException: VHDLRuntimeException =>
-            vhdlException.setStackTrace(vhdlException.getStackTrace.filterNot(element => element.getFileName == null || element.getFileName.endsWith(".scala") || element.getFileName.endsWith(".java")))
-            vhdlException.printStackTrace()
+          case exception@(_: VHDLRuntimeException | _: java.lang.NullPointerException) =>
+            exception.setStackTrace(exception.getStackTrace.filterNot(element => element.getFileName == null || element.getFileName.endsWith(".scala") || element.getFileName.endsWith(".java")))
+            exception.printStackTrace()
           case t => t.printStackTrace()
         }
       case e: Exception => e.printStackTrace
