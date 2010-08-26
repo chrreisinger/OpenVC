@@ -31,6 +31,7 @@ import at.jku.ssw.openvc.ast.expressions._
 import at.jku.ssw.openvc.symbolTable._
 import java.io.{File, IOException, FileInputStream}
 import at.jku.ssw.openvc.VHDLCompiler.Configuration
+import at.jku.ssw.openvc.codeGenerator.CodeGenerator.getNextIndex
 
 object SemanticCheckVisitor {
   type SemanticCheckResult = (DesignFile, Seq[CompilerMessage], Seq[CompilerMessage])
@@ -118,7 +119,7 @@ object SemanticCheckVisitor {
               }
             case r: RuntimeSymbol =>
               if (r.dataType.isInstanceOf[RecordType]) {
-                r.dataType.asInstanceOf[RecordType].elements.get(identifier.text) match {
+                r.dataType.asInstanceOf[RecordType].elementsMap.get(identifier.text) match {
                   case None =>
                     addError(identifier, SemanticMessage.NO_FIELD, identifier.text)
                     null
@@ -368,7 +369,7 @@ object SemanticCheckVisitor {
               val expression = checkExpression(context, element.expression, dataType) //TODO
               new Aggregate.ElementAssociation(choices = element.choices, expression = expression)
           }
-        case recordType: RecordType => aggregateExpression.aggregate.elements.zip(recordType.elements.values).map {
+        case recordType: RecordType => aggregateExpression.aggregate.elements.zip(recordType.elementList.unzip._2).map {
           case (element, dataType) =>
             val expression = checkExpression(context, element.expression, dataType) //TODO
             new Aggregate.ElementAssociation(choices = element.choices, expression = expression)
@@ -652,7 +653,7 @@ object SemanticCheckVisitor {
                       case recordType: RecordType => recordType
                       case accessType: AccessType => accessType.pointerType.asInstanceOf[RecordType]
                     }
-                    record.elements.get(identifier.text) match {
+                    record.elementsMap.get(identifier.text) match {
                       case None =>
                         addError(part, SemanticMessage.NOT_FOUND, "field", identifier.text)
                         EmptyExpression
@@ -944,12 +945,6 @@ object SemanticCheckVisitor {
     }
     Identifier(name.position, text)
   }
-
-  def getNextIndex(dataType: DataType): Int =
-    dataType match {
-      case _: RealType | _: PhysicalType => 2
-      case _ => 1
-    }
 
   def checkIsStaticExpression(expr: Option[Expression]): Unit = {
 
@@ -1790,7 +1785,7 @@ object SemanticCheckVisitor {
       case _: FileType => addError(location, SemanticMessage.INVALID_TYPE, "file")
       case _: ProtectedType => addError(location, SemanticMessage.INVALID_TYPE, "protected")
       case _: AccessType => addError(location, SemanticMessage.INVALID_TYPE, "access")
-      case recordType: RecordType => recordType.elements.valuesIterator.foreach(checkIfNotFileProtectedAccessType(location, _))
+      case recordType: RecordType => recordType.elementList.foreach(element => checkIfNotFileProtectedAccessType(location, element._2))
       case arrayType: ArrayType => checkIfNotFileProtectedAccessType(location, arrayType.elementType)
       case _ =>
     }
@@ -1799,7 +1794,7 @@ object SemanticCheckVisitor {
     dataType match {
       case _: FileType => addError(location, SemanticMessage.INVALID_TYPE, "file")
       case _: ProtectedType => addError(location, SemanticMessage.INVALID_TYPE, "protected")
-      case recordType: RecordType => recordType.elements.valuesIterator.foreach(checkIfNotFileProtectedType(location, _))
+      case recordType: RecordType => recordType.elementList.foreach(element => checkIfNotFileProtectedType(location, element._2))
       case arrayType: ArrayType => checkIfNotFileProtectedType(location, arrayType.elementType)
       case _ =>
     }
@@ -1878,7 +1873,7 @@ object SemanticCheckVisitor {
             }
             element.identifierList.map(id => id.text -> dataType)
         }
-        (recordType.copy(dataType = new RecordType(name, Map(elements: _*), parentSymbol)), Seq())
+        (recordType.copy(dataType = new RecordType(name, elements, parentSymbol)), Seq())
       case accessType: AccessTypeDefinition =>
         val dataType = createType(context, accessType.subType, isAccessTypeDefinition = true)
         checkIfNotFileProtectedType(accessType.subType, dataType)

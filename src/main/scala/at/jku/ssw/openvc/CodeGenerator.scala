@@ -171,6 +171,12 @@ object CodeGenerator {
       case fileType: FileType => p(classOf[RuntimeFile])
     }
 
+  def getNextIndex(dataType: DataType): Int =
+    dataType match {
+      case _: RealType | _: PhysicalType => 2
+      case _ => 1
+    }
+
   def apply(configuration: Configuration, sourceFileName: String, designFile: DesignFile): Unit = {
     acceptNode(designFile, null)
 
@@ -491,7 +497,7 @@ object CodeGenerator {
             NEW(record.fullName())
             DUP
             acceptExpressionInner(qualifiedExpression.expression)
-            val desc = record.elements.valuesIterator.map(getJVMDataType).mkString
+            val desc = record.elementList.map(element => getJVMDataType(element._2)).mkString
             INVOKESPECIAL(record.fullName(), "<init>", "(" + desc + ")V")
         }
       }
@@ -1579,8 +1585,8 @@ object CodeGenerator {
           val cw = createClass(Opcodes.ACC_FINAL, className, "java/lang/Object", classOf[RecordAnnotation], createEmptyConstructor = false)
           cw.visitInnerClass(className, context.cw.className, record.name, Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC)
 
-          val methodDesc = record.elements.valuesIterator.map(getJVMDataType).mkString
-          for ((name, dataType) <- record.elements) {
+          val methodDesc = record.elementList.map(element => getJVMDataType(element._2)).mkString
+          for ((name, dataType) <- record.elementList) {
             cw.visitField(Opcodes.ACC_PUBLIC, name, getJVMDataType(dataType))
           }
           {
@@ -1589,9 +1595,9 @@ object CodeGenerator {
 
             ALOAD(0)
             INVOKESPECIAL("java/lang/Object", "<init>", "()V")
-            for (((fieldName, fieldDataType), i) <- record.elements.zipWithIndex) {
+            for (((fieldName, fieldDataType), i) <- record.elementList.zip(record.elementList.map(element => getNextIndex(element._2)).scanLeft(1)(_ + _))) {
               ALOAD(0)
-              loadInstruction(fieldDataType, i + 1)
+              loadInstruction(fieldDataType, i)
               PUTFIELD(record.fullName(), fieldName, getJVMDataType(fieldDataType))
             }
             RETURN
@@ -1603,7 +1609,7 @@ object CodeGenerator {
 
             ALOAD(0)
             INVOKESPECIAL("java/lang/Object", "<init>", "()V")
-            for ((fieldName, fieldDataType) <- record.elements) {
+            for ((fieldName, fieldDataType) <- record.elementList) {
               ALOAD(0)
               loadDefaultValue(fieldDataType, mv)
               PUTFIELD(record.fullName(), fieldName, getJVMDataType(fieldDataType))
@@ -1661,13 +1667,13 @@ object CodeGenerator {
             ALOAD(0)
             INVOKEVIRTUAL(record.fullName(), "canEqual", "(Ljava/lang/Object;)Z")
             IFEQ(falseLabel)
-            for ((fieldName, fieldType) <- record.elements) {
+            for ((fieldName, fieldType) <- record.elementList) {
               ALOAD(0)
               GETFIELD(record.fullName(), fieldName, getJVMDataType(fieldType))
               ALOAD(2)
               GETFIELD(record.fullName(), fieldName, getJVMDataType(fieldType))
               fieldType match {
-                case _: IntegerType => IF_ICMPNE(falseLabel)
+                case _: IntegerType | _: EnumerationType => IF_ICMPNE(falseLabel)
                 case _: RealType =>
                   DCMPL
                   IFNE(falseLabel)

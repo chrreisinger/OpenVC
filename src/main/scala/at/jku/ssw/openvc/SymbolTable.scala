@@ -238,7 +238,8 @@ final case class UnconstrainedArrayType(name: String, elementType: DataType, dim
 final case class ConstrainedArrayType(name: String, elementType: DataType, dimensions: Seq[ConstrainedRangeType]) extends ArrayType
 
 @SerialVersionUID(1153487243267887269L)
-final case class RecordType(name: String, elements: Map[String, DataType], parent: Symbol) extends CompositeType {
+final case class RecordType(name: String, elementList: Seq[(String, DataType)], parent: Symbol) extends CompositeType {
+  val elementsMap=elementList.toMap
   override def fullName(separator: String = "$"): String = {
     val str = parent match {
       case _: PackageHeaderSymbol => parent.name + "_header"
