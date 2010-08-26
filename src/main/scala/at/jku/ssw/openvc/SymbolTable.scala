@@ -315,7 +315,7 @@ final case class EnumerationType(name: String, elements: Seq[String], baseType: 
 abstract sealed class NumericType extends ScalarType //marker trait
 
 @SerialVersionUID(5078439353614332831L)
-final case class IntegerType(val name: String, left: Int, right: Int, baseType: Option[IntegerType]) extends NumericType with DiscreteType {
+final case class IntegerType(name: String, left: Int, right: Int, baseType: Option[IntegerType]) extends NumericType with DiscreteType {
   val lowerBound = math.min(left, right)
   val upperBound = math.max(left, right)
   val ascending = left < right
@@ -324,7 +324,7 @@ final case class IntegerType(val name: String, left: Int, right: Int, baseType: 
 }
 
 @SerialVersionUID(5078432353614332831L)
-final case class RealType(val name: String, left: Double, right: Double, baseType: Option[RealType]) extends NumericType {
+final case class RealType(name: String, left: Double, right: Double, baseType: Option[RealType]) extends NumericType {
   val lowerBound = math.min(left, right)
   val upperBound = math.max(left, right)
   val ascending = left < right
