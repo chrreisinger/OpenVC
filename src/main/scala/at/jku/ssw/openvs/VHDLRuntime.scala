@@ -172,13 +172,14 @@ object VHDLRuntime {
     var outputStream: DataOutputStream = null
     var readOnlyMode = false
 
-    def openForReading(file: String): Unit = {
-      inputStream = new DataInputStream(new BufferedInputStream(new FileInputStream(file)))
-      readOnlyMode = true
-    }
-
-    def openForWriting(file: String, append: Boolean): Unit =
-      outputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file, append)))
+    def open(external_Name: String, open_Kind: Int): Unit =
+      FILE_OPEN_KIND(open_Kind) match {
+        case FILE_OPEN_KIND.READ_MODE =>
+          inputStream = new DataInputStream(new BufferedInputStream(new FileInputStream(external_Name)))
+          readOnlyMode = true
+        case FILE_OPEN_KIND.WRITE_MODE => outputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(external_Name, false)))
+        case FILE_OPEN_KIND.APPEND_MODE => outputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(external_Name, true)))
+      }
 
     def close: Unit = {
       if (inputStream != null) inputStream.close
@@ -350,11 +351,7 @@ object VHDLRuntime {
   def file_open(file: RuntimeFile, external_Name: String, open_Kind: Int): Unit =
     try {
       if (file.isOpen) throw new VHDLRuntimeException("file is alreay open")
-      FILE_OPEN_KIND(open_Kind) match {
-        case FILE_OPEN_KIND.READ_MODE => file.openForReading(external_Name)
-        case FILE_OPEN_KIND.WRITE_MODE => file.openForWriting(external_Name, append = false)
-        case FILE_OPEN_KIND.APPEND_MODE => file.openForWriting(external_Name, append = true)
-      }
+      file.open(external_Name, open_Kind)
     } catch {
       case fileNotFoundException: java.io.FileNotFoundException => throw new VHDLRuntimeException("file not found:" + fileNotFoundException.getMessage)
     }
@@ -366,11 +363,7 @@ object VHDLRuntime {
   //not used MODE_ERROR
     try {
       if (file.isOpen) return FILE_OPEN_STATUS.STATUS_ERROR.id
-      FILE_OPEN_KIND(open_Kind) match {
-        case FILE_OPEN_KIND.READ_MODE => file.openForReading(external_Name)
-        case FILE_OPEN_KIND.WRITE_MODE => file.openForWriting(external_Name, append = false)
-        case FILE_OPEN_KIND.APPEND_MODE => file.openForWriting(external_Name, append = true)
-      }
+      file.open(external_Name, open_Kind)
       FILE_OPEN_STATUS.OPEN_OK.id
     } catch {
       case fileNotFoundException: java.io.FileNotFoundException => FILE_OPEN_STATUS.NAME_ERROR.id

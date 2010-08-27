@@ -1411,7 +1411,7 @@ object CodeGenerator {
               //mangle read procedure name so that it matches one of the readX names in the runtime
               Some("read" + getJVMDataType(procedureSymbol.parameters.head.dataType.asInstanceOf[FileType].elementType))
             case "file_open" =>
-              if (procedureSymbol.parameters.head.dataType.name == "file_open_status") Some("file_open_status")
+              if (procedureSymbol.parameters.head.dataType.name == "status") Some("file_open_status")
               else Some("file_open")
             case name => Some(name)
           }

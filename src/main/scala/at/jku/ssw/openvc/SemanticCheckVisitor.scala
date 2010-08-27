@@ -1897,7 +1897,7 @@ object SemanticCheckVisitor {
         import RuntimeSymbol.Modifier._
         val fileSymbol = FileSymbol(Identifier("f"), fileType, 0, null)
         val file_open1 = new ProcedureSymbol(Identifier("file_open"),
-          Seq(fileSymbol, ConstantSymbol(Identifier("external_Name"), SymbolTable.stringType, 0, null), ConstantSymbol(Identifier("open_kind"), SymbolTable.fileOpenKind, 0, null, isOptional = true)),
+          Seq(fileSymbol, ConstantSymbol(Identifier("external_name"), SymbolTable.stringType, 0, null), ConstantSymbol(Identifier("open_kind"), SymbolTable.fileOpenKind, 0, null, isOptional = true)),
           Runtime, staticBitSet, true)
 
         val file_open2 = new ProcedureSymbol(Identifier("file_open"),
