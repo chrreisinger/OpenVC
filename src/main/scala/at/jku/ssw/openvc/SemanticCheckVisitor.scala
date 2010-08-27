@@ -674,7 +674,12 @@ object SemanticCheckVisitor {
           case Seq() =>
             expectedType match {
               case _: PhysicalType => visitPhysicalLiteral(PhysicalLiteral(nameExpression.position, "1", name.identifier, Literal.Type.INTEGER_LITERAL))
-              case enumType: EnumerationType if (enumType.contains(name.identifier.text)) => Literal(nameExpression.position, enumType.intValue(name.identifier.text).toString, Literal.Type.INTEGER_LITERAL, enumType)
+              case enumType: EnumerationType =>
+                if (enumType.contains(name.identifier.text)) Literal(nameExpression.position, enumType.intValue(name.identifier.text).toString, Literal.Type.INTEGER_LITERAL, enumType)
+                else {
+                  addError(nameExpression.name, SemanticMessage.NO_ENUMERATION_VALUE, name.identifier.text, enumType.name)
+                  EmptyExpression
+                }
               case arrayType: ArrayType => visitLiteral(Literal(nameExpression.position, name.identifier.text, Literal.Type.STRING_LITERAL)) //TODO
               case _ =>
                 addError(nameExpression.name, SemanticMessage.NOT_FOUND, "type,variable,signal,constant or function", name.identifier)
@@ -991,25 +996,44 @@ object SemanticCheckVisitor {
     }
   }
 
-  def createType(context: Context, subtypeIndication: SubTypeIndication, subTypeName: String = "SubTypeName", isAccessTypeDefinition: Boolean = false): DataType = {
-    def createEnumerationType(range: Range, name: String, baseType: EnumerationType): DataType = {
-      def getEnumEntry(expr: Expression, elem: Map[String, Int]): Int = {
-        val text = acceptExpression(expr, baseType, context) match {
-          case literal: Literal => literal.text
+  def createType(context: Context, subtypeIndication: SubTypeIndication, subTypeName: String = "subtype", isAccessTypeDefinition: Boolean = false): DataType = {
+    def createEnumerationSubType(range: Range, baseType: EnumerationType): DataType = {
+      def getEnumEntry(expr: Expression): Option[Int] =
+        acceptExpression(expr, baseType, context) match {
+          case literal: Literal if (literal.dataType eq baseType) => Some(literal.text.toInt)
+          case _ => None
         }
-        val entry = elem.getOrElse(text, -1)
-        if (entry == -1) addError(expr, SemanticMessage.NO_ENUMERATION_VALUE, text, baseType.name)
-        entry
-      }
-      val zippedMap = baseType.elements.zipWithIndex.toMap
-      val low = getEnumEntry(range.fromExpression, zippedMap)
-      val high = getEnumEntry(range.toExpression, zippedMap)
+
+      val low = getEnumEntry(range.fromExpression).getOrElse(baseType.left)
+      val high = getEnumEntry(range.toExpression).getOrElse(baseType.right)
       range.direction match {
         case Range.Direction.To => if (low > high) addError(range.fromExpression, SemanticMessage.INVALID_TO_DIRECTION)
         case Range.Direction.Downto => if (low < high) addError(range.fromExpression, SemanticMessage.INVALID_DOWNTO_DIRECTION)
       }
-      val newList = zippedMap.filter {case (_, i) => i >= low && i <= high}.toList.sortWith((a, b) => a._2 < b._2).map(x => x._1)
-      new EnumerationType(name, newList, Option(baseType.baseType.getOrElse(baseType)), baseType.parent)
+      val (newList, _) = baseType.elements.zipWithIndex.filter {case (_, i) => i >= low && i <= high}.unzip
+      new EnumerationType(subTypeName, newList, Option(baseType.baseType.getOrElse(baseType)), baseType.parent)
+    }
+
+    def createIntegerOrRealSubType[T <: DataType](sourceRange: Range, baseType: DataType): DataType = {
+      val range = checkRange(context, sourceRange, true)
+      val dataType = range.fromExpression.dataType
+      if (dataType.getClass eq baseType.getClass) {
+        baseType match {
+          case intBaseType: IntegerType =>
+            val intType = new IntegerType(subTypeName, lowLong.toInt, highLong.toInt, Option(intBaseType.baseType.getOrElse(intBaseType))) //if this is a subtype of a subtype we want the real base type
+            if (intType.lowerBound < intBaseType.lowerBound) addError(range.fromExpression, "lower bound %s is smaller than the lower bound of the base type %s", intType.lowerBound.toString, intBaseType.lowerBound.toString)
+            if (intType.upperBound > intBaseType.upperBound) addError(range.toExpression, "upper bound %s is greater than the upper bound of the base type %s", intType.upperBound.toString, intBaseType.upperBound.toString)
+            intType
+          case realBaseType: RealType =>
+            val realType = new RealType(subTypeName, lowDouble, highDouble, Option(realBaseType.baseType.getOrElse(realBaseType)))
+            if (realType.lowerBound < realType.lowerBound) addError(range.fromExpression, "lower bound %s is smaller than the lower bound of the base type %s", realType.lowerBound.toString, realType.lowerBound.toString)
+            if (realType.upperBound > realType.upperBound) addError(range.toExpression, "upper bound %s is greater than the upper bound of the base type %s", realType.upperBound.toString, realType.upperBound.toString)
+            realType
+        }
+      } else {
+        addError(range.fromExpression, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, baseType.name, dataType.name)
+        NoType
+      }
     }
     // TODO subtypeIndication.resolutionFunction
     val baseType = context.findType(subtypeIndication.typeName, isAccessTypeDefinition)
@@ -1024,8 +1048,8 @@ object SemanticCheckVisitor {
             constraint match {
               case Left(range) =>
                 baseType match {
-                  case _: IntegerType | _: RealType => createIntegerOrRealType(context, range, subTypeName, Some(baseType))
-                  case e: EnumerationType => createEnumerationType(range, subTypeName, e)
+                  case _: IntegerType | _: RealType => createIntegerOrRealSubType(range, baseType)
+                  case e: EnumerationType => createEnumerationSubType(range, e)
                   case _: AccessType =>
                     //The only form of constraint that is allowed after the name of an access type in a subtype indication is an index constraint
                     addError(range, SemanticMessage.NOT_ALLOWED, "access subtype with a range constraint")
@@ -1752,34 +1776,6 @@ object SemanticCheckVisitor {
     (newNode, newContext)
   }
 
-  def createIntegerOrRealType[T <: DataType](context: Context, sourceRange: Range, name: String, baseTypeOption: Option[T]): DataType = {
-    val range = checkRange(context, sourceRange, true)
-    val dataType = range.fromExpression.dataType
-    baseTypeOption match {
-      case Some(baseType) =>
-        if (dataType.getClass eq baseType.getClass) {
-          baseType match {
-            case intBaseType: IntegerType => new IntegerType(name, lowLong.toInt, highLong.toInt, Option(intBaseType.baseType.getOrElse(intBaseType))) //if this is a subtype of a subtype we want the real base type
-            case realBaseType: RealType => new RealType(name, lowDouble, highDouble, Option(realBaseType.baseType.getOrElse(realBaseType)))
-            case _ =>
-              addError(range.fromExpression, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, baseType.name, dataType.name)
-              NoType
-          }
-        } else {
-          addError(range.fromExpression, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, baseType.name, dataType.name)
-          NoType
-        }
-      case None =>
-        dataType match {
-          case _: IntegerType => new IntegerType(name, lowLong.toInt, highLong.toInt, None)
-          case _: RealType => new RealType(name, lowDouble, highDouble, None)
-          case _ =>
-            addError(range.fromExpression, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, "integer or real", dataType.name)
-            NoType
-        }
-    }
-  }
-
   def checkIfNotFileProtectedAccessType(location: Locatable, dataType: DataType): Unit =
     dataType match {
       case _: FileType => addError(location, SemanticMessage.INVALID_TYPE, "file")
@@ -1835,7 +1831,16 @@ object SemanticCheckVisitor {
 
         val phyType = new PhysicalType(name, lowLong, highLong, buildUnitsMap(physicalType.elements, Map(physicalType.baseIdentifier.text -> 1)))
         (physicalType.copy(dataType = phyType), Seq())
-      case scalarType: IntegerOrFloatingPointTypeDefinition => (scalarType.copy(dataType = createIntegerOrRealType(context, scalarType.range, name, None)), Seq())
+      case integerOrRealType: IntegerOrFloatingPointTypeDefinition =>
+        val range = checkRange(context, integerOrRealType.range, true)
+        val dataType = range.fromExpression.dataType match {
+          case _: IntegerType => new IntegerType(name, lowLong.toInt, highLong.toInt, None)
+          case _: RealType => new RealType(name, lowDouble, highDouble, None)
+          case otherType =>
+            addError(range.fromExpression, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, "integer or real", otherType.name)
+            NoType
+        }
+        (integerOrRealType.copy(dataType = dataType), Seq())
       case arrayType: AbstractArrayTypeDefinition =>
         val elementDataType = createType(context, arrayType.subType)
         elementDataType match {
@@ -1903,7 +1908,6 @@ object SemanticCheckVisitor {
         val read = if (dataType.isInstanceOf[ArrayType])
           new ProcedureSymbol(Identifier("read"), Seq(fileSymbol, VariableSymbol(Identifier("value"), dataType, OUT, 0, null), VariableSymbol(Identifier("length"), SymbolTable.naturalType, OUT, 0, null)), Runtime, staticBitSet, true)
         else new ProcedureSymbol(Identifier("read"), Seq(fileSymbol, VariableSymbol(Identifier("value"), dataType, OUT, 0, null)), Runtime, staticBitSet, true)
-        
         val write = new ProcedureSymbol(Identifier("write"), Seq(fileSymbol, ConstantSymbol(Identifier("value"), dataType, 0, null)), Runtime, staticBitSet, true)
         val endfile = new FunctionSymbol(Identifier("endfile"), Seq(fileSymbol), SymbolTable.booleanType, Runtime, staticBitSet, true)
 
