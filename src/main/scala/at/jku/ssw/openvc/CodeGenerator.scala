@@ -277,10 +277,7 @@ object CodeGenerator {
           case aggregateExpression: AggregateExpression => visitAggregateExpression(aggregateExpression)
           case typeCastExpr: TypeCastExpression => visitTypeCastExpression(typeCastExpr)
           case relation: Relation => acceptExpressionInner(relation.left, innerContext); acceptExpressionInner(relation.right, innerContext); visitRelation(relation, innerContext)
-
-          case qualifiedExpr: QualifiedExpression => visitQualifiedExpression(qualifiedExpr)
           case factor: Factor => visitFactor(factor, innerContext)
-
           case functionCallExpr: FunctionCallExpression => visitFunctionCallExpression(functionCallExpr)
           case logicalExpr: LogicalExpression => visitLogicalExpression(logicalExpr.copy(left = toRelation(logicalExpr.left), right = toRelation(logicalExpr.right)), innerContext)
           case simpleExpr: SimpleExpression => acceptExpressionInner(simpleExpr.left); acceptExpressionInnerOption(simpleExpr.rightOption, innerContext); visitSimpleExpression(simpleExpr)
@@ -416,9 +413,14 @@ object CodeGenerator {
                 case _ => mv.AASTORE
               }
             }
-          case _ =>
+          case record: RecordType =>
+            import mv._
+            NEW(record.fullName())
+            DUP
             for (element <- aggregateExpression.aggregate.elements)
               acceptExpressionInner(element.expression)
+            val desc = record.elementList.map(element => getJVMDataType(element._2)).mkString
+            INVOKESPECIAL(record.fullName(), "<init>", "(" + desc + ")V")
         }
       }
 
@@ -489,18 +491,6 @@ object CodeGenerator {
             DUP
             INVOKESPECIAL(dataTypeName, "<init>", "()V")
         }
-
-      def visitQualifiedExpression(qualifiedExpression: QualifiedExpression): Unit = {
-        import mv._
-        qualifiedExpression.dataType match {
-          case record: RecordType =>
-            NEW(record.fullName())
-            DUP
-            acceptExpressionInner(qualifiedExpression.expression)
-            val desc = record.elementList.map(element => getJVMDataType(element._2)).mkString
-            INVOKESPECIAL(record.fullName(), "<init>", "(" + desc + ")V")
-        }
-      }
 
       def visitLogicalExpression(logicalExpr: LogicalExpression, context: ExpressionContext, lastXORStatement: Boolean = true): Unit = {
         import LogicalExpression.Operator._

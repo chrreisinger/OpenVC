@@ -103,7 +103,7 @@ final class SubTypeIndication(val resolutionFunction: Option[SelectedName], val 
 final class Signature(val parameterList: Seq[SelectedName], val returnType: Option[SelectedName])
 
 object Aggregate {
-  final class ElementAssociation(val choices: Option[Choices], val expression: Expression)
+  final case class ElementAssociation(choices: Option[Choices], expression: Expression)
 }
 final case class Aggregate(elements: Seq[Aggregate.ElementAssociation])
 

@@ -374,6 +374,9 @@ object SemanticCheckVisitor {
             val expression = checkExpression(context, element.expression, dataType) //TODO
             new Aggregate.ElementAssociation(choices = element.choices, expression = expression)
         }
+        case dataType =>
+          addError(aggregateExpression, "expected a expression of an array or record type found %s", dataType.name)
+          aggregateExpression.aggregate.elements
       }
       new AggregateExpression(aggregate = new Aggregate(elements = elements), dataType = expectedType)
     }
@@ -717,9 +720,15 @@ object SemanticCheckVisitor {
       }
 
     def visitQualifiedExpression(qualifiedExpression: QualifiedExpression): Expression = {
-      // TODO Auto-generated method stub
+      //because a qualified expression is parsed as type_mark ' aggregate we must distinguish between the two forms
+      //the two forms are parsed as aggregate because a aggregate is of the from ( (choices ARROW)? expression (, (choices ARROW)? expression)* ), so a input of
+      //type_mark ' ( expression ) can also be an aggregate with one element without a choices part
       val dataType = context.findType(qualifiedExpression.typeName)
-      new QualifiedExpression(qualifiedExpression.typeName, checkExpression(context, qualifiedExpression.expression, dataType), dataType)
+      val expressionToCheck = qualifiedExpression.expression match {
+        case AggregateExpression(Aggregate(Seq(Aggregate.ElementAssociation(None, expression))), _) => expression //expression is of type: type_mark ' ( expression )
+        case _ => qualifiedExpression.expression //expression is of type: type_mark ' aggregate
+      }
+      checkExpression(context, expressionToCheck, dataType)
     }
 
     def visitRelation(relation: Relation): Expression = {
