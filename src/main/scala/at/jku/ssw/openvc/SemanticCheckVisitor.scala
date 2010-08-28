@@ -795,14 +795,14 @@ object SemanticCheckVisitor {
     newExpr
   }
 
-  def checkAssociationList(context: Context, associationList: Option[AssociationList], symbols: Seq[Symbol], parent: Locatable): Seq[Expression] = {
+  def checkAssociationList(context: Context, associationList: Option[AssociationList], symbols: Seq[Symbol], owner: Locatable): Seq[Expression] = {
     //TODO check formal Signal => actual Signal, formal Constant => actual Constant, formal Variable => actual Variable, formal File => actual File
     associationList match {
       case None =>
-        if (!symbols.isEmpty) addError(parent, SemanticMessage.INVALID_ARG_COUNT, "0", symbols.size.toString)
+        if (!symbols.isEmpty) addError(owner, SemanticMessage.INVALID_ARG_COUNT, "0", symbols.size.toString)
         List()
       case Some(list) =>
-        if (list.elements.size != symbols.size) addError(parent, SemanticMessage.INVALID_ARG_COUNT, associationList.iterator.size.toString, symbols.size.toString)
+        if (list.elements.size != symbols.size) addError(owner, SemanticMessage.INVALID_ARG_COUNT, associationList.iterator.size.toString, symbols.size.toString)
         list.elements.map(element => checkExpression(context, element.actualPart.get, NoType)) // TODO check parameters
     }
   }
@@ -1020,7 +1020,7 @@ object SemanticCheckVisitor {
         case Range.Direction.Downto => if (low < high) addError(range.fromExpression, SemanticMessage.INVALID_DOWNTO_DIRECTION)
       }
       val (newList, _) = baseType.elements.zipWithIndex.filter {case (_, i) => i >= low && i <= high}.unzip
-      new EnumerationType(subTypeName, newList, Option(baseType.baseType.getOrElse(baseType)), baseType.parent)
+      new EnumerationType(subTypeName, newList, Option(baseType.baseType.getOrElse(baseType)), baseType.owner)
     }
 
     def createIntegerOrRealSubType[T <: DataType](sourceRange: Range, baseType: DataType): DataType = {
@@ -1155,7 +1155,7 @@ object SemanticCheckVisitor {
   def visitAttributeDeclaration(attributeDeclaration: AttributeDeclaration, parentSymbol: Symbol, context: Context): ReturnType = {
     val dataType = context.findType(attributeDeclaration.typeName)
     checkIfNotFileProtectedAccessType(attributeDeclaration.typeName, dataType)
-    val symbol = new AttributeSymbol(attributeDeclaration.identifier, dataType, parameter = None, isParameterOptional = false, parent = parentSymbol, isPredefined = false)
+    val symbol = new AttributeSymbol(attributeDeclaration.identifier, dataType, parameter = None, isParameterOptional = false, owner = parentSymbol, isPredefined = false)
     (attributeDeclaration, context.insertSymbol(symbol))
   }
 

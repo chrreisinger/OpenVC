@@ -238,13 +238,13 @@ final case class UnconstrainedArrayType(name: String, elementType: DataType, dim
 final case class ConstrainedArrayType(name: String, elementType: DataType, dimensions: Seq[ConstrainedRangeType]) extends ArrayType
 
 @SerialVersionUID(1153487243267887269L)
-final case class RecordType(name: String, elementList: Seq[(String, DataType)], parent: Symbol) extends CompositeType {
+final case class RecordType(name: String, elementList: Seq[(String, DataType)], owner: Symbol) extends CompositeType {
   val elementsMap=elementList.toMap
   override def fullName(separator: String = "$"): String = {
-    val str = parent match {
-      case _: PackageHeaderSymbol => parent.name + "_header"
-      case process: ProcessSymbol => process.parent.name + "$" + process.name
-      case _ => parent.name
+    val str = owner match {
+      case _: PackageHeaderSymbol => owner.name + "_header"
+      case process: ProcessSymbol => process.owner.name + "$" + process.name
+      case _ => owner.name
     }
     str + separator + name
   }
@@ -280,13 +280,13 @@ abstract sealed class ScalarType extends DataType {
 trait DiscreteType //marker trait
 
 @SerialVersionUID(-2424799647169553170L)
-final case class EnumerationType(name: String, elements: Seq[String], baseType: Option[EnumerationType], parent: Symbol) extends ScalarType with DiscreteType {
+final case class EnumerationType(name: String, elements: Seq[String], baseType: Option[EnumerationType], owner: Symbol) extends ScalarType with DiscreteType {
   //TODO recursive classen namen aufbauen
   override def fullName(separator: String = "$"): String = {
-    val str = parent match {
-      case _: PackageHeaderSymbol => parent.name + "_header"
-      case process: ProcessSymbol => process.parent.name + "$" + process.name
-      case _ => parent.name
+    val str = owner match {
+      case _: PackageHeaderSymbol => owner.name + "_header"
+      case process: ProcessSymbol => process.owner.name + "$" + process.name
+      case _ => owner.name
     }
     str + separator + (if (baseType.isDefined) baseType.get.name else this.name)
   }
@@ -357,9 +357,9 @@ final case class ListOfFunctions(identifier: Identifier, functions: mutable.List
 final case class ListOfProcedures(identifier: Identifier, procedures: mutable.ListBuffer[ProcedureSymbol]) extends Symbol
 
 @SerialVersionUID(1238244612233452818L)
-final case class AttributeSymbol(identifier: Identifier, dataType: DataType, parameter: Option[DataType], isParameterOptional: Boolean, parent: Symbol, isPredefined: Boolean) extends Symbol {
+final case class AttributeSymbol(identifier: Identifier, dataType: DataType, parameter: Option[DataType], isParameterOptional: Boolean, owner: Symbol, isPredefined: Boolean) extends Symbol {
   def this(name: String, dataType: DataType, parameter: Option[DataType], isParameterOptional: Boolean = false) =
-    this (Identifier(name), dataType, parameter, isParameterOptional = isParameterOptional, parent = null, isPredefined = true)
+    this (Identifier(name), dataType, parameter, isParameterOptional = isParameterOptional, owner = null, isPredefined = true)
 }
 
 object SubProgramFlags {
@@ -372,12 +372,12 @@ abstract sealed class SubprogramSymbol extends Symbol {
   val flags: BitSet
 }
 @SerialVersionUID(-7427096092567821868L)
-final case class FunctionSymbol(identifier: Identifier, parameters: Seq[RuntimeSymbol], returnType: DataType, parent: Symbol, flags: BitSet, isPure: Boolean) extends SubprogramSymbol {
+final case class FunctionSymbol(identifier: Identifier, parameters: Seq[RuntimeSymbol], returnType: DataType, owner: Symbol, flags: BitSet, isPure: Boolean) extends SubprogramSymbol {
   var implemented = false
 }
 
 @SerialVersionUID(1492091303227052136L)
-final case class ProcedureSymbol(identifier: Identifier, parameters: Seq[RuntimeSymbol], parent: Symbol, flags: BitSet, var isPassive: Boolean) extends SubprogramSymbol {
+final case class ProcedureSymbol(identifier: Identifier, parameters: Seq[RuntimeSymbol], owner: Symbol, flags: BitSet, var isPassive: Boolean) extends SubprogramSymbol {
   var implemented = false
   val copyBackSymbols = parameters.collect {
     _ match {
@@ -400,7 +400,7 @@ final case class GroupTemplateSymbol(identifier: Identifier, items: Seq[EntityCl
 final case class GroupSymbol(identifier: Identifier) extends Symbol
 
 @SerialVersionUID(-6214450543318369430L)
-final case class ProcessSymbol(identifier: Identifier, parent: ArchitectureSymbol, var isPassive: Boolean) extends Symbol
+final case class ProcessSymbol(identifier: Identifier, owner: ArchitectureSymbol, var isPassive: Boolean) extends Symbol
 
 @SerialVersionUID(7523805927766617817L)
 final case class TypeSymbol(identifier: Identifier, dataType: DataType) extends Symbol {

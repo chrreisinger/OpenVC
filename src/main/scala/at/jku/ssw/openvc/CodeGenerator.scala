@@ -450,7 +450,7 @@ object CodeGenerator {
           Opcodes.INVOKEVIRTUAL
         }
         loadParameters(functionCallExpr.parameters, mv)
-        mv.visitMethodInsn(functionCallType, functionSymbol.parent.name, functionSymbol.name, "(" + getJVMParameterList(functionSymbol.parameters) + ")" + getJVMDataType(functionSymbol.returnType))
+        mv.visitMethodInsn(functionCallType, functionSymbol.owner.name, functionSymbol.name, "(" + getJVMParameterList(functionSymbol.parameters) + ")" + getJVMDataType(functionSymbol.returnType))
       }
 
       def visitPhysicalLiteral(physicalLiteral: PhysicalLiteral): Unit = {
@@ -1386,7 +1386,7 @@ object CodeGenerator {
           mv.ALOAD(0)
           Opcodes.INVOKEVIRTUAL
         }
-      procedureSymbol.parent match {
+      procedureSymbol.owner match {
         case Runtime =>
           //implicitly declared procedures and functions
           val procedureName = procedureSymbol.name match {
@@ -1407,11 +1407,11 @@ object CodeGenerator {
           }
           procedureName.foreach {
             loadParameters(procedureCallStmt.parameters, mv)
-            mv.visitMethodInsn(procedureCallType, procedureSymbol.parent.name, _, "(" + getJVMParameterList(procedureSymbol.parameters) + ")V")
+            mv.visitMethodInsn(procedureCallType, procedureSymbol.owner.name, _, "(" + getJVMParameterList(procedureSymbol.parameters) + ")V")
           }
         case _ =>
           loadParameters(procedureCallStmt.parameters, mv)
-          mv.visitMethodInsn(procedureCallType, procedureSymbol.parent.name, procedureSymbol.name, "(" + getJVMParameterList(procedureSymbol.parameters) + ")V")
+          mv.visitMethodInsn(procedureCallType, procedureSymbol.owner.name, procedureSymbol.name, "(" + getJVMParameterList(procedureSymbol.parameters) + ")V")
       }
       if (procedureSymbol.needsCopyBack) {
         //TODO call checkIsInRange
