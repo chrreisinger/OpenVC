@@ -1936,7 +1936,7 @@ object SemanticCheckVisitor {
         val deallocateProcedures = accessTypes.map(accessType => new ProcedureSymbol(Identifier("deallocate"), Seq(VariableSymbol(Identifier("p"), accessType, RuntimeSymbol.Modifier.IN_OUT, 0, null)), Runtime, BitSet(SubProgramFlags.Static), true))
         (newTypeDeclaration, context.copy(symbolTable = context.insertSymbols(deallocateProcedures).symbolTable.insert(new TypeSymbol(typeDeclaration.identifier, newTypeDeclaration.dataType))))
       case _ =>
-        (newTypeDeclaration, if (newTypeDeclaration.dataType == null) context else context.insertSymbols(new TypeSymbol(typeDeclaration.identifier, newTypeDeclaration.dataType) +: newSymbols))
+        (newTypeDeclaration, if (newTypeDeclaration.dataType == NoType) context else context.insertSymbols(new TypeSymbol(typeDeclaration.identifier, newTypeDeclaration.dataType) +: newSymbols))
     }
   }
 

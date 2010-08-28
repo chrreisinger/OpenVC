@@ -30,27 +30,22 @@ case object EmptyExpression extends Expression {
   val position = Position.Empty
 }
 
-abstract sealed class BinaryExpression extends Expression {
-  val left: Expression
-  val right: Expression
-}
-
 object Term {
   type Operator = Operator.Value
   object Operator extends Enumeration {
     val MUL, DIV, MOD, REM = Value
   }
 }
-final case class Term(position: Position, left: Expression, operator: Term.Operator, right: Expression, dataType: DataType = null) extends BinaryExpression
+final case class Term(position: Position, left: Expression, operator: Term.Operator, right: Expression, dataType: DataType = NoType) extends Expression
 
-final case class AggregateExpression(aggregate: Aggregate, dataType: DataType = null) extends Expression {
+final case class AggregateExpression(aggregate: Aggregate, dataType: DataType = NoType) extends Expression {
   val position = aggregate.elements.head.choices match {
     case None => aggregate.elements.head.expression.position
     case Some(choices) => choices.elements.head.position
   }
 }
 
-final case class TypeCastExpression(expression: Expression, dataType: DataType = null) extends Expression {
+final case class TypeCastExpression(expression: Expression, dataType: DataType = NoType) extends Expression {
   val position = expression.position
 }
 
@@ -60,9 +55,9 @@ object Relation {
     val EQ, NEQ, LT, LEQ, GT, GEQ = Value
   }
 }
-final case class Relation(position: Position, left: Expression, operator: Relation.Operator, right: Expression, dataType: DataType = null) extends BinaryExpression
+final case class Relation(position: Position, left: Expression, operator: Relation.Operator, right: Expression, dataType: DataType = NoType) extends Expression
 
-final case class QualifiedExpression(typeName: SelectedName, expression: Expression, dataType: DataType = null) extends Expression {
+final case class QualifiedExpression(typeName: SelectedName, expression: Expression, dataType: DataType = NoType) extends Expression {
   val position = typeName.position
 }
 
@@ -100,7 +95,7 @@ object ShiftExpression {
     val SLL, SRL, SLA, SRA, ROL, ROR = Value
   }
 }
-final case class ShiftExpression(position: Position, left: Expression, operator: ShiftExpression.Operator, right: Expression, dataType: DataType = null) extends BinaryExpression
+final case class ShiftExpression(position: Position, left: Expression, operator: ShiftExpression.Operator, right: Expression, dataType: DataType = NoType) extends Expression
 
 object Factor {
   type Operator = Operator.Value
@@ -108,12 +103,10 @@ object Factor {
     val POW, ABS, NOT = Value //, And, Nand, Or, Nor, Xor, XNor;
   }
 }
-final case class Factor(position: Position, left: Expression, operator: Factor.Operator, rightOption: Option[Expression] = None, dataType: DataType = null) extends BinaryExpression {
-  val right = rightOption.getOrElse(null)
-}
+final case class Factor(position: Position, left: Expression, operator: Factor.Operator, rightOption: Option[Expression] = None, dataType: DataType = NoType) extends Expression
 
 final case class FunctionCallExpression(functionName: SelectedName, parameterAssociationList: Option[AssociationList],
-                                        parameters: Seq[Expression] = Seq(), dataType: DataType = null, symbol: FunctionSymbol = null) extends Expression {
+                                        parameters: Seq[Expression] = Seq(), dataType: DataType = NoType, symbol: FunctionSymbol = null) extends Expression {
   val position = functionName.position
 }
 object LogicalExpression {
@@ -122,7 +115,7 @@ object LogicalExpression {
     val AND, NAND, OR, NOR, XOR, XNOR = Value
   }
 }
-final case class LogicalExpression(position: Position, left: Expression, operator: LogicalExpression.Operator, right: Expression, dataType: DataType = null) extends BinaryExpression
+final case class LogicalExpression(position: Position, left: Expression, operator: LogicalExpression.Operator, right: Expression, dataType: DataType = NoType) extends Expression
 
 object SimpleExpression {
   type AddOperator = AddOperator.Value
@@ -134,13 +127,12 @@ object SimpleExpression {
     val PLUS, MINUS = Value
   }
 }
-final case class SimpleExpression(position: Position, signOperator: Option[SimpleExpression.SignOperator], left: Expression, addOperator: Option[SimpleExpression.AddOperator], rightOption: Option[Expression], dataType: DataType = null)
-        extends BinaryExpression {
+final case class SimpleExpression(position: Position, signOperator: Option[SimpleExpression.SignOperator], left: Expression, addOperator: Option[SimpleExpression.AddOperator], rightOption: Option[Expression], dataType: DataType = NoType)
+        extends Expression {
   require(addOperator.isDefined == rightOption.isDefined)
-  val right = rightOption.getOrElse(null)
 }
 
-final case class NewExpression(position: Position, qualifiedExpressionOrSubTypeIndication: Either[Expression, SubTypeIndication], dataType: DataType = null) extends Expression
+final case class NewExpression(position: Position, qualifiedExpressionOrSubTypeIndication: Either[Expression, SubTypeIndication], dataType: DataType = NoType) extends Expression
 
 object Literal {
   type Type = Type.Value
@@ -149,7 +141,7 @@ object Literal {
   }
 }
 
-final case class Literal(position: Position, text: String, literalType: Literal.Type, dataType: DataType = null)
+final case class Literal(position: Position, text: String, literalType: Literal.Type, dataType: DataType = NoType)
         extends Expression {
   import Literal.Type
 
@@ -165,7 +157,7 @@ final case class Literal(position: Position, text: String, literalType: Literal.
     require(literalType == Type.INTEGER_LITERAL)
     // DECIMAL_LITERAL : INTEGER;
     if (text.contains("E"))
-      this.text.replace("_","").toDouble.toLong //for values that contain an exponent like 1E16
+      this.text.replace("_", "").toDouble.toLong //for values that contain an exponent like 1E16
     else
       this.text.replace("_", "").toLong
   }
@@ -177,14 +169,14 @@ final case class Literal(position: Position, text: String, literalType: Literal.
   }
 }
 
-final case class PhysicalLiteral(position: Position, text: String, unitName: Identifier, literalType: Literal.Type, dataType: DataType = null) extends Expression {
+final case class PhysicalLiteral(position: Position, text: String, unitName: Identifier, literalType: Literal.Type, dataType: DataType = NoType) extends Expression {
   def this(literal: Literal, unitName: Identifier) = this (literal.position, literal.text, unitName, literal.literalType)
 
   def toLong: Long = {
     require(literalType == Literal.Type.INTEGER_LITERAL)
     // DECIMAL_LITERAL : INTEGER;
     if (text.contains("E"))
-      this.text.replace("_","").toDouble.toLong
+      this.text.replace("_", "").toDouble.toLong
     else
       this.text.replace("_", "").toLong
   }

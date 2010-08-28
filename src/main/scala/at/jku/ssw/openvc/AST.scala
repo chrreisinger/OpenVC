@@ -20,7 +20,7 @@ package at.jku.ssw.openvc.ast {
 
 import at.jku.ssw.openvc.ast.expressions.Expression
 import at.jku.ssw.openvc.ast.ams.SubNatureIndication
-import at.jku.ssw.openvc.symbolTable.{DataType, ConstrainedRangeType}
+import at.jku.ssw.openvc.symbolTable.{DataType, ConstrainedRangeType, NoType}
 import declarations.UseClause
 
 object Position {
@@ -432,7 +432,7 @@ final case class ProcedureDefinition(position: Position, identifier: Identifier,
                                      localSymbols: Seq[Symbol] = Seq(), symbol: ProcedureSymbol = null)
         extends SubProgramDefinition
 
-final case class ConfigurationSpecification(position: Position) extends DeclarativeItem 
+final case class ConfigurationSpecification(position: Position) extends DeclarativeItem
 
 final case class GroupDeclaration(position: Position, identifier: Identifier, groupTemplateName: SelectedName, constituentList: Seq[Either[Name, Identifier]]) extends DeclarativeItem
 
@@ -448,38 +448,38 @@ abstract sealed class AbstractTypeDeclaration extends DeclarativeItem {
   val dataType: DataType
 }
 
-final case class IncompleteTypeDeclaration(position: Position, identifier: Identifier, dataType: DataType = null) extends AbstractTypeDeclaration
+final case class IncompleteTypeDeclaration(position: Position, identifier: Identifier, dataType: DataType = NoType) extends AbstractTypeDeclaration
 
-final case class IntegerOrFloatingPointTypeDefinition(position: Position, identifier: Identifier, range: Range, dataType: DataType = null) extends AbstractTypeDeclaration
+final case class IntegerOrFloatingPointTypeDefinition(position: Position, identifier: Identifier, range: Range, dataType: DataType = NoType) extends AbstractTypeDeclaration
 
-final case class AccessTypeDefinition(position: Position, identifier: Identifier, subType: SubTypeIndication, dataType: DataType = null) extends AbstractTypeDeclaration
+final case class AccessTypeDefinition(position: Position, identifier: Identifier, subType: SubTypeIndication, dataType: DataType = NoType) extends AbstractTypeDeclaration
 
 object RecordTypeDefinition {
   final class Element(val identifierList: Seq[Identifier], val subType: SubTypeIndication)
 }
-final case class RecordTypeDefinition(position: Position, identifier: Identifier, elements: Seq[RecordTypeDefinition.Element], endIdentifier: Option[Identifier], dataType: DataType = null) extends AbstractTypeDeclaration
+final case class RecordTypeDefinition(position: Position, identifier: Identifier, elements: Seq[RecordTypeDefinition.Element], endIdentifier: Option[Identifier], dataType: DataType = NoType) extends AbstractTypeDeclaration
 
 object PhysicalTypeDefinition {
   final class Element(val identifier: Identifier, val literal: PhysicalLiteral)
 }
 
-final case class PhysicalTypeDefinition(position: Position, identifier: Identifier, range: Range, baseIdentifier: Identifier, elements: Seq[PhysicalTypeDefinition.Element], endIdentifier: Option[Identifier], dataType: DataType = null) extends AbstractTypeDeclaration
+final case class PhysicalTypeDefinition(position: Position, identifier: Identifier, range: Range, baseIdentifier: Identifier, elements: Seq[PhysicalTypeDefinition.Element], endIdentifier: Option[Identifier], dataType: DataType = NoType) extends AbstractTypeDeclaration
 
-final case class FileTypeDefinition(position: Position, identifier: Identifier, typeName: SelectedName, dataType: DataType = null) extends AbstractTypeDeclaration
+final case class FileTypeDefinition(position: Position, identifier: Identifier, typeName: SelectedName, dataType: DataType = NoType) extends AbstractTypeDeclaration
 
 abstract sealed class AbstractArrayTypeDefinition extends AbstractTypeDeclaration {
   val subType: SubTypeIndication
 }
 
-final case class UnconstrainedArrayTypeDefinition(position: Position, identifier: Identifier, dimensions: Seq[SelectedName], subType: SubTypeIndication, dataType: DataType = null) extends AbstractArrayTypeDefinition
+final case class UnconstrainedArrayTypeDefinition(position: Position, identifier: Identifier, dimensions: Seq[SelectedName], subType: SubTypeIndication, dataType: DataType = NoType) extends AbstractArrayTypeDefinition
 
-final case class ConstrainedArrayTypeDefinition(position: Position, identifier: Identifier, dimensions: Seq[DiscreteRange], subType: SubTypeIndication, dataType: DataType = null) extends AbstractArrayTypeDefinition
+final case class ConstrainedArrayTypeDefinition(position: Position, identifier: Identifier, dimensions: Seq[DiscreteRange], subType: SubTypeIndication, dataType: DataType = NoType) extends AbstractArrayTypeDefinition
 
-final case class EnumerationTypeDefinition(position: Position, identifier: Identifier, elements: Seq[Identifier], dataType: DataType = null) extends AbstractTypeDeclaration
+final case class EnumerationTypeDefinition(position: Position, identifier: Identifier, elements: Seq[Identifier], dataType: DataType = NoType) extends AbstractTypeDeclaration
 
-final case class ProtectedTypeBodyDeclaration(position: Position, identifier: Identifier, declarativeItems: Seq[DeclarativeItem], endIdentifier: Option[Identifier], dataType: DataType = null) extends AbstractTypeDeclaration
+final case class ProtectedTypeBodyDeclaration(position: Position, identifier: Identifier, declarativeItems: Seq[DeclarativeItem], endIdentifier: Option[Identifier], dataType: DataType = NoType) extends AbstractTypeDeclaration
 
-final case class ProtectedTypeDeclaration(position: Position, identifier: Identifier, declarativeItems: Seq[DeclarativeItem], endIdentifier: Option[Identifier], dataType: DataType = null) extends AbstractTypeDeclaration
+final case class ProtectedTypeDeclaration(position: Position, identifier: Identifier, declarativeItems: Seq[DeclarativeItem], endIdentifier: Option[Identifier], dataType: DataType = NoType) extends AbstractTypeDeclaration
 }
 
 package ams {
@@ -516,20 +516,20 @@ final case class SubNatureIndication(natureMark: SelectedName, ranges: Option[Se
 
 final case class SubNatureDeclaration(position: Position, identifier: Identifier, subNature: SubNatureIndication) extends DeclarativeItem
 
-final case class ScalarNatureDefinition(position: Position, identifier: Identifier, typeName: SelectedName, acrossType: SelectedName, throughIdentifier: Identifier, dataType: DataType = null) extends AbstractTypeDeclaration
+final case class ScalarNatureDefinition(position: Position, identifier: Identifier, typeName: SelectedName, acrossType: SelectedName, throughIdentifier: Identifier, dataType: DataType = NoType) extends AbstractTypeDeclaration
 
 abstract sealed class AbstractArrayNatureTypeDefinition extends AbstractTypeDeclaration {
   val subNature: SubNatureIndication
 }
 
-final case class UnconstrainedArrayNatureTypeDefinition(position: Position, identifier: Identifier, dimensions: Seq[SelectedName], subNature: SubNatureIndication, dataType: DataType = null) extends AbstractArrayNatureTypeDefinition
+final case class UnconstrainedArrayNatureTypeDefinition(position: Position, identifier: Identifier, dimensions: Seq[SelectedName], subNature: SubNatureIndication, dataType: DataType = NoType) extends AbstractArrayNatureTypeDefinition
 
-final case class ConstrainedArrayNatureTypeDefinition(position: Position, identifier: Identifier, dimensions: Seq[DiscreteRange], subNature: SubNatureIndication, dataType: DataType = null) extends AbstractArrayNatureTypeDefinition
+final case class ConstrainedArrayNatureTypeDefinition(position: Position, identifier: Identifier, dimensions: Seq[DiscreteRange], subNature: SubNatureIndication, dataType: DataType = NoType) extends AbstractArrayNatureTypeDefinition
 
 object RecordNatureDefinition {
   final class Element(val identifierList: Seq[Identifier], val subNature: SubNatureIndication)
 }
-final case class RecordNatureDefinition(position: Position, identifier: Identifier, elements: Seq[RecordNatureDefinition.Element], endIdentifier: Option[Identifier], dataType: DataType = null) extends AbstractTypeDeclaration
+final case class RecordNatureDefinition(position: Position, identifier: Identifier, elements: Seq[RecordNatureDefinition.Element], endIdentifier: Option[Identifier], dataType: DataType = NoType) extends AbstractTypeDeclaration
 
 final class BreakElement(val forQuantityName: Option[Name], val name: Name, val expression: Expression)
 
