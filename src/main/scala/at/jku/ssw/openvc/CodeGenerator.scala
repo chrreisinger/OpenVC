@@ -697,31 +697,21 @@ object CodeGenerator {
               case DIV => DDIV
             }
           case (_: PhysicalType, _: IntegerType) =>
+            loadOperands()
+            I2L
             (term.operator: @unchecked) match {
-              case MUL =>
-                loadOperands()
-                I2L
-                LMUL
-              case DIV =>
-                loadOperands()
-                I2L
-                LDIV
+              case MUL => LMUL
+              case DIV => LDIV
             }
           case (_: PhysicalType, _: RealType) =>
+            acceptExpressionInner(term.left)
+            L2D
+            acceptExpressionInner(term.right)
             (term.operator: @unchecked) match {
-              case MUL =>
-                acceptExpressionInner(term.left)
-                L2D
-                acceptExpressionInner(term.right)
-                DMUL
-                D2L
-              case DIV =>
-                acceptExpressionInner(term.left)
-                L2D
-                acceptExpressionInner(term.right)
-                DDIV
-                D2L
+              case MUL => DMUL
+              case DIV => DDIV
             }
+            D2L
           case (_: IntegerType, _: PhysicalType) =>
             acceptExpressionInner(term.left)
             I2L
@@ -736,6 +726,18 @@ object CodeGenerator {
             loadOperands()
             LDIV
             L2I
+          case (_: RealType, _: IntegerType) =>
+            loadOperands()
+            I2D
+            (term.operator: @unchecked) match {
+              case MUL => DMUL
+              case DIV => DDIV
+            }
+          case (_: IntegerType, _: RealType) =>
+            acceptExpressionInner(term.left)
+            I2D
+            acceptExpressionInner(term.right)
+            DMUL
         }
       }
 

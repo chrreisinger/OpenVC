@@ -41,11 +41,11 @@ object SemanticCheckVisitor {
     else {
       dataType match {
         case i: IntegerType => expectedDataType match {
-          case ei: IntegerType => i.baseType.getOrElse(i) == ei.baseType.getOrElse(ei)
+          case ei: IntegerType => dataType == SymbolTable.universalIntegerType || i.baseType.getOrElse(i) == ei.baseType.getOrElse(ei)
           case _ => false
         }
         case r: RealType => expectedDataType match {
-          case er: RealType => r.baseType.getOrElse(r) == er.baseType.getOrElse(er)
+          case er: RealType => dataType == SymbolTable.universalRealType || r.baseType.getOrElse(r) == er.baseType.getOrElse(er)
           case _ => false
         }
         case e: EnumerationType => expectedDataType match {
@@ -388,7 +388,8 @@ object SemanticCheckVisitor {
           }
         case Factor.Operator.POW =>
           factor.rightOption.foreach {
-            rightExpression => if (rightExpression.dataType != SymbolTable.integerType) addError(rightExpression, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, "integer", rightExpression.dataType.name)
+            rightExpression => if (!(rightExpression.dataType == SymbolTable.integerType || rightExpression.dataType == SymbolTable.universalIntegerType))
+              addError(rightExpression, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, "integer", rightExpression.dataType.name)
           }
           factor.left.dataType match {
             case _: IntegerType | _: RealType => factor.left.dataType
@@ -437,7 +438,7 @@ object SemanticCheckVisitor {
             case Some(expr) => Option(checkExpression(context, expr, requiredDataType))
           }
           case true => attributeExpr.expression match {
-            case None => Some(Literal(attributeExpr.position, "1", Literal.Type.INTEGER_LITERAL, SymbolTable.integerType)) //this must be a array attribute where the dimension is optional
+            case None => Some(Literal(attributeExpr.position, "1", Literal.Type.INTEGER_LITERAL, SymbolTable.universalIntegerType)) //this must be a array attribute where the dimension is optional
             case Some(expr) => Option(checkExpression(context, expr, requiredDataType))
           }
         }
@@ -466,8 +467,8 @@ object SemanticCheckVisitor {
       import Literal.Type._
 
       literal.literalType match {
-        case INTEGER_LITERAL => literal.copy(dataType = SymbolTable.integerType)
-        case REAL_LITERAL => literal.copy(dataType = SymbolTable.realType)
+        case INTEGER_LITERAL => literal.copy(dataType = SymbolTable.universalIntegerType)
+        case REAL_LITERAL => literal.copy(dataType = SymbolTable.universalRealType)
         case STRING_LITERAL => expectedType match {
           case arrayType: ArrayType if (arrayType.elementType.isInstanceOf[EnumerationType]) =>
             val enumType = arrayType.elementType.asInstanceOf[EnumerationType]
@@ -558,12 +559,12 @@ object SemanticCheckVisitor {
               val base = baseString.toInt
               val exponent = (if (exponentString != null) math.pow(base, Integer.parseInt(exponentString)).toInt else 1)
               if (fractionString == null)
-                Literal(literal.position, (Integer.parseInt(values, base) * exponent).toString, INTEGER_LITERAL, SymbolTable.integerType)
+                Literal(literal.position, (Integer.parseInt(values, base) * exponent).toString, INTEGER_LITERAL, SymbolTable.universalIntegerType)
               else {
                 val fraction = fractionString.zipWithIndex.map {
                   case (digit, i) => Integer.parseInt(digit.toString, base) / math.pow(base, i + 1)
                 }.sum
-                Literal(literal.position, ((Integer.parseInt(values, base) + fraction) * exponent).toString, REAL_LITERAL, SymbolTable.realType)
+                Literal(literal.position, ((Integer.parseInt(values, base) + fraction) * exponent).toString, REAL_LITERAL, SymbolTable.universalRealType)
               }
           }
         case NULL_LITERAL =>
@@ -754,25 +755,29 @@ object SemanticCheckVisitor {
         addError(term, SemanticMessage.OPERATOR_NOT_DEFINED, term.operator.toString, term.left.dataType.name, term.right.dataType.name)
         NoType
       }
+      def isValid(dataType: DataType): Boolean = dataType == SymbolTable.integerType || dataType == SymbolTable.universalIntegerType || dataType == SymbolTable.realType || dataType == SymbolTable.universalRealType
       import Term.Operator._
       val dataType = term.operator match {
         case MUL =>
           (term.left.dataType, term.right.dataType) match {
-            case (integerOrRealType@(_: IntegerType | _: RealType), right) if (isCompatible(integerOrRealType,right)) => integerOrRealType
-            case (physicalType: PhysicalType, integerOrRealType@(_: IntegerType | _: RealType)) => physicalType
-            case (integerOrRealType@(_: IntegerType | _: RealType), physicalType: PhysicalType) => physicalType
+            case (integerOrRealType@(_: IntegerType | _: RealType), right) if (isCompatible(integerOrRealType, right)) => integerOrRealType
+            case (physicalType: PhysicalType, integerOrRealType@(_: IntegerType | _: RealType)) if (isValid(integerOrRealType)) => physicalType
+            case (integerOrRealType@(_: IntegerType | _: RealType), physicalType: PhysicalType) if (isValid(integerOrRealType)) => physicalType
+            case (SymbolTable.universalRealType, SymbolTable.universalIntegerType) => SymbolTable.universalRealType
+            case (SymbolTable.universalIntegerType, SymbolTable.universalRealType) => SymbolTable.universalRealType
             case _ => errorMessage()
           }
         case DIV =>
           (term.left.dataType, term.right.dataType) match {
-            case (integerOrRealType@(_: IntegerType | _: RealType), right) if (isCompatible(integerOrRealType,right)) => integerOrRealType
-            case (physicalType: PhysicalType, integerOrRealType@(_: IntegerType | _: RealType)) => physicalType
-            case (physicalType: PhysicalType, right) if (physicalType == right) => SymbolTable.integerType
+            case (integerOrRealType@(_: IntegerType | _: RealType), right) if (isCompatible(integerOrRealType, right)) => integerOrRealType
+            case (physicalType: PhysicalType, integerOrRealType@(_: IntegerType | _: RealType)) if (isValid(integerOrRealType)) => physicalType
+            case (physicalType: PhysicalType, right) if (physicalType == right) => SymbolTable.universalIntegerType
+            case (SymbolTable.universalRealType, SymbolTable.universalIntegerType) => SymbolTable.universalRealType
             case _ => errorMessage()
           }
         case MOD | REM =>
           (term.left.dataType, term.right.dataType) match {
-            case (integerType: IntegerType, right) if (integerType == right) => integerType
+            case (integerType: IntegerType, right) if (integerType == right || right == SymbolTable.universalIntegerType) => integerType
             case _ => errorMessage()
           }
       }
@@ -873,30 +878,29 @@ object SemanticCheckVisitor {
         val fromExpression = checkExpression(context, range.fromExpression, NoType)
         val toExpression = checkExpression(context, range.toExpression, fromExpression.dataType)
         if (calcValues) {
-          if ((SymbolTable.integerType != null && (fromExpression.dataType eq SymbolTable.integerType)) ||
-                  (SymbolTable.integerType == null && toExpression.isInstanceOf[Literal] && toExpression.asInstanceOf[Literal].literalType == Literal.Type.INTEGER_LITERAL)) { //hack to compile the standard types, where integer and real are defined => SymbolTable.integerType is null
-            lowLong = StaticExpressionCalculator.calcValue(fromExpression)(LongIsIntegral)
-            highLong = StaticExpressionCalculator.calcValue(toExpression)(LongIsIntegral)
-            range.direction match {
-              case Range.Direction.To => if (lowLong > highLong) addError(fromExpression, SemanticMessage.INVALID_TO_DIRECTION)
-              case Range.Direction.Downto => if (lowLong < highLong) addError(fromExpression, SemanticMessage.INVALID_DOWNTO_DIRECTION)
-            }
-          } else if (fromExpression.dataType eq SymbolTable.realType) {
-            lowDouble = StaticExpressionCalculator.calcValue(fromExpression)(DoubleAsIfIntegral)
-            highDouble = StaticExpressionCalculator.calcValue(toExpression)(DoubleAsIfIntegral)
-            range.direction match {
-              case Range.Direction.To => if (lowDouble > highDouble) addError(fromExpression, SemanticMessage.INVALID_TO_DIRECTION)
-              case Range.Direction.Downto => if (lowDouble < highDouble) addError(fromExpression, SemanticMessage.INVALID_DOWNTO_DIRECTION)
-            }
-          } else if (fromExpression.dataType.isInstanceOf[EnumerationType]) {
-            lowLong = StaticExpressionCalculator.calcValue(fromExpression)(IntIsIntegral)
-            highLong = StaticExpressionCalculator.calcValue(toExpression)(IntIsIntegral)
-            range.direction match {
-              case Range.Direction.To => if (lowLong > highLong) addError(fromExpression, SemanticMessage.INVALID_TO_DIRECTION)
-              case Range.Direction.Downto => if (lowLong < highLong) addError(fromExpression, SemanticMessage.INVALID_DOWNTO_DIRECTION)
-            }
-          } else {
-            addError(fromExpression, SemanticMessage.INVALID_SIMPLE_EXPRESSION)
+          fromExpression.dataType match {
+            case _: IntegerType =>
+              lowLong = StaticExpressionCalculator.calcValue(fromExpression)(LongIsIntegral)
+              highLong = StaticExpressionCalculator.calcValue(toExpression)(LongIsIntegral)
+              range.direction match {
+                case Range.Direction.To => if (lowLong > highLong) addError(fromExpression, SemanticMessage.INVALID_TO_DIRECTION)
+                case Range.Direction.Downto => if (lowLong < highLong) addError(fromExpression, SemanticMessage.INVALID_DOWNTO_DIRECTION)
+              }
+            case _: RealType =>
+              lowDouble = StaticExpressionCalculator.calcValue(fromExpression)(DoubleAsIfIntegral)
+              highDouble = StaticExpressionCalculator.calcValue(toExpression)(DoubleAsIfIntegral)
+              range.direction match {
+                case Range.Direction.To => if (lowDouble > highDouble) addError(fromExpression, SemanticMessage.INVALID_TO_DIRECTION)
+                case Range.Direction.Downto => if (lowDouble < highDouble) addError(fromExpression, SemanticMessage.INVALID_DOWNTO_DIRECTION)
+              }
+            case _: EnumerationType =>
+              lowLong = StaticExpressionCalculator.calcValue(fromExpression)(IntIsIntegral)
+              highLong = StaticExpressionCalculator.calcValue(toExpression)(IntIsIntegral)
+              range.direction match {
+                case Range.Direction.To => if (lowLong > highLong) addError(fromExpression, SemanticMessage.INVALID_TO_DIRECTION)
+                case Range.Direction.Downto => if (lowLong < highLong) addError(fromExpression, SemanticMessage.INVALID_DOWNTO_DIRECTION)
+              }
+            case _ => addError(fromExpression, SemanticMessage.INVALID_SIMPLE_EXPRESSION)
           }
         }
         new Range(fromExpression = fromExpression, toExpression = toExpression, direction = range.direction, attributeNameOption = None)

@@ -53,8 +53,10 @@ object SymbolTable {
   var bitType: EnumerationType = null
   var characterType: EnumerationType = null
   var severityLevel: EnumerationType = null
-  var integerType = IntegerType("integer", Integer.MIN_VALUE, Integer.MAX_VALUE, None) //universal_integer
-  var realType = RealType("real", java.lang.Double.MIN_VALUE, java.lang.Double.MAX_VALUE, None) //universal_real
+  var integerType: IntegerType = null
+  var realType: RealType = null
+  val universalIntegerType = IntegerType("universal_integer", Integer.MIN_VALUE, Integer.MAX_VALUE, None)
+  val universalRealType = RealType("universal_real", java.lang.Double.MIN_VALUE, java.lang.Double.MAX_VALUE, None)
   var timeType: PhysicalType = null
   var naturalType: IntegerType = null
   var positiveType: IntegerType = null

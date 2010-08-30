@@ -82,7 +82,6 @@ final class ExpressionTests extends GenericTest {
         variable x : integer:=5;
         variable y : real:=5.0;
         variable z : time:=5 fs;
-        variable a : integer range 0 to 5 := 2;
       begin  -- main
         x:=x*x;
         y:=y*y;
@@ -97,8 +96,9 @@ final class ExpressionTests extends GenericTest {
         z:=z / x;
         z:=z / y;
         x:=z / z;
-        a:=a*x;
-        z:=z*a;
+        y:=3 * 5.0;
+        y:=5.0 * 3;
+        y:=5.0 / 3;
       end main;
     """
   }
