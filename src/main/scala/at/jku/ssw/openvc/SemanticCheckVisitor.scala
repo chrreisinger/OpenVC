@@ -36,7 +36,7 @@ import at.jku.ssw.openvc.codeGenerator.CodeGenerator.getNextIndex
 object SemanticCheckVisitor {
   type SemanticCheckResult = (DesignFile, Seq[CompilerMessage], Seq[CompilerMessage])
 
-  def isCompatible(dataType: DataType, expectedDataType: DataType, expr: Expression = null): Boolean =
+  def isCompatible(dataType: DataType, expectedDataType: DataType): Boolean =
     if (dataType == expectedDataType || (dataType eq NoType) || (expectedDataType eq NoType)) true
     else {
       dataType match {
@@ -48,16 +48,12 @@ object SemanticCheckVisitor {
           case er: RealType => r.baseType.getOrElse(r) == er.baseType.getOrElse(er)
           case _ => false
         }
-        case e: EnumerationType =>
-          expr match {
-            case literal: Literal if (e.contains(literal.text)) => true
-            case _ => expectedDataType match {
-              case ee: EnumerationType => e.baseType.getOrElse(e) == ee.baseType.getOrElse(ee)
-              case _ => false
-            }
-          }
-        case a: ArrayType => isCompatible(a.elementType, expectedDataType, null) //TODO check element type and range
-        case _ => false; //error(expr.position + " " + expr.toString)
+        case e: EnumerationType => expectedDataType match {
+          case ee: EnumerationType => e.baseType.getOrElse(e) == ee.baseType.getOrElse(ee)
+          case _ => false
+        }
+        case a: ArrayType => isCompatible(a.elementType, expectedDataType) //TODO check element type and range
+        case _ => false
       }
     }
 
@@ -754,13 +750,31 @@ object SemanticCheckVisitor {
     }
 
     def visitTerm(term: Term): Expression = {
-      val dataType = term.left.dataType match {
-        case dataType@(_: IntegerType | _: RealType) =>
-          if (term.right.dataType != dataType) addError(term.right, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, dataType.name, term.right.dataType)
-          dataType
-        case dataType =>
-          addError(term, SemanticMessage.OPERATOR_NOT_DEFINED, term.operator.toString, term.left.dataType.name, term.right.dataType.name)
-          dataType
+      def errorMessage(): DataType = {
+        addError(term, SemanticMessage.OPERATOR_NOT_DEFINED, term.operator.toString, term.left.dataType.name, term.right.dataType.name)
+        NoType
+      }
+      import Term.Operator._
+      val dataType = term.operator match {
+        case MUL =>
+          (term.left.dataType, term.right.dataType) match {
+            case (integerOrRealType@(_: IntegerType | _: RealType), right) if (isCompatible(integerOrRealType,right)) => integerOrRealType
+            case (physicalType: PhysicalType, integerOrRealType@(_: IntegerType | _: RealType)) => physicalType
+            case (integerOrRealType@(_: IntegerType | _: RealType), physicalType: PhysicalType) => physicalType
+            case _ => errorMessage()
+          }
+        case DIV =>
+          (term.left.dataType, term.right.dataType) match {
+            case (integerOrRealType@(_: IntegerType | _: RealType), right) if (isCompatible(integerOrRealType,right)) => integerOrRealType
+            case (physicalType: PhysicalType, integerOrRealType@(_: IntegerType | _: RealType)) => physicalType
+            case (physicalType: PhysicalType, right) if (physicalType == right) => SymbolTable.integerType
+            case _ => errorMessage()
+          }
+        case MOD | REM =>
+          (term.left.dataType, term.right.dataType) match {
+            case (integerType: IntegerType, right) if (integerType == right) => integerType
+            case _ => errorMessage()
+          }
       }
       term.copy(dataType = dataType)
     }
@@ -789,7 +803,7 @@ object SemanticCheckVisitor {
 
   def checkExpression(context: Context, expr: Expression, dataType: DataType): Expression = {
     val newExpr = acceptExpression(expr, dataType, context)
-    if (!isCompatible(newExpr.dataType, dataType, newExpr)) {
+    if (!isCompatible(newExpr.dataType, dataType)) {
       addError(expr, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, dataType.name, newExpr.dataType.name)
     }
     newExpr

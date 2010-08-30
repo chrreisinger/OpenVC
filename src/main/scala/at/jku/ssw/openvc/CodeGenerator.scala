@@ -681,8 +681,8 @@ object CodeGenerator {
           acceptExpressionInner(term.left)
           acceptExpressionInner(term.right)
         }
-        (term.dataType: @unchecked) match {
-          case _: IntegerType =>
+        ((term.left.dataType, term.right.dataType): @unchecked) match {
+          case (_: IntegerType, _: IntegerType) =>
             loadOperands()
             term.operator match {
               case MUL => IMUL
@@ -690,59 +690,52 @@ object CodeGenerator {
               case MOD => INVOKESTATIC(RUNTIME, "mod", "(II)I")
               case REM => IREM
             }
-          case _: RealType =>
+          case (_: RealType, _: RealType) =>
             loadOperands()
-            term.operator match {
+            (term.operator: @unchecked) match {
               case MUL => DMUL
               case DIV => DDIV
-              case MOD => INVOKESTATIC(RUNTIME, "mod", "(DD)D")
-              case REM => DREM
             }
-          case _: PhysicalType =>
+          case (_: PhysicalType, _: IntegerType) =>
             (term.operator: @unchecked) match {
-              case MUL => (term.left.dataType: @unchecked) match {
-                case _: IntegerType =>
-                  acceptExpressionInner(term.left)
-                  I2L
-                  acceptExpressionInner(term.right)
-                  LMUL
-                case _: RealType =>
-                  acceptExpressionInner(term.left)
-                  L2D
-                  acceptExpressionInner(term.right)
-                  DMUL
-                  D2L
-                case _: PhysicalType => (term.right.dataType: @unchecked) match {
-                  case _: IntegerType =>
-                    loadOperands()
-                    I2L
-                    LMUL
-                  case _: RealType =>
-                    acceptExpressionInner(term.left)
-                    L2D
-                    acceptExpressionInner(term.right)
-                    DMUL
-                    D2L
-                }
-              }
+              case MUL =>
+                loadOperands()
+                I2L
+                LMUL
               case DIV =>
-                (term.right.dataType: @unchecked) match {
-                  case _: IntegerType =>
-                    loadOperands()
-                    I2L
-                    LDIV
-                  case _: RealType =>
-                    acceptExpressionInner(term.left)
-                    L2D
-                    acceptExpressionInner(term.right)
-                    DDIV
-                    D2L
-                  case _: PhysicalType =>
-                    loadOperands()
-                    LDIV
-                    L2I
-                }
+                loadOperands()
+                I2L
+                LDIV
             }
+          case (_: PhysicalType, _: RealType) =>
+            (term.operator: @unchecked) match {
+              case MUL =>
+                acceptExpressionInner(term.left)
+                L2D
+                acceptExpressionInner(term.right)
+                DMUL
+                D2L
+              case DIV =>
+                acceptExpressionInner(term.left)
+                L2D
+                acceptExpressionInner(term.right)
+                DDIV
+                D2L
+            }
+          case (_: IntegerType, _: PhysicalType) =>
+            acceptExpressionInner(term.left)
+            I2L
+            acceptExpressionInner(term.right)
+            LMUL
+          case (_: RealType, _: PhysicalType) =>
+            loadOperands()
+            L2D
+            DMUL
+            D2L
+          case (_: PhysicalType, _: PhysicalType) =>
+            loadOperands()
+            LDIV
+            L2I
         }
       }
 

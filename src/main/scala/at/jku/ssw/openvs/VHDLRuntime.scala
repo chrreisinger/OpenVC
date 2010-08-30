@@ -326,11 +326,6 @@ object VHDLRuntime {
     return if ((mod < 0 && y > 0) || (mod > 0 && y < 0)) mod + y else mod
   }
 
-  def mod(x: Double, y: Double): Double = {
-    val mod = math.IEEEremainder(x, y)
-    return if (y * mod < 0) mod + y else mod
-  }
-
   def booleanAND(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = left.zip(right).map(x => x._1 && x._2)
 
   def booleanNAND(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = left.zip(right).map(x => !(x._1 && x._2))

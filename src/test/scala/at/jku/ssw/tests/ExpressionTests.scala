@@ -76,7 +76,34 @@ final class ExpressionTests extends GenericTest {
     """
   }
 
-    compileCodeInPackageAndRun("compile expressions with abs and pow") {
+  compileCodeInPackageAndRun("compile expressions with *, /, mod and rem") {
+    """
+      procedure main is
+        variable x : integer:=5;
+        variable y : real:=5.0;
+        variable z : time:=5 fs;
+        variable a : integer range 0 to 5 := 2;
+      begin  -- main
+        x:=x*x;
+        y:=y*y;
+        x:=x/x;
+        y:=y/y;
+        x:=x mod x;
+        x:=x rem x;
+        z:=z * x;
+        z:=z * y;
+        z:=x * z;
+        z:=y * z;
+        z:=z / x;
+        z:=z / y;
+        x:=z / z;
+        a:=a*x;
+        z:=z*a;
+      end main;
+    """
+  }
+
+  compileCodeInPackageAndRun("compile expressions with abs and pow") {
     """
       procedure main is
         variable x : integer;
