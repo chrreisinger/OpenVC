@@ -150,7 +150,7 @@ object CodeGenerator {
 
   private def getJVMName(dataType: DataType): String =
     dataType match {
-      case arrayType: UnconstrainedArrayType =>
+      case arrayType: ArrayType =>
         if (dataType.name == "string") "java/lang/String"
         else OPENVS + "VHDLRuntime$RuntimeArray" + arrayType.dimensions.size + "D" + {
           arrayType.elementType match {
@@ -276,10 +276,25 @@ object CodeGenerator {
           case term: Term => visitTerm(term)
           case aggregateExpression: AggregateExpression => visitAggregateExpression(aggregateExpression)
           case typeCastExpr: TypeCastExpression => visitTypeCastExpression(typeCastExpr)
-          case relation: Relation => acceptExpressionInner(relation.left, innerContext); acceptExpressionInner(relation.right, innerContext); visitRelation(relation, innerContext)
+          case relation: Relation => visitRelation(relation, innerContext)
           case factor: Factor => visitFactor(factor, innerContext)
+          case shiftExpression: ShiftExpression =>
+            acceptExpressionInner(shiftExpression.left)
+            acceptExpressionInner(shiftExpression.right)
+            import ShiftExpression.Operator._
+            val parameters = shiftExpression.operator match {
+              case SLA | SRA =>
+                //TODO is ascending? shiftExpression.dataType.asInstanceOf[ArrayType].dimensions
+                mv.ICONST_1
+                "(" + getJVMDataType(shiftExpression.left.dataType) + "IZ)"
+              case _ => "(" + getJVMDataType(shiftExpression.left.dataType) + "I)"
+            }
+            mv.INVOKESTATIC(RUNTIME, shiftExpression.operator.toString, parameters + getJVMDataType(shiftExpression.left.dataType))
           case functionCallExpr: FunctionCallExpression => visitFunctionCallExpression(functionCallExpr)
-          case logicalExpr: LogicalExpression => visitLogicalExpression(logicalExpr.copy(left = toRelation(logicalExpr.left), right = toRelation(logicalExpr.right)), innerContext)
+          case logicalExpr: LogicalExpression => logicalExpr.dataType match {
+            case _: ArrayType => visitLogicalExpression(logicalExpr, innerContext)
+            case _ => visitLogicalExpression(logicalExpr.copy(left = toRelation(logicalExpr.left), right = toRelation(logicalExpr.right)), innerContext)
+          }
           case simpleExpr: SimpleExpression => acceptExpressionInner(simpleExpr.left); acceptExpressionInnerOption(simpleExpr.rightOption, innerContext); visitSimpleExpression(simpleExpr)
           case newExpr: NewExpression => visitNewExpression(newExpr)
           case literal: Literal => visitLiteral(literal)
@@ -439,7 +454,12 @@ object CodeGenerator {
             INVOKESTATIC("java/lang/Math", "abs", "(" + getJVMDataType(factor.dataType) + ")" + getJVMDataType(factor.dataType)) //calls abs(I)I or abs(D)D or abs(L)L
           case NOT =>
             require(factor.rightOption.isEmpty)
-            acceptExpressionInner(toRelation(factor.left), context.invert)
+            factor.dataType match {
+              case arrayType: ArrayType =>
+                acceptExpressionInner(factor.left, context)
+                INVOKESTATIC(RUNTIME, "NOT", "([Z)[Z")
+              case _ => acceptExpressionInner(toRelation(factor.left), context.invert)
+            }
         }
       }
 
@@ -495,77 +515,83 @@ object CodeGenerator {
       def visitLogicalExpression(logicalExpr: LogicalExpression, context: ExpressionContext, lastXORStatement: Boolean = true): Unit = {
         import LogicalExpression.Operator._
         import ExpressionContext.JumpKind._
-        //AND,NAND,OR,NOR are short-circuit operators
-        // AND,NAND left expr == false => jump
-        // OR, NOR left expr == true => jump
-
-        def acceptExprCreateBoolValue(expr: Expression): Unit = {
-          val trueLabel = RichLabel(mv)
-          val falseLabel = RichLabel(mv)
-          val afterLabel = RichLabel(mv)
-          import mv._
-          def createValues(): Unit = {
-            trueLabel()
-            ICONST_1
-            GOTO(afterLabel)
-            falseLabel()
-            ICONST_0
-            afterLabel()
-          }
-          val newContext = ExpressionContext(trueLabel, falseLabel, FalseJump)
-          expr match {
-            case l: LogicalExpression =>
-              l.operator match {
-                case XOR | XNOR => visitLogicalExpression(l, newContext, false)
+        logicalExpr.dataType match {
+          case arrayType: ArrayType =>
+            acceptExpressionInner(logicalExpr.left, context)
+            acceptExpressionInner(logicalExpr.right, context)
+            mv.INVOKESTATIC(RUNTIME, logicalExpr.operator.toString, "([Z[Z)[Z")
+          case _ =>
+            //AND,NAND,OR,NOR are short-circuit operators
+            // AND,NAND left expr == false => jump
+            // OR, NOR left expr == true => jump
+            def acceptExprCreateBoolValue(expr: Expression): Unit = {
+              val trueLabel = RichLabel(mv)
+              val falseLabel = RichLabel(mv)
+              val afterLabel = RichLabel(mv)
+              import mv._
+              def createValues(): Unit = {
+                trueLabel()
+                ICONST_1
+                GOTO(afterLabel)
+                falseLabel()
+                ICONST_0
+                afterLabel()
+              }
+              val newContext = ExpressionContext(trueLabel, falseLabel, FalseJump)
+              expr match {
+                case logicalExpression: LogicalExpression =>
+                  logicalExpression.operator match {
+                    case XOR | XNOR => visitLogicalExpression(logicalExpression, newContext, false)
+                    case _ =>
+                      visitLogicalExpression(logicalExpression, newContext, false)
+                      createValues()
+                  }
                 case _ =>
-                  visitLogicalExpression(l, newContext, false)
+                  acceptExpressionInner(expr, newContext)
                   createValues()
               }
-            case _ =>
-              acceptExpressionInner(expr, newContext);
-              createValues()
-          }
-        }
-        def newFalseLabel(label: RichLabel): RichLabel =
-          if ((logicalExpr.left.isInstanceOf[LogicalExpression]) || context.kind == FalseJump) context.falseJump
-          else label
-
-        def newTrueLabel(label: RichLabel): RichLabel =
-          if ((logicalExpr.left.isInstanceOf[LogicalExpression]) || context.kind == TrueJump) context.trueJump
-          else label
-
-        val afterLabel = RichLabel(mv)
-        import mv._
-        logicalExpr.operator match {
-          case AND =>
-            acceptExpressionInner(logicalExpr.left, context.copy(kind = FalseJump, falseJump = newFalseLabel(afterLabel)))
-            acceptExpressionInner(logicalExpr.right, context)
-            afterLabel()
-          case NAND => visitFactor(Factor(logicalExpr.position, logicalExpr.copy(operator = AND), Factor.Operator.NOT, None, logicalExpr.dataType), context)
-          case OR =>
-            acceptExpressionInner(logicalExpr.left, context.copy(kind = TrueJump, trueJump = newTrueLabel(afterLabel)))
-            acceptExpressionInner(logicalExpr.right, context)
-            afterLabel()
-          case NOR => visitFactor(Factor(logicalExpr.position, logicalExpr.copy(operator = OR), Factor.Operator.NOT, None, logicalExpr.dataType), context)
-          case XOR =>
-            acceptExprCreateBoolValue(logicalExpr.left)
-            acceptExprCreateBoolValue(logicalExpr.right)
-            IXOR
-            if (lastXORStatement) {
-              context.kind match {
-                case TrueJump => IFNE(context.trueJump)
-                case FalseJump => IFEQ(context.falseJump)
-              }
             }
-          case XNOR =>
-            acceptExprCreateBoolValue(logicalExpr.left)
-            acceptExprCreateBoolValue(logicalExpr.right)
-            IXOR
-            if (lastXORStatement) {
-              context.kind match {
-                case TrueJump => IFEQ(context.trueJump)
-                case FalseJump => IFNE(context.falseJump)
-              }
+            def newFalseLabel(label: RichLabel): RichLabel =
+              if ((logicalExpr.left.isInstanceOf[LogicalExpression]) || context.kind == FalseJump) context.falseJump
+              else label
+
+            def newTrueLabel(label: RichLabel): RichLabel =
+              if ((logicalExpr.left.isInstanceOf[LogicalExpression]) || context.kind == TrueJump) context.trueJump
+              else label
+
+            val afterLabel = RichLabel(mv)
+            import mv._
+            logicalExpr.operator match {
+              case AND =>
+                acceptExpressionInner(logicalExpr.left, context.copy(kind = FalseJump, falseJump = newFalseLabel(afterLabel)))
+                acceptExpressionInner(logicalExpr.right, context)
+                afterLabel()
+              case NAND => visitFactor(Factor(logicalExpr.position, logicalExpr.copy(operator = AND), Factor.Operator.NOT, None, logicalExpr.dataType), context)
+              case OR =>
+                acceptExpressionInner(logicalExpr.left, context.copy(kind = TrueJump, trueJump = newTrueLabel(afterLabel)))
+                acceptExpressionInner(logicalExpr.right, context)
+                afterLabel()
+              case NOR => visitFactor(Factor(logicalExpr.position, logicalExpr.copy(operator = OR), Factor.Operator.NOT, None, logicalExpr.dataType), context)
+              case XOR =>
+                acceptExprCreateBoolValue(logicalExpr.left)
+                acceptExprCreateBoolValue(logicalExpr.right)
+                IXOR
+                if (lastXORStatement) {
+                  context.kind match {
+                    case TrueJump => IFNE(context.trueJump)
+                    case FalseJump => IFEQ(context.falseJump)
+                  }
+                }
+              case XNOR =>
+                acceptExprCreateBoolValue(logicalExpr.left)
+                acceptExprCreateBoolValue(logicalExpr.right)
+                IXOR
+                if (lastXORStatement) {
+                  context.kind match {
+                    case TrueJump => IFEQ(context.trueJump)
+                    case FalseJump => IFNE(context.falseJump)
+                  }
+                }
             }
         }
       }
@@ -580,56 +606,89 @@ object CodeGenerator {
         }
         relation.right match {
           case EmptyExpression =>
+            acceptExpressionInner(relation.left, context)
             relation.operator match {
               case EQ => if (jumpInverted) IFNE(jumpLabel) else IFEQ(jumpLabel)
               case NEQ => if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)
             }
           case _ =>
-            relation.left.dataType match {
-              case recordType: RecordType =>
-                INVOKEVIRTUAL(recordType.fullName(), "equals", "(Ljava/lang/Object;)Z")
-                relation.operator match {
-                  case EQ => if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)
-                  case NEQ => if (jumpInverted) IFNE(jumpLabel) else IFEQ(jumpLabel)
-                }
-              case NullType =>
-                relation.operator match {
-                  case EQ => if (jumpInverted) IFNONNULL(jumpLabel) else IFNULL(jumpLabel)
-                  case NEQ => if (jumpInverted) IFNULL(jumpLabel) else IFNONNULL(jumpLabel)
-                }
-              case _: AccessType =>
-                relation.operator match {
-                  case EQ => if (jumpInverted) IF_ACMPNE(jumpLabel) else IF_ACMPEQ(jumpLabel)
-                  case NEQ => if (jumpInverted) IF_ACMPEQ(jumpLabel) else IF_ACMPNE(jumpLabel)
-                }
-              case _: IntegerType | _: EnumerationType =>
-                relation.operator match {
-                  case EQ => if (jumpInverted) IF_ICMPNE(jumpLabel) else IF_ICMPEQ(jumpLabel)
-                  case NEQ => if (jumpInverted) IF_ICMPEQ(jumpLabel) else IF_ICMPNE(jumpLabel)
-                  case LT => if (jumpInverted) IF_ICMPGE(jumpLabel) else IF_ICMPLT(jumpLabel)
-                  case LEQ => if (jumpInverted) IF_ICMPGT(jumpLabel) else IF_ICMPLE(jumpLabel)
-                  case GT => if (jumpInverted) IF_ICMPLE(jumpLabel) else IF_ICMPGT(jumpLabel)
-                  case GEQ => if (jumpInverted) IF_ICMPLT(jumpLabel) else IF_ICMPGE(jumpLabel)
-                }
-              case _: RealType =>
-                relation.operator match {
-                  case EQ => DCMPL; if (jumpInverted) IFNE(jumpLabel) else IFEQ(jumpLabel)
-                  case NEQ => DCMPL; if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)
-                  case LT => DCMPG; if (jumpInverted) IFGE(jumpLabel) else IFLT(jumpLabel)
-                  case LEQ => DCMPG; if (jumpInverted) IFGT(jumpLabel) else IFLE(jumpLabel)
-                  case GT => DCMPL; if (jumpInverted) IFLE(jumpLabel) else IFGT(jumpLabel)
-                  case GEQ => DCMPL; if (jumpInverted) IFLT(jumpLabel) else IFGE(jumpLabel)
-                }
-              case _: PhysicalType =>
-                LCMP
-                relation.operator match {
-                  case EQ => if (jumpInverted) IFNE(jumpLabel) else IFEQ(jumpLabel)
-                  case NEQ => if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)
-                  case LT => if (jumpInverted) IFGE(jumpLabel) else IFLT(jumpLabel)
-                  case LEQ => if (jumpInverted) IFGT(jumpLabel) else IFLE(jumpLabel)
-                  case GT => if (jumpInverted) IFLE(jumpLabel) else IFGT(jumpLabel)
-                  case GEQ => if (jumpInverted) IFLT(jumpLabel) else IFGE(jumpLabel)
-                }
+            if (relation.left.dataType == NullType || relation.right.dataType == NullType) {
+              if (relation.left.dataType == NullType) acceptExpressionInner(relation.right, context)
+              else acceptExpressionInner(relation.left, context) //also handles the strange corner case where both expression are null literals, e.g. if (null=null) then ... or if (null/=null) then
+              relation.operator match {
+                case EQ => if (jumpInverted) IFNONNULL(jumpLabel) else IFNULL(jumpLabel)
+                case NEQ => if (jumpInverted) IFNULL(jumpLabel) else IFNONNULL(jumpLabel)
+              }
+            }
+            else {
+              acceptExpressionInner(relation.left, context)
+              acceptExpressionInner(relation.right, context)
+              (relation.left.dataType: @unchecked) match {
+                case arrayType: ArrayType =>
+                  relation.operator match {
+                    case EQ =>
+                      if (arrayType.dimensions.size == 1) INVOKESTATIC("java/util/Arrays", "equals", "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
+                      else INVOKESTATIC("java/util/Arrays", "deepEquals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z")
+                      if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)
+                    case NEQ =>
+                      if (arrayType.dimensions.size == 1) INVOKESTATIC("java/util/Arrays", "equals", "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
+                      else INVOKESTATIC("java/util/Arrays", "deepEquals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z")
+                      if (jumpInverted) IFNE(jumpLabel) else IFEQ(jumpLabel)
+                    case LT =>
+                      INVOKESTATIC(RUNTIME, "LT", "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
+                      if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)
+                    case LEQ =>
+                      INVOKESTATIC(RUNTIME, "LEQ", "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
+                      if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)
+                    //The relations > (greater than) and >= (greater than or equal) are defined to be the complements of the <= and < operators,
+                    //respectively, for the same two operands.
+                    case GT =>
+                      INVOKESTATIC(RUNTIME, "LEQ", "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
+                      if (jumpInverted) IFNE(jumpLabel) else IFEQ(jumpLabel)
+                    case GEQ =>
+                      INVOKESTATIC(RUNTIME, "LT", "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
+                      if (jumpInverted) IFNE(jumpLabel) else IFEQ(jumpLabel)
+                  }
+                case recordType: RecordType =>
+                  INVOKEVIRTUAL(recordType.fullName(), "equals", "(Ljava/lang/Object;)Z")
+                  relation.operator match {
+                    case EQ => if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)
+                    case NEQ => if (jumpInverted) IFNE(jumpLabel) else IFEQ(jumpLabel)
+                  }
+                case _: AccessType =>
+                  relation.operator match {
+                    case EQ => if (jumpInverted) IF_ACMPNE(jumpLabel) else IF_ACMPEQ(jumpLabel)
+                    case NEQ => if (jumpInverted) IF_ACMPEQ(jumpLabel) else IF_ACMPNE(jumpLabel)
+                  }
+                case _: IntegerType | _: EnumerationType =>
+                  relation.operator match {
+                    case EQ => if (jumpInverted) IF_ICMPNE(jumpLabel) else IF_ICMPEQ(jumpLabel)
+                    case NEQ => if (jumpInverted) IF_ICMPEQ(jumpLabel) else IF_ICMPNE(jumpLabel)
+                    case LT => if (jumpInverted) IF_ICMPGE(jumpLabel) else IF_ICMPLT(jumpLabel)
+                    case LEQ => if (jumpInverted) IF_ICMPGT(jumpLabel) else IF_ICMPLE(jumpLabel)
+                    case GT => if (jumpInverted) IF_ICMPLE(jumpLabel) else IF_ICMPGT(jumpLabel)
+                    case GEQ => if (jumpInverted) IF_ICMPLT(jumpLabel) else IF_ICMPGE(jumpLabel)
+                  }
+                case _: RealType =>
+                  relation.operator match {
+                    case EQ => DCMPL; if (jumpInverted) IFNE(jumpLabel) else IFEQ(jumpLabel)
+                    case NEQ => DCMPL; if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)
+                    case LT => DCMPG; if (jumpInverted) IFGE(jumpLabel) else IFLT(jumpLabel)
+                    case LEQ => DCMPG; if (jumpInverted) IFGT(jumpLabel) else IFLE(jumpLabel)
+                    case GT => DCMPL; if (jumpInverted) IFLE(jumpLabel) else IFGT(jumpLabel)
+                    case GEQ => DCMPL; if (jumpInverted) IFLT(jumpLabel) else IFGE(jumpLabel)
+                  }
+                case _: PhysicalType =>
+                  LCMP
+                  relation.operator match {
+                    case EQ => if (jumpInverted) IFNE(jumpLabel) else IFEQ(jumpLabel)
+                    case NEQ => if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)
+                    case LT => if (jumpInverted) IFGE(jumpLabel) else IFLT(jumpLabel)
+                    case LEQ => if (jumpInverted) IFGT(jumpLabel) else IFLE(jumpLabel)
+                    case GT => if (jumpInverted) IFLE(jumpLabel) else IFGT(jumpLabel)
+                    case GEQ => if (jumpInverted) IFLT(jumpLabel) else IFGE(jumpLabel)
+                  }
+              }
             }
         }
       }
@@ -1507,7 +1566,7 @@ object CodeGenerator {
       dataType match {
         case scalarType: ScalarType => pushAnyVal(scalarType.left)
         //case enumType: EnumerationType => GETSTATIC(enumType.fullName(), enumType.elements.head.replace("\'", ""), getJVMDataType(enumType))
-        case constrainedArrayType: ConstrainedArrayType =>
+        /*case constrainedArrayType: ConstrainedArrayType =>
           constrainedArrayType.dimensions.map {
             dim =>
               pushInt((dim.from - dim.to).abs)
@@ -1517,6 +1576,8 @@ object CodeGenerator {
           val name = getJVMName(constrainedArrayType)
           INVOKESTATIC(RUNTIME, "create" + name.split("/").last, "(" + ("I" * (3 * constrainedArrayType.dimensions.size)) + ")" + "L" + name + ";")
         case unconstrainedArrayType: UnconstrainedArrayType => ACONST_NULL //TODO
+        */
+        case arrayType: ArrayType => ACONST_NULL //TODO
         case record: RecordType =>
           NEW(record.fullName())
           DUP
@@ -1680,7 +1741,7 @@ object CodeGenerator {
               GETFIELD(record.fullName(), fieldName, getJVMDataType(fieldType))
               ALOAD(2)
               GETFIELD(record.fullName(), fieldName, getJVMDataType(fieldType))
-              fieldType match {
+              (fieldType: @unchecked) match {
                 case _: IntegerType | _: EnumerationType => IF_ICMPNE(falseLabel)
                 case _: RealType =>
                   DCMPL
@@ -1691,6 +1752,9 @@ object CodeGenerator {
                 case _: AccessType => IF_ACMPNE(falseLabel)
                 case recordType: RecordType =>
                   INVOKEVIRTUAL(recordType.fullName(), "equals", "(Ljava/lang/Object;)Z")
+                  IFEQ(falseLabel)
+                case arrayType: ArrayType =>
+                  INVOKESTATIC("java/util/Arrays", "equals", "(" + (getJVMDataType(arrayType) * 2) + ")Z")
                   IFEQ(falseLabel)
               }
             }

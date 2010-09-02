@@ -57,6 +57,7 @@ object SemanticMessage {
   val OTHERS_CHOICE_NOT_LAST_ALTERNATIVE = "the others case must be the last case"
   val OTHERS_CHOICE_NOT_ALONE = "the others case must be alone"
   val OPERATOR_NOT_DEFINED="the operator %s is not defined for types %s and %s"
+  val UNARY_OPERATOR_NOT_DEFINED="the unary operator %s is not defined for type %s"
   val RESOLVED_DUPLICATE_SIGNAL_ASSIGNMENT = "signal %s already has a driver at line: %s"
   val RETURN_STMT_IN_PROCESS = "A process can not contain a return statement!"
   val PROTECTED_TYPE_BODY_IN_PACKAGE = "protected type body declaration in package declaration is not allowed"

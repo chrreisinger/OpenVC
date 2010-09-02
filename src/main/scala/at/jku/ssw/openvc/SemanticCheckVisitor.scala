@@ -52,6 +52,8 @@ object SemanticCheckVisitor {
           case ee: EnumerationType => e.baseType.getOrElse(e) == ee.baseType.getOrElse(ee)
           case _ => false
         }
+        case NullType => expectedDataType.isInstanceOf[AccessType]
+        case accessType: AccessType => expectedDataType == NullType
         case a: ArrayType => isCompatible(a.elementType, expectedDataType) //TODO check element type and range
         case _ => false
       }
@@ -397,7 +399,16 @@ object SemanticCheckVisitor {
               addError(factor.left, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, "integer or real", dataType.name)
               NoType
           }
-        case Factor.Operator.NOT => factor.left.dataType
+        case Factor.Operator.NOT =>
+          factor.left.dataType match {
+            case arrayType: ArrayType if (arrayType.dimensions.size == 1 && (arrayType.elementType == SymbolTable.bitType || arrayType.elementType == SymbolTable.booleanType)) => factor.left.dataType
+            case otherType =>
+              if (otherType == SymbolTable.bitType || otherType == SymbolTable.booleanType) factor.left.dataType
+              else {
+                addError(factor, SemanticMessage.UNARY_OPERATOR_NOT_DEFINED, factor.operator.toString, factor.left.dataType.name)
+                NoType
+              }
+          }
       }
       factor.copy(dataType = newDataType)
     }
@@ -567,25 +578,21 @@ object SemanticCheckVisitor {
                 Literal(literal.position, ((Integer.parseInt(values, base) + fraction) * exponent).toString, REAL_LITERAL, SymbolTable.universalRealType)
               }
           }
-        case NULL_LITERAL =>
-          if (!expectedType.isInstanceOf[AccessType]) addError(literal, SemanticMessage.NOT_A, expectedType.name, "access type")
-          literal.copy(dataType = expectedType)
+        case NULL_LITERAL => literal.copy(dataType = NullType)
       }
     }
-    /*def createFunctionCallExpression(dataType: DataType, leftExpression: Expression, rightExpression: Expression): Expression = {
-      val functionSymbol: FunctionSymbol = null
-      FunctionCallExpression(functionName, None, Seq(leftExpression, rightExpression), functionSymbol.returnType, functionSymbol)
-    }*/
-    def visitLogicalExpression(logicalExpr: LogicalExpression): Expression =
-      if (logicalExpr.left.dataType != logicalExpr.right.dataType) {
-        addError(logicalExpr.right, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, logicalExpr.left.dataType.name, logicalExpr.right.dataType.name)
-        logicalExpr.copy(dataType = NoType)
-      } else if (logicalExpr.left.dataType == SymbolTable.booleanType || logicalExpr.left.dataType == SymbolTable.bitType) {
-        logicalExpr.copy(dataType = logicalExpr.left.dataType)
-      } else {
-        //TODO context.findFunctionElseError()
-        logicalExpr.copy(dataType = logicalExpr.left.dataType)
+
+    def visitLogicalExpression(logicalExpr: LogicalExpression): Expression = {
+      def isBooleanOrBit(dataType: DataType): Boolean = dataType == SymbolTable.bitType || dataType == SymbolTable.booleanType
+      val dataType = if (isBooleanOrBit(logicalExpr.left.dataType) && logicalExpr.left.dataType == logicalExpr.right.dataType) logicalExpr.left.dataType
+      else (logicalExpr.left.dataType, logicalExpr.right.dataType) match {
+        case (left: ArrayType, right: ArrayType) if (left.dimensions.size == 1 && right.dimensions.size == 1 && isCompatible(left, right) && isBooleanOrBit(left.elementType)) => logicalExpr.left.dataType
+        case _ =>
+          addError(logicalExpr, SemanticMessage.OPERATOR_NOT_DEFINED, logicalExpr.operator.toString, logicalExpr.left.dataType.name, logicalExpr.right.dataType.name)
+          NoType
       }
+      logicalExpr.copy(dataType = dataType)
+    }
 
     def visitNameExpression(nameExpression: NameExpression): Expression = {
       val name = nameExpression.name
@@ -729,13 +736,35 @@ object SemanticCheckVisitor {
     }
 
     def visitRelation(relation: Relation): Expression = {
+      import Relation.Operator._
+      def checkIfFileOrProtected(dataType: DataType): Boolean = dataType.isInstanceOf[FileType] || dataType.isInstanceOf[ProtectedType]
+      relation.operator match {
+        case EQ | NEQ =>
+          if (checkIfFileOrProtected(relation.left.dataType) || checkIfFileOrProtected(relation.right.dataType))
+            addError(relation, SemanticMessage.OPERATOR_NOT_DEFINED, relation.operator.toString, relation.left.dataType.name, relation.right.dataType.name)
+          else {
+            if (!isCompatible(relation.left.dataType, relation.right.dataType))
+              addError(relation, SemanticMessage.OPERATOR_NOT_DEFINED, relation.operator.toString, relation.left.dataType.name, relation.right.dataType.name)
+          }
+        case _ => (relation.left.dataType, relation.right.dataType) match {
+          case (left: ScalarType, right: ScalarType) if (isCompatible(left, right)) =>
+          case (left: ArrayType, right: ArrayType) if (isCompatible(left, right) && left.elementType.isInstanceOf[DiscreteType] && right.elementType.isInstanceOf[DiscreteType]) =>
+          case _ => addError(relation, SemanticMessage.OPERATOR_NOT_DEFINED, relation.operator.toString, relation.left.dataType.name, relation.right.dataType.name)
+        }
+      }
       relation.copy(dataType = SymbolTable.booleanType)
     }
 
     def visitShiftExpression(shiftExpr: ShiftExpression): Expression = {
-      val leftType = shiftExpr.left.dataType
-      val rightType = shiftExpr.right.dataType
-      shiftExpr.copy(dataType = leftType)
+      val dataType = shiftExpr.left.dataType match {
+        case arrayType: ArrayType if (arrayType.dimensions.size == 1 && (arrayType.elementType == SymbolTable.bitType) || arrayType.elementType == SymbolTable.booleanType) => shiftExpr.left.dataType
+        case otherType =>
+          addError(shiftExpr.left, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, "one-dimensional array type whose element type is BIT or BOOLEAN", otherType.name)
+          NoType
+      }
+      if (shiftExpr.right.dataType != SymbolTable.integerType && shiftExpr.right.dataType != SymbolTable.universalIntegerType)
+        addError(shiftExpr.right, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, "integer", shiftExpr.right.dataType.name)
+      shiftExpr.copy(dataType = dataType)
     }
 
     def visitSimpleExpression(simpleExpr: SimpleExpression): Expression = {

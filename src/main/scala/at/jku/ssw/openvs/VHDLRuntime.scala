@@ -170,7 +170,7 @@ object VHDLRuntime {
     import java.io._
     var inputStream: DataInputStream = null
     var outputStream: DataOutputStream = null
-    var readOnlyMode = false
+    private[this] var readOnlyMode = false
 
     def open(external_Name: String, open_Kind: Int): Unit =
       FILE_OPEN_KIND(open_Kind) match {
@@ -326,17 +326,129 @@ object VHDLRuntime {
     return if ((mod < 0 && y > 0) || (mod > 0 && y < 0)) mod + y else mod
   }
 
-  def booleanAND(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = left.zip(right).map(x => x._1 && x._2)
 
-  def booleanNAND(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = left.zip(right).map(x => !(x._1 && x._2))
+  def NOT(data: Array[Boolean]): Array[Boolean] = data.map(!_)
 
-  def booleanOR(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = left.zip(right).map(x => x._1 || x._2)
+  def AND(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = (for (i <- 0 to left.length) yield left(i) && right(i)).toArray
 
-  def booleanNOR(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = left.zip(right).map(x => !(x._1 || x._2))
+  def NAND(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = (for (i <- 0 to left.length) yield !(left(i) && right(i))).toArray
 
-  def booleanXOR(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = left.zip(right).map(x => x._1 ^ x._2)
+  def OR(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = (for (i <- 0 to left.length) yield left(i) || right(i)).toArray
 
-  def booleanXNOR(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = left.zip(right).map(x => !(x._1 ^ x._2))
+  def NOR(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = (for (i <- 0 to left.length) yield !(left(i) || right(i))).toArray
+
+  def XOR(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = (for (i <- 0 to left.length) yield left(i) ^ right(i)).toArray
+
+  def XNOR(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = (for (i <- 0 to left.length) yield !(left(i) ^ right(i))).toArray
+
+
+  def LT(left: Array[Boolean], right: Array[Boolean]): Boolean = {
+    for (i <- 0 to left.length) if (left(i) >= right(i)) return false
+    true
+  }
+
+  def LT(left: Array[Byte], right: Array[Byte]): Boolean = {
+    for (i <- 0 to left.length) if (left(i) >= right(i)) return false
+    true
+  }
+
+  def LT(left: Array[Char], right: Array[Char]): Boolean = {
+    for (i <- 0 to left.length) if (left(i) >= right(i)) return false
+    true
+  }
+
+  def LT(left: Array[Int], right: Array[Int]): Boolean = {
+    for (i <- 0 to left.length) if (left(i) >= right(i)) return false
+    true
+  }
+
+  def LEQ(left: Array[Boolean], right: Array[Boolean]): Boolean = {
+    for (i <- 0 to left.length) if (left(i) > right(i)) return false
+    true
+  }
+
+  def LEQ(left: Array[Byte], right: Array[Byte]): Boolean = {
+    for (i <- 0 to left.length) if (left(i) > right(i)) return false
+    true
+  }
+
+  def LEQ(left: Array[Char], right: Array[Char]): Boolean = {
+    for (i <- 0 to left.length) if (left(i) > right(i)) return false
+    true
+  }
+
+  def LEQ(left: Array[Int], right: Array[Int]): Boolean = {
+    for (i <- 0 to left.length) if (left(i) > right(i)) return false
+    true
+  }
+
+
+  def SLL(src: Array[Boolean], right: Int): Array[Boolean] =
+    if (right < 0) SRL(src, -right)
+    else if (right == 0 || src.length == 0) src
+    else {
+      val destination = Array.ofDim[Boolean](src.length)
+      if (src.length - right > 0)
+        Array.copy(src, right, destination, 0, src.length - right)
+      destination
+    }
+
+  def SRL(src: Array[Boolean], right: Int): Array[Boolean] =
+    if (right < 0) SLL(src, -right)
+    else if (right == 0 || src.length == 0) src
+    else {
+      val destination = Array.ofDim[Boolean](src.length)
+      if (src.length - right > 0)
+        Array.copy(src, 0, destination, right, src.length - right)
+      destination
+    }
+
+  def SLA(src: Array[Boolean], right: Int, ascending: Boolean): Array[Boolean] =
+    if (right < 0) SRA(src, -right, ascending)
+    else if (right == 0 || src.length == 0) src
+    else {
+      val destination = Array.fill(src.length)(src(src.length - 1)) //msb
+      if (src.length - right - 1 > 0)
+        Array.copy(src, right, destination, 0, src.length - right - 1)
+      if (ascending) destination else destination.reverse
+    }
+
+  def SRA(src: Array[Boolean], right: Int, ascending: Boolean): Array[Boolean] =
+    if (right < 0) SLA(src, -right, ascending)
+    else if (right == 0 || src.length == 0) src
+    else {
+      val destination = Array.fill(src.length)(src(0)) //lsb
+      if (src.length - right - 1 > 0)
+        Array.copy(src, 1, destination, right + 1, src.length - right - 1)
+      if (ascending) destination else destination.reverse
+    }
+
+  def rotate(src: Array[Boolean], right: Int): Array[Boolean] = {
+    //http://answers.yahoo.com/question/index?qid=20091007083508AAcpDsd
+    val len = src.length;
+    val destination = Array.ofDim[Boolean](src.length)
+    // Normalize the amount to rotate to be between 0 and len
+    val tmp = right % len
+    val amount = if (tmp < 0) len + tmp else tmp
+    // The offset is the amount from end of the original array.
+    //This is where we start the copy.
+    val offset = len - amount
+    // Copy from the offset to the end of the array
+    Array.copy(src, offset, destination, 0, amount)
+    // Copy from the beginning to the offset
+    Array.copy(src, 0, destination, amount, offset)
+    destination
+  }
+
+  def ROL(src: Array[Boolean], right: Int): Array[Boolean] =
+    if (right < 0) ROR(src, -right)
+    else if (right == 0 || src.length == 0) src
+    else rotate(src, -right)
+
+  def ROR(src: Array[Boolean], right: Int): Array[Boolean] =
+    if (right < 0) ROL(src, -right)
+    else if (right == 0 || src.length == 0) src
+    else rotate(src, right)
 
 
   @throws(classOf[VHDLRuntimeException])
