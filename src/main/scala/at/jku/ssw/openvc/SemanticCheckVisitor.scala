@@ -481,24 +481,24 @@ object SemanticCheckVisitor {
         case INTEGER_LITERAL => literal.copy(dataType = SymbolTable.universalIntegerType)
         case REAL_LITERAL => literal.copy(dataType = SymbolTable.universalRealType)
         case STRING_LITERAL => expectedType match {
-          case arrayType: ArrayType if (arrayType.elementType.isInstanceOf[EnumerationType]) =>
+          case arrayType: ArrayType if (arrayType.elementType.isInstanceOf[EnumerationType] && arrayType.dimensions.size == 1) =>
             val enumType = arrayType.elementType.asInstanceOf[EnumerationType]
-            literal.text.replace("\"", "").foreach {
-              c =>
-                if (!enumType.contains(c.toString) && !enumType.contains("'" + c + "'"))
-                  addError(literal, SemanticMessage.NOT_A, c.toString, "element of enumeration type " + enumType.name)
+            literal.text.replace("\"", "").zipWithIndex.foreach {
+              case (c, i) =>
+                if (!enumType.contains(c.toString))
+                  addErrorPosition(literal.position.addCharacterOffset(i + 1), SemanticMessage.NOT_A, c.toString, "element of enumeration type " + enumType.name)
             }
             //literal.copy(dataType = new ConstrainedRangeType(arrayType.elementType, 0, literal.text.length))//TODO
-            literal.copy(dataType = SymbolTable.stringType)
+            literal.copy(dataType = arrayType)
           case dataType =>
             addError(literal, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, expectedType.name, dataType.name)
             literal.copy(dataType = NoType)
         }
         case CHARACTER_LITERAL =>
           val dataType = expectedType match {
-            case e: EnumerationType if (e.contains(literal.text)) => e
+            case e: EnumerationType if (e.contains(literal.text.replace("'", ""))) => e
             case a: ArrayType => a.elementType match {
-              case e: EnumerationType if (e.contains(literal.text)) => e
+              case e: EnumerationType if (e.contains(literal.text.replace("'", ""))) => e
               case dataType =>
                 addError(literal, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, expectedType.name, dataType.name)
                 NoType
@@ -1858,7 +1858,7 @@ object SemanticCheckVisitor {
 
     val (newTypeDeclaration, newSymbols) = typeDeclaration match {
       case enumerationType: EnumerationTypeDefinition =>
-        val elements = enumerationType.elements.map(id => id.text)
+        val elements = enumerationType.elements.map(id => id.text.replace("'", ""))
         require(enumerationType.elements.size <= Char.MaxValue)
         checkDuplicateIdentifiers(enumerationType.elements, SemanticMessage.DUPLICATE_ENUMERATION_VALUE)
         (enumerationType.copy(dataType = new EnumerationType(name, elements, None, parentSymbol)), Seq())

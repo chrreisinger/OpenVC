@@ -99,7 +99,7 @@ object CodeGenerator {
       case _: RealType => p(classOf[java.lang.Double])
       case _: PhysicalType => p(classOf[java.lang.Long])
       case enumeration: EnumerationType =>
-        if (enumeration.name == "boolean" || enumeration.name == "bit") p(classOf[java.lang.Boolean])
+        if (enumeration == SymbolTable.booleanType || enumeration == SymbolTable.bitType) p(classOf[java.lang.Boolean])
         else if (enumeration.elements.size <= Byte.MaxValue) p(classOf[java.lang.Byte])
         else p(classOf[java.lang.Character])
     }
@@ -112,7 +112,7 @@ object CodeGenerator {
       case _: RealType => p(classOf[MutableReal])
       case _: PhysicalType => ci(classOf[MutableLong])
       case enumeration: EnumerationType =>
-        if (enumeration.name == "boolean" || enumeration.name == "bit") p(classOf[MutableBoolean])
+        if (enumeration == SymbolTable.booleanType || enumeration == SymbolTable.bitType) p(classOf[MutableBoolean])
         else if (enumeration.elements.size <= Byte.MaxValue) p(classOf[MutableByte])
         else p(classOf[MutableCharacter])
     }
@@ -129,7 +129,7 @@ object CodeGenerator {
       case _: RealType => "D"
       case _: PhysicalType => "J"
       case enumeration: EnumerationType =>
-        if (enumeration.name == "boolean" || enumeration.name == "bit") "Z"
+        if (enumeration == SymbolTable.booleanType || enumeration == SymbolTable.bitType) "Z"
         else if (enumeration.elements.size <= Byte.MaxValue) "B"
         else "C"
       case arrayType: ConstrainedArrayType => ("[" * arrayType.dimensions.size) + getJVMDataType(arrayType.elementType)
@@ -158,8 +158,8 @@ object CodeGenerator {
             case _: IntegerType => "Int"
             case _: RealType => "Double"
             case enumeration: EnumerationType =>
-              if (enumeration.name == "boolean" || enumeration.name == "bit") "Boolean"
-              else if (enumeration.name == "character") "Char"
+              if (enumeration == SymbolTable.booleanType || enumeration == SymbolTable.bitType) "Boolean"
+              else if (enumeration.name == SymbolTable.characterType) "Char"
               else {
                 if (enumeration.elements.size <= Byte.MaxValue) "Byte"
                 else if (enumeration.elements.size <= Short.MaxValue) "Short"
@@ -169,6 +169,17 @@ object CodeGenerator {
         }
       case record: RecordType => record.fullName()
       case fileType: FileType => p(classOf[RuntimeFile])
+    }
+
+  def getJVMArrayType(dataType: ScalarType): Int =
+    dataType match {
+      case _: IntegerType => Opcodes.T_INT
+      case _: RealType => Opcodes.T_DOUBLE
+      case _: PhysicalType => Opcodes.T_LONG
+      case enumeration: EnumerationType =>
+        if (enumeration == SymbolTable.booleanType || enumeration == SymbolTable.bitType) Opcodes.T_BOOLEAN
+        else if (enumeration.elements.size <= Byte.MaxValue) Opcodes.T_BYTE
+        else Opcodes.T_CHAR
     }
 
   def getNextIndex(dataType: DataType): Int =
@@ -247,7 +258,7 @@ object CodeGenerator {
         case Some(context) => acceptExpressionInner(toRelation(expr), context)
         case None =>
           expr.dataType match {
-            case e: EnumerationType if (e.name == "boolean" || e.name == "bit") =>
+            case e: EnumerationType if (e == SymbolTable.booleanType || e == SymbolTable.bitType) =>
               expr match {
                 case _: LogicalExpression | _: Relation =>
                   val trueLabel = RichLabel(mv)
@@ -392,17 +403,6 @@ object CodeGenerator {
 
       def visitAggregateExpression(aggregateExpression: AggregateExpression): Unit = {
         //TODO
-        def getJVMArrayType(dataType: ScalarType): Int =
-          dataType match {
-            case _: IntegerType => Opcodes.T_INT
-            case _: RealType => Opcodes.T_DOUBLE
-            case _: PhysicalType => Opcodes.T_LONG
-            case enumeration: EnumerationType =>
-              if (enumeration.name == "boolean" || enumeration.name == "bit") Opcodes.T_BOOLEAN
-              else if (enumeration.elements.size <= Byte.MaxValue) Opcodes.T_BYTE
-              else Opcodes.T_CHAR
-          }
-
         val elements = aggregateExpression.aggregate.elements
         aggregateExpression.dataType match {
           case arrayType: ConstrainedArrayType =>
@@ -488,15 +488,24 @@ object CodeGenerator {
         import mv._
 
         literal.literalType match {
-          case STRING_LITERAL => LDC(literal.text.replace("\"", ""))
+          case STRING_LITERAL =>
+            val pureString = literal.text.replace("\"", "")
+            if (literal.dataType == SymbolTable.stringType) LDC(pureString)
+            else {
+              val dataType = literal.dataType.asInstanceOf[ArrayType].elementType.asInstanceOf[EnumerationType]
+              pushInt(pureString.length)
+              NEWARRAY(getJVMArrayType(dataType))
+              pureString.zipWithIndex.foreach {
+                case (c, i) =>
+                  DUP
+                  pushInt(i)
+                  pushInt(dataType.intValue(c.toString))
+                  arrayStoreInstruction(dataType)
+              }
+            }
           case INTEGER_LITERAL => pushInt(literal.toInt)
           case REAL_LITERAL => pushDouble(literal.toDouble)
-          case CHARACTER_LITERAL =>
-            literal.dataType match {
-              case enumType: EnumerationType =>
-                //GETSTATIC(enumType.fullName(), literal.text.replace("\'", ""), getJVMDataType(enumType))
-                pushInt(enumType.intValue(literal.text))
-            }
+          case CHARACTER_LITERAL => pushInt(literal.dataType.asInstanceOf[EnumerationType].intValue(literal.text.replace("'","")))
           case NULL_LITERAL => ACONST_NULL
         }
       }
