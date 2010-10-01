@@ -80,12 +80,12 @@ final class SymbolTable(private val scopes: Seq[SymbolTable.Scope]) {
     None
   }
 
-  def findInCurrentScope[T <: Symbol](name: String, clazz: Class[T]): Option[T] =
+  def findInCurrentScope[A <: Symbol](name: String, clazz: Class[A]): Option[A] =
     currentScope.get(name).flatMap {
       symbol =>
         if (symbol.getClass ne clazz)
           None
-        else Some(symbol.asInstanceOf[T])
+        else Some(symbol.asInstanceOf[A])
     }
 
   def insertWithoutCheck(list: Seq[Symbol]) = {
@@ -95,22 +95,22 @@ final class SymbolTable(private val scopes: Seq[SymbolTable.Scope]) {
 
   def insert(obj: Symbol): SymbolTable = new SymbolTable((this.scopes.head + (obj.name -> obj)) +: this.scopes.tail)
 
-  def insertScopes(scopeList: Seq[Scope]): SymbolTable = new SymbolTable(scopeList.filter(!_.isEmpty) ++ this.scopes)
+  def insertScopes(scopeList: Seq[Scope]): SymbolTable = new SymbolTable(scopeList.filter(_.nonEmpty) ++ this.scopes)
 
   def openScope: SymbolTable = new SymbolTable(Map[String, Symbol]() +: this.scopes)
 
-  def dumpTo(out: PrintStream): Unit =
+  def dumpTo(out: PrintStream) =
     for ((s, i) <- this.scopes.zipWithIndex) {
       out.println("scope:" + i)
       for (symbol <- s) out.println(symbol._2.name)
     }
 
   @throws(classOf[IOException])
-  def writeToFile(file: String): Unit = {
+  def writeToFile(file: String) {
     // this.dumpTo(System.out)
     val writer = new ObjectOutputStream(new FileOutputStream(file, false))
     try {
-      this.scopes.reverse.foreach(scope => if (!scopes.isEmpty) writer.writeObject(scope))
+      this.scopes.reverse.foreach(scope => if (scopes.nonEmpty) writer.writeObject(scope))
     }
     finally {
       writer.close()
@@ -119,7 +119,7 @@ final class SymbolTable(private val scopes: Seq[SymbolTable.Scope]) {
 }
 
 abstract sealed class AbstractLibraryArchive {
-  def close: Unit
+  def close()
 
   def getInputStream(file: String): Option[InputStream]
 }
@@ -139,7 +139,7 @@ final class JarFileLibraryArchive(file: String) extends AbstractLibraryArchive {
   }
 
   @throws(classOf[IOException])
-  override def close: Unit = this.jarFile.close()
+  override def close() = this.jarFile.close()
 
   override def getInputStream(file: String): Option[InputStream] =
     this.files.get(file).map(entry => new BufferedInputStream(this.jarFile.getInputStream(entry)))
@@ -149,7 +149,7 @@ final class DirectoryLibraryArchive(directory: String) extends AbstractLibraryAr
   import java.io.File
 
   @throws(classOf[IOException])
-  override def close: Unit = {}
+  override def close() = {}
 
   override def getInputStream(file: String): Option[InputStream] = //TODO close FileInputStream
     try {
@@ -165,17 +165,30 @@ abstract sealed class DataType extends Serializable {
 
   val resolutionFunction: Option[FunctionSymbol] = None
 
-  val isResolved: Boolean = !this.resolutionFunction.isEmpty
-
-  val isUnresolved: Boolean = this.resolutionFunction.isEmpty
-
   lazy val attributes = Map[String, AttributeSymbol]()
 
-  def fullName(separator: String = "$"): String = name
+  lazy val fullName: String = this match {
+    case accessType: AccessType => accessType.pointerType.fullName
+    case enumerationType: EnumerationType if (enumerationType.baseType.isDefined) => enumerationType.baseType.get.fullName
+    case hasOwner: HasOwner =>
+      val str = hasOwner.owner match {
+        case header: PackageHeaderSymbol => header.name + "_header"
+        case process: ProcessSymbol => process.owner.name + "$" + process.name
+        case subprogramSymbol: SubprogramSymbol => subprogramSymbol.owner.name + "$" + subprogramSymbol.name
+        case typeSymbol: TypeSymbol => typeSymbol.dataType.fullName
+        case owner => owner.name
+      }
+      str + "$" + name
+    case _ => name
+  }
 }
 
 @SerialVersionUID(-8688092999207243317L)
-final case class ProtectedType(name: String, var subprograms: Seq[SubprogramSymbol]) extends DataType
+final case class ProtectedType(name: String, val subprograms: Seq[SubprogramSymbol], owner: Symbol, implemented: Boolean) extends DataType with HasOwner
+
+trait HasOwner {
+  val owner: Symbol
+}
 
 @SerialVersionUID(3917539156743915612L)
 case object NoType extends DataType {
@@ -194,7 +207,6 @@ case object NullType extends DataType {
 
 @SerialVersionUID(7611073448233675364L)
 final case class AccessType(name: String, var pointerType: DataType) extends DataType { //var is needed for incomplete type declarations
-  override def fullName(separator: String = "$"): String = pointerType.fullName(separator)
   //override toString, so that we don't get a StackOverflowError Exception, because when an access type points to record type which contains a field of the same access type, we've got a cycle
   override def toString = "AccessType(" + name + "," + pointerType.name + ")"
 }
@@ -240,16 +252,8 @@ final case class UnconstrainedArrayType(name: String, elementType: DataType, dim
 final case class ConstrainedArrayType(name: String, elementType: DataType, dimensions: Seq[ConstrainedRangeType]) extends ArrayType
 
 @SerialVersionUID(1153487243267887269L)
-final case class RecordType(name: String, elementList: Seq[(String, DataType)], owner: Symbol) extends CompositeType {
-  val elementsMap=elementList.toMap
-  override def fullName(separator: String = "$"): String = {
-    val str = owner match {
-      case _: PackageHeaderSymbol => owner.name + "_header"
-      case process: ProcessSymbol => process.owner.name + "$" + process.name
-      case _ => owner.name
-    }
-    str + separator + name
-  }
+final case class RecordType(name: String, elementList: Seq[(String, DataType)], owner: Symbol) extends CompositeType with HasOwner {
+  val elementsMap = elementList.toMap
 }
 
 @SerialVersionUID(4190805209591793888L)
@@ -262,7 +266,7 @@ abstract sealed class ScalarType extends DataType {
   val upperBound: AnyVal
   val ascending: Boolean
   val isSubType: Boolean
-  lazy override val attributes = Map(
+  override lazy val attributes = Map(
     ("left" -> new AttributeSymbol("left", this, None)),
     ("right" -> new AttributeSymbol("right", this, None)),
     ("low" -> new AttributeSymbol("low", this, None)),
@@ -282,17 +286,7 @@ abstract sealed class ScalarType extends DataType {
 trait DiscreteType //marker trait
 
 @SerialVersionUID(-2424799647169553170L)
-final case class EnumerationType(name: String, elements: Seq[String], baseType: Option[EnumerationType], owner: Symbol) extends ScalarType with DiscreteType {
-  //TODO recursive classen namen aufbauen
-  override def fullName(separator: String = "$"): String = {
-    val str = owner match {
-      case _: PackageHeaderSymbol => owner.name + "_header"
-      case process: ProcessSymbol => process.owner.name + "$" + process.name
-      case _ => owner.name
-    }
-    str + separator + (if (baseType.isDefined) baseType.get.name else this.name)
-  }
-
+final case class EnumerationType(name: String, elements: Seq[String], baseType: Option[EnumerationType], owner: Symbol) extends ScalarType with DiscreteType with HasOwner {
   private[this] val firstElement = elements.head
   private[this] val lastElement = elements.last
 
@@ -347,16 +341,28 @@ final case class PhysicalType(name: String, left: Long, right: Long, units: Map[
 @SerialVersionUID(6463078064067295176L)
 abstract sealed class Symbol extends Serializable with Locatable {
   val identifier: Identifier
+
+  def owner: Symbol
+
   lazy val position = identifier.position
   lazy val name = identifier.text
   lazy val attributes = Map[String, AttributeSymbol]()
 }
 
+case object NoSymbol extends Symbol {
+  val identifier = Identifier("NoSymbol")
+  val owner = null
+}
+
 @SerialVersionUID(7013029205564976456L)
-final case class ListOfFunctions(identifier: Identifier, functions: mutable.ListBuffer[FunctionSymbol]) extends Symbol
+final case class ListOfFunctions(identifier: Identifier, functions: mutable.ListBuffer[FunctionSymbol]) extends Symbol {
+  val owner = NoSymbol
+}
 
 @SerialVersionUID(2010307013874058143L)
-final case class ListOfProcedures(identifier: Identifier, procedures: mutable.ListBuffer[ProcedureSymbol]) extends Symbol
+final case class ListOfProcedures(identifier: Identifier, procedures: mutable.ListBuffer[ProcedureSymbol]) extends Symbol {
+  val owner = NoSymbol
+}
 
 @SerialVersionUID(1238244612233452818L)
 final case class AttributeSymbol(identifier: Identifier, dataType: DataType, parameter: Option[DataType], isParameterOptional: Boolean, owner: Symbol, isPredefined: Boolean) extends Symbol {
@@ -372,6 +378,7 @@ object SubProgramFlags {
 abstract sealed class SubprogramSymbol extends Symbol {
   val parameters: Seq[RuntimeSymbol]
   val flags: BitSet
+  val owner: Symbol
 }
 @SerialVersionUID(-7427096092567821868L)
 final case class FunctionSymbol(identifier: Identifier, parameters: Seq[RuntimeSymbol], returnType: DataType, owner: Symbol, flags: BitSet, isPure: Boolean) extends SubprogramSymbol {
@@ -386,43 +393,52 @@ final case class ProcedureSymbol(identifier: Identifier, parameters: Seq[Runtime
       case x: VariableSymbol if (x.modifier != RuntimeSymbol.Modifier.IN && x.dataType.isInstanceOf[ScalarType]) => x
     }
   }
-  val needsCopyBack = !copyBackSymbols.isEmpty
+  val needsCopyBack = copyBackSymbols.nonEmpty
 }
 
 @SerialVersionUID(-1724650145084937620L)
 case object Runtime extends Symbol {
-  import at.jku.ssw.openvc.codeGenerator.CodeGenerator
-  val identifier = Identifier(CodeGenerator.RUNTIME)
+  import at.jku.ssw.openvc.codeGenerator.ByteCodeGenerator
+  val identifier = Identifier(ByteCodeGenerator.RUNTIME)
+  val owner = NoSymbol
 }
 
 @SerialVersionUID(4341399901500604597L)
-final case class GroupTemplateSymbol(identifier: Identifier, items: Seq[EntityClass], infinite: Boolean) extends Symbol
+final case class GroupTemplateSymbol(identifier: Identifier, items: Seq[EntityClass], infinite: Boolean, owner: Symbol) extends Symbol
 
 @SerialVersionUID(-3051930707092602812L)
-final case class GroupSymbol(identifier: Identifier) extends Symbol
+final case class GroupSymbol(identifier: Identifier, owner: Symbol) extends Symbol
 
 @SerialVersionUID(-6214450543318369430L)
-final case class ProcessSymbol(identifier: Identifier, owner: ArchitectureSymbol, var isPassive: Boolean) extends Symbol
+final case class ProcessSymbol(identifier: Identifier, owner: Symbol, var isPassive: Boolean) extends Symbol
 
 @SerialVersionUID(7523805927766617817L)
-final case class TypeSymbol(identifier: Identifier, dataType: DataType) extends Symbol {
+final case class TypeSymbol(identifier: Identifier, dataType: DataType, owner: Symbol) extends Symbol {
   override lazy val attributes = dataType.attributes
 }
 
 @SerialVersionUID(1111707794631502222L)
-final case class ComponentSymbol(identifier: Identifier, generics: Seq[RuntimeSymbol], ports: Seq[RuntimeSymbol]) extends Symbol
+final case class ComponentSymbol(identifier: Identifier, generics: Seq[RuntimeSymbol], ports: Seq[RuntimeSymbol], owner: Symbol) extends Symbol
 
 @SerialVersionUID(2222707794631501111L)
-final case class EntitySymbol(identifier: Identifier, generics: Seq[RuntimeSymbol], ports: Seq[RuntimeSymbol]) extends Symbol
+final case class EntitySymbol(identifier: Identifier, generics: Seq[RuntimeSymbol], ports: Seq[RuntimeSymbol]) extends Symbol {
+  val owner = NoSymbol
+}
 
 @SerialVersionUID(5924008907619747454L)
-final case class ArchitectureSymbol(identifier: Identifier) extends Symbol
+final case class ArchitectureSymbol(identifier: Identifier) extends Symbol {
+  val owner = NoSymbol
+}
 
 @SerialVersionUID(-848787780393119417L)
-final case class PackageHeaderSymbol(identifier: Identifier, localSymbols: Map[String, Symbol]) extends Symbol
+final case class PackageHeaderSymbol(identifier: Identifier, localSymbols: Map[String, Symbol]) extends Symbol {
+  val owner = NoSymbol
+}
 
 @SerialVersionUID(-555587780393116666L)
-final case class PackageBodySymbol(identifier: Identifier, localSymbols: Map[String, Symbol]) extends Symbol
+final case class PackageBodySymbol(identifier: Identifier, localSymbols: Map[String, Symbol]) extends Symbol {
+  val owner = NoSymbol
+}
 
 object RuntimeSymbol {
   type Modifier = Modifier.Value
@@ -458,6 +474,10 @@ final case class SignalSymbol(identifier: Identifier, dataType: DataType, modifi
   @transient var driver: ASTNode = null
 
   def makeCopy(identifier: Identifier, dataType: DataType) = this.copy(identifier = identifier, dataType = dataType, owner = this)
+
+  val isResolved: Boolean = this.dataType.resolutionFunction.nonEmpty
+
+  val isUnresolved: Boolean = this.dataType.resolutionFunction.isEmpty
 
   val signalAttributes = Map(
     ("delayed" -> new AttributeSymbol("delayed", dataType, Option(SymbolTable.timeType))),

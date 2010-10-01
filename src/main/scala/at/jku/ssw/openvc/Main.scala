@@ -24,7 +24,7 @@ import at.jku.ssw.openvs.VHDLRuntime._
 import java.io._
 
 object Main {
-  def main(arguments: Array[String]): Unit = {
+  def main(arguments: Array[String]) {
     println(" OpenVC  Copyright (C) 2010  Christian Reisinger")
     try {
       val filter = new FilenameFilter() {
@@ -46,12 +46,22 @@ object Main {
           Simulator.loadFiles(this.getClass.getClassLoader, configuration.designLibrary, List(files.tail.head.split("-body").head), List("std.jar", "ieee.jar"))
         case Some(file) =>
           VHDLCompiler.compileFile(configuration, file).printErrors(new PrintWriter(System.out), Some(toLines(file)))
+          /*
+          val clazz = new java.net.URLClassLoader(Array(new File("work/").toURI.toURL), this.getClass.getClassLoader).loadClass("alu_tb$main$foorec")
+          val x=clazz.getConstructor(java.lang.Integer.TYPE,java.lang.Double.TYPE).newInstance(new java.lang.Integer(40),new java.lang.Double(40.0))
+          println(x)
+          val clazz2 = new java.net.URLClassLoader(Array(new File("work/").toURI.toURL), this.getClass.getClassLoader).loadClass("alu_tb$sharedcounter")
+          val y=clazz2.newInstance
+          clazz2.getMethod("increment",java.lang.Integer.TYPE).invoke(y,new java.lang.Integer(20))
+          clazz2.getMethod("decrement",java.lang.Integer.TYPE).invoke(y,new java.lang.Integer(30))
+          println(clazz2.getMethod("value").invoke(y))
+          */
           Simulator.runClass(this.getClass.getClassLoader, configuration.designLibrary, "alu_tb", "main", List("std.jar", "ieee.jar"))
       }
       /*
-            val (designFile, syntaxErrors) = ASTBuilder.getASTFromFile("numeric_std-body.vhd", configuration)
-            //val (designFile, syntaxErrors) = ASTBuilder.getASTFromFile("""C:\Users\christian\Desktop\grlib-gpl-1.0.22-b4095\lib\gaisler\sim\pwm_check.vhd""", configuration)
-            //val (designFile, syntaxErrors) = ASTBuilder.getASTFromFile("alu_tb.vhd", configuration)
+            val (designFile, syntaxErrors) = ASTBuilder.fromFile("numeric_std-body.vhd", configuration)
+            //val (designFile, syntaxErrors) = ASTBuilder.fromFile("""C:\Users\christian\Desktop\grlib-gpl-1.0.22-b4095\lib\gaisler\sim\pwm_check.vhd""", configuration)
+            //val (designFile, syntaxErrors) = ASTBuilder.fromFile("alu_tb.vhd", configuration)
             for (msg <- syntaxErrors) {
               println("line:" + msg.position.line + " col:" + msg.position.charPosition + " " + msg.message)
             }
@@ -71,7 +81,7 @@ object Main {
               //for (f <- Main.listFiles(new File("C:\\Users\\christian\\Desktop\\DHE\\abschlussprojekt"), filter,true)) {
               //for (f <- Main.listFiles(new File("C:\\Users\\christian\\Desktop\\vhdl-ams-code\\"), filter, true)) {
               println("Compiling file:" + f.getAbsolutePath)
-              val (designFile, syntaxErrors) = ASTBuilder.getASTFromFile(f.getAbsolutePath, configuration)
+              val (designFile, syntaxErrors) = ASTBuilder.fromFile(f.getAbsolutePath, configuration)
               for (msg <- syntaxErrors) {
                 println("--" + f.getName + ": line:" + msg.position.line + " col:" + msg.position.charPosition + " " + msg.message)
               }

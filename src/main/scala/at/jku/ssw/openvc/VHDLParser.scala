@@ -4231,8 +4231,8 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
     }
     // $ANTLR end "package_body_declarative_item"
 
-    // $ANTLR start "designator"
-    // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:539:1: designator returns [Identifier id] : ( identifier | STRING_LITERAL );
+    // $ANTLR start "identifier"
+    // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:539:1: identifier returns [Identifier id] : ( identifier | STRING_LITERAL );
     @throws(classOf[RecognitionException])
     def designator():Identifier = {
          var id :Identifier = null;
@@ -4292,10 +4292,10 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
         }
         return id
     }
-    // $ANTLR end "designator"
+    // $ANTLR end "identifier"
 
     // $ANTLR start "subprogram_specification"
-    // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:544:1: subprogram_specification returns [SubProgramDeclaration decl] : ( PROCEDURE designator ( LPAREN parameter_interface_list_procedure RPAREN )? | ( PURE | i= IMPURE )? FUNCTION designator ( LPAREN parameter_interface_list_function RPAREN )? RETURN type_mark );
+    // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:544:1: subprogram_specification returns [SubProgramDeclaration decl] : ( PROCEDURE identifier ( LPAREN parameter_interface_list_procedure RPAREN )? | ( PURE | i= IMPURE )? FUNCTION identifier ( LPAREN parameter_interface_list_function RPAREN )? RETURN type_mark );
     @throws(classOf[RecognitionException])
     def subprogram_specification():SubProgramDeclaration = {
          var decl :SubProgramDeclaration = null;
@@ -4314,7 +4314,7 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
 
 
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:545:2: ( PROCEDURE designator ( LPAREN parameter_interface_list_procedure RPAREN )? | ( PURE | i= IMPURE )? FUNCTION designator ( LPAREN parameter_interface_list_function RPAREN )? RETURN type_mark )
+            // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:545:2: ( PROCEDURE identifier ( LPAREN parameter_interface_list_procedure RPAREN )? | ( PURE | i= IMPURE )? FUNCTION identifier ( LPAREN parameter_interface_list_function RPAREN )? RETURN type_mark )
             var alt45 :Int=2
             val LA45_0:Int = input.LA(1)
 
@@ -4332,7 +4332,7 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
             }
             alt45 match {
                 case 1 =>
-                    // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:545:5: PROCEDURE designator ( LPAREN parameter_interface_list_procedure RPAREN )?
+                    // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:545:5: PROCEDURE identifier ( LPAREN parameter_interface_list_procedure RPAREN )?
                     {
                     	PROCEDURE91=`match`(input,PROCEDURE,FOLLOW_PROCEDURE_in_subprogram_specification2772).asInstanceOf[CommonToken]; if (state.failed) return decl;
                     	pushFollow(FOLLOW_designator_in_subprogram_specification2774)
@@ -4368,7 +4368,7 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
                     	}
 
                     }case 2 =>
-                    // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:550:6: ( PURE | i= IMPURE )? FUNCTION designator ( LPAREN parameter_interface_list_function RPAREN )? RETURN type_mark
+                    // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:550:6: ( PURE | i= IMPURE )? FUNCTION identifier ( LPAREN parameter_interface_list_function RPAREN )? RETURN type_mark
                     {
                     	// C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:550:6: ( PURE | i= IMPURE )?
                     	var alt43 :Int=3
@@ -4548,7 +4548,7 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
     // $ANTLR end "subprogram_declaration"
 
     // $ANTLR start "subprogram_body"
-    // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:567:1: subprogram_body[SubProgramDeclaration subprogramDecl] returns [SubProgramDefinition subProgramDef] : IS ( subprogram_declarative_item )* BEGIN sequential_statement_list END ( PROCEDURE | FUNCTION )? (endIdent= designator )? ;
+    // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:567:1: subprogram_body[SubProgramDeclaration subprogramDecl] returns [SubProgramDefinition subProgramDef] : IS ( subprogram_declarative_item )* BEGIN sequential_statement_list END ( PROCEDURE | FUNCTION )? (endIdent= identifier )? ;
     @throws(classOf[RecognitionException])
     def subprogram_body(subprogramDecl:SubProgramDeclaration):SubProgramDefinition = {
          var subProgramDef :SubProgramDefinition = null;
@@ -4563,8 +4563,8 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
         	val declItems=new Buffer[DeclarativeItem]()
 
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:571:2: ( IS ( subprogram_declarative_item )* BEGIN sequential_statement_list END ( PROCEDURE | FUNCTION )? (endIdent= designator )? )
-            // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:571:4: IS ( subprogram_declarative_item )* BEGIN sequential_statement_list END ( PROCEDURE | FUNCTION )? (endIdent= designator )?
+            // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:571:2: ( IS ( subprogram_declarative_item )* BEGIN sequential_statement_list END ( PROCEDURE | FUNCTION )? (endIdent= identifier )? )
+            // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:571:4: IS ( subprogram_declarative_item )* BEGIN sequential_statement_list END ( PROCEDURE | FUNCTION )? (endIdent= identifier )?
             {
             	`match`(input,IS,FOLLOW_IS_in_subprogram_body2926); if (state.failed) return subProgramDef;
             	// C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:572:4: ( subprogram_declarative_item )*
@@ -4630,7 +4630,7 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
             	    case _ => 
             	}
 
-            	// C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:575:39: (endIdent= designator )?
+            	// C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:575:39: (endIdent= identifier )?
             	var alt49 :Int=2
             	val LA49_0:Int = input.LA(1)
 
@@ -4639,7 +4639,7 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
             	}
             	alt49 match {
             	    case 1 =>
-            	        // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:575:39: endIdent= designator
+            	        // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:575:39: endIdent= identifier
             	        {
             	        	pushFollow(FOLLOW_designator_in_subprogram_body2962)
             	        	endIdent=designator();
@@ -6699,7 +6699,7 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
     // $ANTLR end "attribute_specification"
 
     // $ANTLR start "entity_designator"
-    // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:746:1: entity_designator returns [(Identifier,Option[Signature]) designator] : ( identifier | CHARACTER_LITERAL | STRING_LITERAL ) ( signature )? ;
+    // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:746:1: entity_designator returns [(Identifier,Option[Signature]) identifier] : ( identifier | CHARACTER_LITERAL | STRING_LITERAL ) ( signature )? ;
     @throws(classOf[RecognitionException])
     def entity_designator():(Identifier,Option[Signature]) = {
          var designator :(Identifier,Option[Signature]) = null;
@@ -12755,7 +12755,7 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
     // $ANTLR end "if_generate_statement"
 
     // $ANTLR start "generate_statement_body"
-    // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:1328:1: generate_statement_body returns [Seq[DeclarativeItem] blockItems,Seq[ConcurrentStatement] statementList] : ( ( block_declarative_item )* BEGIN )? architecture_statement_list ;
+    // C:\\Users\\christian\\Desktop\\OpenVCNew\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:1328:1: generate_statement_body returns [Seq[DeclarativeItem] blockItems,Seq[ConcurrentStatement] concurrentStatements] : ( ( block_declarative_item )* BEGIN )? architecture_statement_list ;
     @throws(classOf[RecognitionException])
     def generate_statement_body():VHDLParser.generate_statement_body_return = {
         val retval:VHDLParser.generate_statement_body_return = new VHDLParser.generate_statement_body_return()

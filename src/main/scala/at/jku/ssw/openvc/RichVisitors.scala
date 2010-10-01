@@ -30,7 +30,7 @@ final class RichLabel(mv: MethodVisitor) extends Label {
 }
 
 final class RichClassWriter(private val outputDirectory: String, val className: String, private val cw: ClassWriter, cv: Option[ClassVisitor] = None) extends ClassAdapter(cv.getOrElse(cw)) {
-  def writeToFile: Unit = {
+  def writeToFile() {
     val f = new FileOutputStream(outputDirectory + className + ".class")
     try {
       this.visitEnd
@@ -41,7 +41,7 @@ final class RichClassWriter(private val outputDirectory: String, val className: 
     }
   }
 
-  def createEmptyConstructor(): Unit = {
+  def createEmptyConstructor() {
     val mv = this.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V")
     import mv._
     visitCode
@@ -382,41 +382,38 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
 
   def IFNONNULL(label: Label) = this.visitJumpInsn(Opcodes.IFNONNULL, label)
 
-  def endMethod: Unit = {
+  def endMethod() {
     //values will be ignored because COMPUTE_FRAMES and COMPUTE_MAXS are used, but the CheckClassAdapter needs values != 0
     this.visitMaxs(1000, 1000)
     this.visitEnd
   }
 
-  def loadInstruction(dataType: DataType, index: Int): Unit =
-    this.visitVarInsn(dataType match {
-      case _: IntegerType | _: EnumerationType => Opcodes.ILOAD
-      case _: RealType => Opcodes.DLOAD
-      case _: PhysicalType => Opcodes.LLOAD
-      case _: ArrayType | _: RecordType | _: FileType | _: AccessType | _: ProtectedType => Opcodes.ALOAD
-    }, index)
+  def loadInstruction(dataType: DataType, index: Int) = this.visitVarInsn((dataType: @unchecked) match {
+    case _: IntegerType | _: EnumerationType => Opcodes.ILOAD
+    case _: RealType => Opcodes.DLOAD
+    case _: PhysicalType => Opcodes.LLOAD
+    case _: ArrayType | _: RecordType | _: FileType | _: AccessType | _: ProtectedType => Opcodes.ALOAD
+  }, index)
 
-  def storeInstruction(symbol: RuntimeSymbol): Unit =
-    this.visitVarInsn(symbol.dataType match {
-      case _: IntegerType | _: EnumerationType => Opcodes.ISTORE
-      case _: RealType => Opcodes.DSTORE
-      case _: PhysicalType => Opcodes.LSTORE
-      case _: ArrayType | _: RecordType | _: FileType | _: AccessType | _: ProtectedType => Opcodes.ASTORE
-    }, symbol.index)
+  def storeInstruction(symbol: RuntimeSymbol) = this.visitVarInsn((symbol.dataType: @unchecked) match {
+    case _: IntegerType | _: EnumerationType => Opcodes.ISTORE
+    case _: RealType => Opcodes.DSTORE
+    case _: PhysicalType => Opcodes.LSTORE
+    case _: ArrayType | _: RecordType | _: FileType | _: AccessType | _: ProtectedType => Opcodes.ASTORE
+  }, symbol.index)
 
-  def arrayStoreInstruction(dataType: DataType): Unit =
-    this.visitInsn(dataType match {
-      case _: IntegerType => Opcodes.IASTORE
-      case _: RealType => Opcodes.DASTORE
-      case _: PhysicalType => Opcodes.LASTORE
-      case enumeration: EnumerationType =>
-        if (enumeration.elements.size <= Byte.MaxValue) Opcodes.BASTORE
-        else Opcodes.CASTORE
-      case _: ArrayType | _: RecordType | _: FileType | _: AccessType | _: ProtectedType => Opcodes.AASTORE
-    })
+  def arrayStoreInstruction(dataType: DataType) = this.visitInsn((dataType: @unchecked) match {
+    case _: IntegerType => Opcodes.IASTORE
+    case _: RealType => Opcodes.DASTORE
+    case _: PhysicalType => Opcodes.LASTORE
+    case enumeration: EnumerationType =>
+      if (enumeration.elements.size <= Byte.MaxValue) Opcodes.BASTORE
+      else Opcodes.CASTORE
+    case _: ArrayType | _: RecordType | _: FileType | _: AccessType | _: ProtectedType => Opcodes.AASTORE
+  })
 
-  def arrayLoadInstruction(dataType: DataType): Unit =
-    this.visitInsn(dataType match {
+  def arrayLoadInstruction(dataType: DataType) =
+    this.visitInsn((dataType: @unchecked) match {
       case _: IntegerType => Opcodes.IALOAD
       case _: RealType => Opcodes.DALOAD
       case _: PhysicalType => Opcodes.LALOAD
@@ -426,78 +423,77 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
       case _: ArrayType | _: RecordType | _: FileType | _: AccessType | _: ProtectedType => Opcodes.AALOAD
     })
 
-  def loadSymbol(symbol: RuntimeSymbol): Unit =
-    symbol.owner match {
-      case _: ArchitectureSymbol | _: TypeSymbol | _: EntitySymbol | _: ProcessSymbol => GETFIELD(symbol.owner.name, symbol.name, CodeGenerator.getJVMDataType(symbol))
-      case _: PackageHeaderSymbol => GETSTATIC(symbol.owner.name + "_header", symbol.name, CodeGenerator.getJVMDataType(symbol))
-      case _: PackageBodySymbol => GETSTATIC(symbol.owner.name, symbol.name, CodeGenerator.getJVMDataType(symbol))
-      case _: SubprogramSymbol => loadInstruction(symbol.dataType, symbol.index)
-    }
+  def loadSymbol(symbol: RuntimeSymbol) = symbol.owner match {
+    case _: ArchitectureSymbol | _: EntitySymbol => GETFIELD(symbol.owner.name, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
+    case processSymbol: ProcessSymbol => GETFIELD(processSymbol.owner.name + "$" + symbol.owner.name, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
+    case typeSymbol: TypeSymbol =>
+      if (typeSymbol.dataType.isInstanceOf[ProtectedType]) ALOAD(0)
+      GETFIELD(typeSymbol.dataType.fullName, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
+    case _: PackageHeaderSymbol => GETSTATIC(symbol.owner.name + "_header", symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
+    case _: PackageBodySymbol => GETSTATIC(symbol.owner.name, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
+    case _: SubprogramSymbol => loadInstruction(symbol.dataType, symbol.index)
+  }
 
-  def storeSymbol(symbol: RuntimeSymbol): Unit =
-    symbol.owner match {
-      case _: ArchitectureSymbol | _: TypeSymbol | _: EntitySymbol | _: ProcessSymbol => PUTFIELD(symbol.owner.name, symbol.name, CodeGenerator.getJVMDataType(symbol))
-      case _: PackageHeaderSymbol => PUTSTATIC(symbol.owner.name + "_header", symbol.name, CodeGenerator.getJVMDataType(symbol))
-      case _: PackageBodySymbol => PUTSTATIC(symbol.owner.name, symbol.name, CodeGenerator.getJVMDataType(symbol))
-      case _: SubprogramSymbol => storeInstruction(symbol)
-    }
+  def storeSymbol(symbol: RuntimeSymbol) = symbol.owner match {
+    case _: ArchitectureSymbol | _: EntitySymbol => PUTFIELD(symbol.owner.name, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
+    case processSymbol: ProcessSymbol => PUTFIELD(processSymbol.owner.name + "$" + symbol.owner.name, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
+    case typeSymbol: TypeSymbol => PUTFIELD(typeSymbol.dataType.fullName, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
+    case _: PackageHeaderSymbol => PUTSTATIC(symbol.owner.name + "_header", symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
+    case _: PackageBodySymbol => PUTSTATIC(symbol.owner.name, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
+    case _: SubprogramSymbol => storeInstruction(symbol)
+  }
 
-  def pushAnyVal(value: AnyVal): Unit =
-    value match {
-      case b: Boolean => pushBoolean(b)
-      case i: Int => pushInt(i)
-      case d: Double => pushDouble(d)
-      case l: Long => pushLong(l)
-    }
+  def pushAnyVal(value: AnyVal) = value match {
+    case b: Boolean => pushBoolean(b)
+    case i: Int => pushInt(i)
+    case d: Double => pushDouble(d)
+    case l: Long => pushLong(l)
+  }
 
-  def pushBoolean(value: Boolean): Unit =
-    value match {
-      case false => ICONST_0
-      case true => ICONST_1
-    }
+  def pushBoolean(value: Boolean) = value match {
+    case false => ICONST_0
+    case true => ICONST_1
+  }
 
-  def pushInt(value: Int): Unit =
-    value match {
-      case -1 => ICONST_M1
-      case 0 => ICONST_0
-      case 1 => ICONST_1
-      case 2 => ICONST_2
-      case 3 => ICONST_3
-      case 4 => ICONST_4
-      case 5 => ICONST_5
-      case byteValue if (value >= Byte.MinValue && value <= Byte.MaxValue) => BIPUSH(byteValue)
-      case shortValue if (value >= Short.MinValue && value <= Short.MaxValue) => SIPUSH(shortValue)
-      case _ =>
-        if (value == Int.MinValue) GETSTATIC("java/lang/Integer", "MIN_VALUE", "I")
-        else if (value == Int.MaxValue) GETSTATIC("java/lang/Integer", "MAX_VALUE", "I")
-        else LDC(Integer.valueOf(value))
-    }
+  def pushInt(value: Int) = value match {
+    case -1 => ICONST_M1
+    case 0 => ICONST_0
+    case 1 => ICONST_1
+    case 2 => ICONST_2
+    case 3 => ICONST_3
+    case 4 => ICONST_4
+    case 5 => ICONST_5
+    case byteValue if (value >= Byte.MinValue && value <= Byte.MaxValue) => BIPUSH(byteValue)
+    case shortValue if (value >= Short.MinValue && value <= Short.MaxValue) => SIPUSH(shortValue)
+    case _ =>
+      if (value == Int.MinValue) GETSTATIC("java/lang/Integer", "MIN_VALUE", "I")
+      else if (value == Int.MaxValue) GETSTATIC("java/lang/Integer", "MAX_VALUE", "I")
+      else LDC(Integer.valueOf(value))
+  }
 
-  def pushDouble(value: Double): Unit =
-    value match {
-      case 0.0 => DCONST_0
-      case 1.0 => DCONST_1
-      case _ =>
-        if (value == Double.MinValue) GETSTATIC("java/lang/Double", "MIN_VALUE", "D")
-        else if (value == Double.MaxValue) GETSTATIC("java/lang/Double", "MAX_VALUE", "D")
-        else LDC(java.lang.Double.valueOf(value))
-    }
+  def pushDouble(value: Double) = value match {
+    case 0.0 => DCONST_0
+    case 1.0 => DCONST_1
+    case _ =>
+      if (value == Double.MinValue) GETSTATIC("java/lang/Double", "MIN_VALUE", "D")
+      else if (value == Double.MaxValue) GETSTATIC("java/lang/Double", "MAX_VALUE", "D")
+      else LDC(java.lang.Double.valueOf(value))
+  }
 
-  def pushLong(value: Long): Unit =
-    value match {
-      case 0 => LCONST_0
-      case 1 => LCONST_1
-      case _ =>
-        if (value == Long.MinValue) GETSTATIC("java/lang/Long", "MIN_VALUE", "J")
-        else if (value == Long.MaxValue) GETSTATIC("java/lang/Long", "MAX_VALUE", "J")
-        else LDC(java.lang.Long.valueOf(value))
-    }
+  def pushLong(value: Long) = value match {
+    case 0 => LCONST_0
+    case 1 => LCONST_1
+    case _ =>
+      if (value == Long.MinValue) GETSTATIC("java/lang/Long", "MIN_VALUE", "J")
+      else if (value == Long.MaxValue) GETSTATIC("java/lang/Long", "MAX_VALUE", "J")
+      else LDC(java.lang.Long.valueOf(value))
+  }
 
   private[this] var lastLine = -1
 
   def createDebugLineNumberInformation(node: Locatable): Unit = createDebugLineNumberInformation(node.position)
 
-  def createDebugLineNumberInformation(position: Position): Unit = {
+  def createDebugLineNumberInformation(position: Position) = {
     val line = position.line
     if (lastLine != line && position != Position.Empty) {
       lastLine = line
@@ -507,7 +503,7 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
     }
   }
 
-  def throwNewException(className: String, message: String): Unit = {
+  def throwNewException(className: String, message: String) = {
     NEW(className)
     DUP
     LDC(message)
@@ -515,6 +511,6 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
     ATHROW
   }
 
-  def createDebugLocalVariableInformation(symbols: Seq[Symbol], startLabel: RichLabel, stopLabel: RichLabel): Unit =
-    symbols.collect(_ match {case r: RuntimeSymbol => r}).foreach(r => this.visitLocalVariable(r.name, CodeGenerator.getJVMDataType(r), null, startLabel, stopLabel, r.index))
+  def createDebugLocalVariableInformation(symbols: Seq[Symbol], startLabel: RichLabel, stopLabel: RichLabel) =
+    symbols.collect(_ match {case r: RuntimeSymbol => r}).foreach(r => this.visitLocalVariable(r.name, ByteCodeGenerator.getJVMDataType(r), null, startLabel, stopLabel, r.index))
 }

@@ -29,7 +29,7 @@ trait GenericTest extends FunSuite with ShouldMatchers {
   val directory = new File(library + File.separator)
   val configuration = new VHDLCompiler.Configuration(false, library, false, false)
 
-  def compile(source: String): Unit = {
+  def compile(source: String) {
     if (directory.exists) directory.listFiles.foreach(_.delete())
 
     val result = VHDLCompiler.compileFileFromText(configuration, source, "testFile")
@@ -38,19 +38,19 @@ trait GenericTest extends FunSuite with ShouldMatchers {
     result.semanticErrors.size should equal(0)
   }
 
-  def compileAndLoad(text: String)(source: String): Unit =
+  def compileAndLoad(text: String)(source: String) =
     test(text) {
       compile(source)
       Simulator.loadFiles(this.getClass.getClassLoader, library, directory.listFiles.filter(_.getName.endsWith(".class")).map(_.getName.split('.').head), List("std.jar"))
     }
 
-  def compileAndRun(text: String, packageName: String, procedure: String)(source: String): Unit =
+  def compileAndRun(text: String, packageName: String, procedure: String)(source: String) =
     test(text) {
       compile(source)
       Simulator.runClass(this.getClass.getClassLoader, configuration.designLibrary, packageName, procedure, List("std.jar", "ieee.jar"))
     }
 
-  def compileCodeInPackageAndLoad(text: String)(source: String): Unit =
+  def compileCodeInPackageAndLoad(text: String)(source: String) =
     compileAndLoad(text) {
       """
       package Dummy is
@@ -61,7 +61,7 @@ trait GenericTest extends FunSuite with ShouldMatchers {
               """
     }
 
-  def compileCodeInPackageAndRun(text: String, packageName: String = "dummy", procedure: String = "main")(source: String): Unit =
+  def compileCodeInPackageAndRun(text: String, packageName: String = "dummy", procedure: String = "main")(source: String) =
     compileAndRun(text, packageName, procedure) {
       """
       package dummy is

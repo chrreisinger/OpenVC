@@ -29,7 +29,7 @@ object Simulator {
     new URLClassLoader(builder.result.toArray, parentClassLoader)
   }
 
-  def runClass(parentClassLoader: ClassLoader, directory: String, name: String, method: String, jars: Seq[String]): Unit = {
+  def runClass(parentClassLoader: ClassLoader, directory: String, name: String, method: String, jars: Seq[String]) {
     val loader = crateClassLoader(parentClassLoader, directory, jars)
     val cl = loader.loadClass(name)
     val o = cl.newInstance
@@ -38,7 +38,7 @@ object Simulator {
     nm.invoke(o)
   }
 
-  def loadFiles(parentClassLoader: ClassLoader, directory: String, files: Seq[String], jars: Seq[String]): Unit = {
+  def loadFiles(parentClassLoader: ClassLoader, directory: String, files: Seq[String], jars: Seq[String]) {
     val loader = crateClassLoader(parentClassLoader, directory, jars)
     val tmpClassLoader = new ClassLoader(loader) {
       def myLoadClass(className: String, resolve: Boolean) = super.loadClass(className, resolve)

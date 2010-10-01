@@ -242,7 +242,7 @@ import at.jku.ssw.openvc.ast.ams._
 @parser::members{
 	var ams=false
 	
-	type Buffer[T] = scala.collection.mutable.ListBuffer[T]
+	type Buffer[A] = scala.collection.mutable.ListBuffer[A]
 	
 	private val syntaxErrorList = new Buffer[CompilerMessage]()
 	
@@ -257,10 +257,10 @@ import at.jku.ssw.openvc.ast.ams._
     			new Identifier(toPosition(token),token.getText())
     		}
 
-        override def displayRecognitionError(tokenNames:Array[String],e:RecognitionException):Unit =     
+        override def displayRecognitionError(tokenNames:Array[String],e:RecognitionException) =     
       		syntaxErrorList += new CompilerMessage(position=toPosition(e.token),message=super.getErrorMessage(e, tokenNames) )
 
-        private implicit def anyToOption[T](value:T):Option[T] = Option(value) 
+        private implicit def anyToOption[A](value:A):Option[A] = Option(value)
 }
 //B.1 Design File
 design_file returns [DesignFile designFile]

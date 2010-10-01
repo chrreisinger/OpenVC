@@ -48,7 +48,7 @@ object ASTBuilder {
 
   type ASTResult = (DesignFile, Seq[CompilerMessage])
 
-  private def getASTFromCharStream(caseInsensitiveStringStream: CharStream, configuration: VHDLCompiler.Configuration): ASTResult = {
+  private def fromCharStream(caseInsensitiveStringStream: CharStream, configuration: VHDLCompiler.Configuration): ASTResult = {
     val lexer = new VHDLLexer(caseInsensitiveStringStream)
     val tokens = new CommonTokenStream(lexer)
     val parser = new VHDLParser(tokens)
@@ -58,27 +58,27 @@ object ASTBuilder {
     (designFile, parser.syntaxErrors)
   }
 
-  def getASTFromFile(fileName: String, configuration: VHDLCompiler.Configuration): ASTResult =
-    getASTFromCharStream(new CaseInsensitiveInputStream(new FileInputStream(fileName)), configuration)
+  def fromFile(fileName: String, configuration: VHDLCompiler.Configuration): ASTResult =
+    fromCharStream(new CaseInsensitiveInputStream(new FileInputStream(fileName)), configuration)
 
-  def getASTFromString(code: String, configuration: VHDLCompiler.Configuration): ASTResult =
-    getASTFromCharStream(new CaseInsensitiveStringStream(code), configuration)
+  def fromText(code: String, configuration: VHDLCompiler.Configuration): ASTResult =
+    fromCharStream(new CaseInsensitiveStringStream(code), configuration)
 }
 
 object VHDLCompiler {
-  import at.jku.ssw.openvc.codeGenerator.CodeGenerator
+  import at.jku.ssw.openvc.codeGenerator.ByteCodeGenerator
   import java.io.PrintWriter
 
   final class Configuration(val amsEnabled: Boolean, val designLibrary: String, val debugCompiler: Boolean, val debugCodeGenerator: Boolean)
 
   final class CompileResult(val syntaxErrors: Seq[CompilerMessage], val semanticErrors: Seq[CompilerMessage], val semanticWarnings: Seq[CompilerMessage], val designFile: DesignFile, val sourceFile: String) {
-    def printErrors(writer: PrintWriter, sourceLinesOption: Option[IndexedSeq[String]]): Unit = {
-      if (!syntaxErrors.isEmpty || !semanticErrors.isEmpty || !semanticWarnings.isEmpty) {
+    def printErrors(writer: PrintWriter, sourceLinesOption: Option[IndexedSeq[String]]) {
+      if (syntaxErrors.nonEmpty || semanticErrors.nonEmpty || semanticWarnings.nonEmpty) {
         writer.println("syntax errors:" + syntaxErrors.size + " semantic errors:" + semanticErrors.size + " semantic warnings:" + semanticWarnings.size)
       }
-      def printMessages(prefix: String, messages: Seq[CompilerMessage]): Unit = {
+      def printMessages(prefix: String, messages: Seq[CompilerMessage]) {
         for (msg <- messages) {
-          writer.println("--" + sourceFile + ": line:" + msg.position.line + " col:" + msg.position.charPosition + " " + msg.message)
+          writer.println(prefix + sourceFile + ": line:" + msg.position.line + " col:" + msg.position.charPosition + " " + msg.message)
           sourceLinesOption.foreach {
             sourceLines =>
               writer.println(sourceLines(msg.position.line - 1).toLowerCase)
@@ -103,12 +103,12 @@ object VHDLCompiler {
     val parseTime = System.currentTimeMillis - parseStart
 
     val semanticCheckStart = System.currentTimeMillis
-    val (checkedDesignFile, semanticErrors, semanticWarnings) = SemanticCheckVisitor(designFile, configuration)
+    val (checkedDesignFile, semanticErrors, semanticWarnings) = SemanticAnalyzer(designFile, configuration)
     val semanticCheckTime = System.currentTimeMillis - semanticCheckStart
 
     val codeGenStart = System.currentTimeMillis
     if (semanticErrors.isEmpty && syntaxErrors.isEmpty) {
-      CodeGenerator(configuration, fileName, checkedDesignFile)
+      ByteCodeGenerator(configuration, fileName, checkedDesignFile)
     }
     val codeGenTime = System.currentTimeMillis - codeGenStart
     if (configuration.debugCompiler) {
@@ -120,9 +120,7 @@ object VHDLCompiler {
     new CompileResult(syntaxErrors, semanticErrors, semanticWarnings, designFile, fileName)
   }
 
-  def compileFile(configuration: Configuration, file: String): CompileResult =
-    this.compile(configuration, ASTBuilder.getASTFromFile, file, file)
+  def compileFile(configuration: Configuration, file: String): CompileResult = this.compile(configuration, ASTBuilder.fromFile, file, file)
 
-  def compileFileFromText(configuration: Configuration, code: String, file: String): CompileResult =
-    this.compile(configuration, ASTBuilder.getASTFromString, code, file)
+  def compileFileFromText(configuration: Configuration, code: String, file: String): CompileResult = this.compile(configuration, ASTBuilder.fromText, code, file)
 }

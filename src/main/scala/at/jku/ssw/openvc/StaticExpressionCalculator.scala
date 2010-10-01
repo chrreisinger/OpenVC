@@ -23,63 +23,61 @@ import Numeric._
 import at.jku.ssw.openvc.symbolTable.{ScalarType, EnumerationType}
 
 object StaticExpressionCalculator {
-  def calcValue[T](e: Expression)(implicit numeric: Integral[T]): T = {
-    def calcValueInner(expr: Expression): T = {
-      expr match {
-        case SimpleExpression(_, signOption, left, op, rightOption, _) =>
-          import SimpleExpression._
-          val value = rightOption match {
-            case Some(right) =>
-              op.get match {
-                case AddOperator.MINUS => numeric.minus(calcValueInner(left), calcValueInner(right))
-                case AddOperator.PLUS => numeric.plus(calcValueInner(left), calcValueInner(right))
-              }
-            case None => calcValueInner(left)
+  def calcValue[A](e: Expression)(implicit numeric: Integral[A]): A = {
+    def calcValueInner(expr: Expression): A = expr match {
+      case SimpleExpression(_, signOption, left, op, rightOption, _) =>
+        import SimpleExpression._
+        val value = rightOption match {
+          case Some(right) => op.get match {
+            case AddOperator.MINUS => numeric.minus(calcValueInner(left), calcValueInner(right))
+            case AddOperator.PLUS => numeric.plus(calcValueInner(left), calcValueInner(right))
           }
-          signOption match {
-            case None => value
-            case Some(sign) =>
-              if (sign == SignOperator.MINUS) numeric.negate(value)
-              else value
-          }
-        case Factor(_, left, op, right, _) =>
-          import Factor.Operator._
-          op match {
-            case POW => math.pow(numeric.toDouble(calcValueInner(left)), numeric.toDouble(calcValueInner(right.get))).asInstanceOf[T]
-            case ABS =>
-              require(right.isEmpty)
-              numeric.abs(calcValueInner(left))
-          }
-        case literal: Literal =>
-          import Literal.Type._
-          literal.literalType match {
-            case INTEGER_LITERAL => literal.toLong.asInstanceOf[T]
-            case REAL_LITERAL => literal.toDouble.asInstanceOf[T]
-            case CHARACTER_LITERAL =>
-              literal.dataType match {
-                case enumType: EnumerationType => enumType.intValue(literal.text).asInstanceOf[T]
-              }
-          }
-        case Term(_, left, op, right, _) =>
-          import Term.Operator._
-          op match {
-            case DIV => numeric.quot(calcValueInner(left), calcValueInner(right))
-            case MUL => numeric.times(calcValueInner(left), calcValueInner(right))
-          }
-        case AttributeExpression(_, symbol, attribute, None, dataType) =>
-          dataType match {
-            case scalar: ScalarType =>
-              attribute.name match {
-                case "left" => scalar.left.asInstanceOf[T]
-                case "right" => scalar.right.asInstanceOf[T]
-                case "low" => scalar.lowerBound.asInstanceOf[T]
-                case "high" => scalar.upperBound.asInstanceOf[T]
-                case "ascending" => scalar.ascending.asInstanceOf[T]
-              }
-          }
-        case e => println(e.position); println(e); throw new UnsupportedOperationException(expr.toString)
-      }
+          case None => calcValueInner(left)
+        }
+        signOption match {
+          case None => value
+          case Some(sign) =>
+            if (sign == SignOperator.MINUS) numeric.negate(value)
+            else value
+        }
+      case Factor(_, left, op, right, _) =>
+        import Factor.Operator._
+        op match {
+          case POW => math.pow(numeric.toDouble(calcValueInner(left)), numeric.toDouble(calcValueInner(right.get))).asInstanceOf[A]
+          case ABS =>
+            require(right.isEmpty)
+            numeric.abs(calcValueInner(left))
+        }
+      case literal: Literal =>
+        import Literal.Type._
+        literal.literalType match {
+          case INTEGER_LITERAL => literal.toLong.asInstanceOf[A]
+          case REAL_LITERAL => literal.toDouble.asInstanceOf[A]
+          case CHARACTER_LITERAL =>
+            literal.dataType match {
+              case enumType: EnumerationType => enumType.intValue(literal.text).asInstanceOf[A]
+            }
+        }
+      case Term(_, left, op, right, _) =>
+        import Term.Operator._
+        op match {
+          case DIV => numeric.quot(calcValueInner(left), calcValueInner(right))
+          case MUL => numeric.times(calcValueInner(left), calcValueInner(right))
+        }
+      case AttributeExpression(_, symbol, attribute, None, dataType) =>
+        dataType match {
+          case scalar: ScalarType =>
+            attribute.name match {
+              case "left" => scalar.left.asInstanceOf[A]
+              case "right" => scalar.right.asInstanceOf[A]
+              case "low" => scalar.lowerBound.asInstanceOf[A]
+              case "high" => scalar.upperBound.asInstanceOf[A]
+              case "ascending" => scalar.ascending.asInstanceOf[A]
+            }
+        }
+      case e => println(e.position); println(e); throw new UnsupportedOperationException(expr.toString)
     }
+
     return calcValueInner(e)
   }
 }

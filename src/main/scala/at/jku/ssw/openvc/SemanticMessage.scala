@@ -63,6 +63,7 @@ object SemanticMessage {
   val PROTECTED_TYPE_BODY_IN_PACKAGE = "protected type body declaration in package declaration is not allowed"
   val PROTECTED_TYPE_IN_BODY = "can not use the defined protected type in the body where it is defined"
   val PROTECTED_TYPE_INITIAL_VALUE_EXPRESSION = "a variable of a protected type can not have a initial value expression"
+  val PROTECTED_TYPE_BODY_NOT_DEFINED="no protected type body found for type %s"
   val PROCESS_WITH_SENSITIVITY_LIST_AND_WAIT = "a process with a sensitivity list can not contain an exlicit wait statement"
   val PROCESS_WITH_SENSITIVITY_LIST_AND_PROCEDURE_CALL = "a process with a sensitivity list can not call a procedure with a wait statement"
   val PROCEDURE_RETURN_VALUE = "A procedure can not return a value"

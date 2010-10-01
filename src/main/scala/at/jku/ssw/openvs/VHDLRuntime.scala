@@ -29,27 +29,27 @@ object VHDLRuntime {
     override def toString: String = "Runtime Exception: " + this.getMessage
   }
 
-  final class MutableBoolean(@BeanProperty var value: Boolean)
+  final case class MutableBoolean(@BeanProperty var value: Boolean)
 
-  final class MutableByte(@BeanProperty var value: Byte)
+  final case class MutableByte(@BeanProperty var value: Byte)
 
-  final class MutableCharacter(@BeanProperty var value: Char)
+  final case class MutableCharacter(@BeanProperty var value: Char)
 
-  final class MutableInteger(@BeanProperty var value: Int)
+  final case class MutableInteger(@BeanProperty var value: Int)
 
-  final class MutableReal(@BeanProperty var value: Double)
+  final case class MutableReal(@BeanProperty var value: Double)
 
-  final class MutableLong(@BeanProperty var value: Long)
+  final case class MutableLong(@BeanProperty var value: Long)
 
-  abstract sealed class RuntimeArray1D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double) T]
-  (val data: Array[T], private[this] val length: Int, val left: Int, val right: Int)(implicit m: scala.reflect.Manifest[T]) {
+  abstract sealed class RuntimeArray1D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double) A]
+  (val data: Array[A], private[this] val length: Int, val left: Int, val right: Int)(implicit m: scala.reflect.Manifest[A]) {
     val low = math.min(left, right)
     val high = math.max(left, right)
     val ascending = left < right
 
-    def getValue(index: Int): T = if (left < right) data(index - left) else data(left - index)
+    def getValue(index: Int): A = if (left < right) data(index - left) else data(left - index)
 
-    def setValue(index: Int, value: T): Unit = if (left < right) data(index - left) = value else data(left - index) = value
+    def setValue(index: Int, value: A) = if (left < right) data(index - left) = value else data(left - index) = value
 
     override def toString = data.mkString(" ")
 
@@ -62,10 +62,10 @@ object VHDLRuntime {
   final class RuntimeArray1DDouble(data: Array[Double], length: Int, left: Int, right: Int) extends RuntimeArray1D[Double](data, length, left, right)
   final class RuntimeArray1DAnyRef(data: Array[AnyRef], length: Int, left: Int, right: Int) extends RuntimeArray1D[AnyRef](data, length, left, right)
 
-  abstract sealed class RuntimeArray2D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double) T]
+  abstract sealed class RuntimeArray2D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double) A]
   (private[this] val dim1Length: Int, private[this] val dim1Left: Int, private[this] val dim1Right: Int, private[this] val dim2Length: Int, private[this] val dim2Left: Int, private[this] val dim2Right: Int)
-  (implicit m: scala.reflect.Manifest[T]) {
-    private[this] val data = Array.ofDim[T](dim1Length, dim2Length)
+  (implicit m: scala.reflect.Manifest[A]) {
+    private[this] val data = Array.ofDim[A](dim1Length, dim2Length)
 
     @throws(classOf[VHDLRuntimeException])
     def ascending(dim: Int) = dim match {
@@ -109,13 +109,13 @@ object VHDLRuntime {
       case _ => throw new VHDLRuntimeException("dimension:" + dim + " is out of range 0 to 1")
     }
 
-    def getValue(dim1: Int, dim2: Int): T = {
+    def getValue(dim1: Int, dim2: Int): A = {
       val index1 = if (dim1Left < dim1Right) (dim1 - dim1Left) else (dim1Left - dim1)
       val index2 = if (dim2Left < dim2Right) (dim2 - dim2Left) else (dim2Left - dim2)
       data(index1)(index2)
     }
 
-    def setValue(dim1: Int, dim2: Int, value: T): Unit = {
+    def setValue(dim1: Int, dim2: Int, value: A) = {
       val index1 = if (dim1Left < dim1Right) (dim1 - dim1Left) else (dim1Left - dim1)
       val index2 = if (dim2Left < dim2Right) (dim2 - dim2Left) else (dim2Left - dim2)
       data(index1)(index2) = value
@@ -143,12 +143,12 @@ object VHDLRuntime {
   final class RuntimeArray2DAnyRef(dim1Length: Int, dim1Left: Int, dim1Right: Int, dim2Length: Int, dim2Left: Int, dim2Right: Int)
           extends RuntimeArray2D[AnyRef](dim1Length, dim1Left, dim1Right, dim2Length, dim2Left, dim2Right)
 
-  abstract sealed class AbstractSignal[T] {
+  abstract sealed class AbstractSignal[A] {
     type TimeType = Long
 
-    var value: T
+    var value: A
 
-    def delayed(delay: TimeType): AbstractSignal[T]
+    def delayed(delay: TimeType): AbstractSignal[A]
 
     def stable(time: TimeType): Boolean
 
@@ -159,9 +159,9 @@ object VHDLRuntime {
     var active: Boolean
     var last_event: TimeType
     var last_active: TimeType
-    var last_value: T
+    var last_value: A
     var driving: Boolean
-    var driving_value: T
+    var driving_value: A
 
     override def toString = value.toString
   }
@@ -172,7 +172,7 @@ object VHDLRuntime {
     var outputStream: DataOutputStream = null
     private[this] var readOnlyMode = false
 
-    def open(external_Name: String, open_Kind: Int): Unit =
+    def open(external_Name: String, open_Kind: Int) =
       FILE_OPEN_KIND(open_Kind) match {
         case FILE_OPEN_KIND.READ_MODE =>
           inputStream = new DataInputStream(new BufferedInputStream(new FileInputStream(external_Name)))
@@ -181,7 +181,7 @@ object VHDLRuntime {
         case FILE_OPEN_KIND.APPEND_MODE => outputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(external_Name, true)))
       }
 
-    def close: Unit = {
+    def close() {
       if (inputStream != null) inputStream.close
       if (outputStream != null) outputStream.close
       inputStream = null
@@ -191,13 +191,13 @@ object VHDLRuntime {
     def isOpen: Boolean = this.inputStream != null || this.outputStream != null
 
     @throws(classOf[VHDLRuntimeException])
-    def writeChecks: Unit = {
+    def writeChecks {
       if (!isOpen) throw new VHDLRuntimeException("file is not open")
       if (readOnlyMode) throw new VHDLRuntimeException("file is in read mode")
     }
 
     @throws(classOf[VHDLRuntimeException])
-    def readChecks: Unit = {
+    def readChecks {
       if (!isOpen) throw new VHDLRuntimeException("file is not open")
       if (!readOnlyMode) throw new VHDLRuntimeException("file is in write mode")
     }
@@ -455,7 +455,7 @@ object VHDLRuntime {
   def file_open(file: RuntimeFile, external_Name: String): Unit = file_open(file, external_Name, FILE_OPEN_KIND.READ_MODE.id)
 
   @throws(classOf[VHDLRuntimeException])
-  def file_open(file: RuntimeFile, external_Name: String, open_Kind: Int): Unit =
+  def file_open(file: RuntimeFile, external_Name: String, open_Kind: Int) =
     try {
       if (file.isOpen) throw new VHDLRuntimeException("file is alreay open")
       file.open(external_Name, open_Kind)
@@ -476,7 +476,7 @@ object VHDLRuntime {
       case fileNotFoundException: java.io.FileNotFoundException => FILE_OPEN_STATUS.NAME_ERROR.id
     }
 
-  def file_close(file: RuntimeFile): Unit = file.close
+  def file_close(file: RuntimeFile) = file.close
 
   //TODO read and write array types and record types
   def readB(file: RuntimeFile): Byte = {
@@ -484,7 +484,7 @@ object VHDLRuntime {
     file.inputStream.readByte
   }
 
-  def write(file: RuntimeFile, value: Byte): Unit = {
+  def write(file: RuntimeFile, value: Byte) {
     file.writeChecks
     file.outputStream.writeByte(value)
   }
@@ -494,7 +494,7 @@ object VHDLRuntime {
     file.inputStream.readBoolean
   }
 
-  def write(file: RuntimeFile, value: Boolean): Unit = {
+  def write(file: RuntimeFile, value: Boolean) {
     file.writeChecks
     file.outputStream.writeBoolean(value)
   }
@@ -504,7 +504,7 @@ object VHDLRuntime {
     file.inputStream.readChar
   }
 
-  def write(file: RuntimeFile, value: Char): Unit = {
+  def write(file: RuntimeFile, value: Char) {
     file.writeChecks
     file.outputStream.writeChar(value)
   }
@@ -514,7 +514,7 @@ object VHDLRuntime {
     file.inputStream.readInt
   }
 
-  def write(file: RuntimeFile, value: Int): Unit = {
+  def write(file: RuntimeFile, value: Int) {
     file.writeChecks
     file.outputStream.writeInt(value)
   }
@@ -524,7 +524,7 @@ object VHDLRuntime {
     file.inputStream.readDouble
   }
 
-  def write(file: RuntimeFile, value: Double): Unit = {
+  def write(file: RuntimeFile, value: Double) {
     file.writeChecks
     file.outputStream.writeDouble(value)
   }
@@ -534,7 +534,7 @@ object VHDLRuntime {
     file.inputStream.readLong
   }
 
-  def write(file: RuntimeFile, value: Long): Unit = {
+  def write(file: RuntimeFile, value: Long) {
     file.writeChecks
     file.outputStream.writeLong(value)
   }

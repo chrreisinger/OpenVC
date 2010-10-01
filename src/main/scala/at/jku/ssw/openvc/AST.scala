@@ -57,11 +57,10 @@ object Identifier {
 final class Identifier(val position: Position, val text: String) extends Locatable with java.io.Serializable {
   override val toString: String = this.text
 
-  override def equals(other: Any): Boolean =
-    other match {
-      case id: Identifier => id.text == this.text
-      case _ => false
-    }
+  override def equals(other: Any): Boolean = other match {
+    case id: Identifier => id.text == this.text
+    case _ => false
+  }
 
   override def hashCode = text.hashCode
 }
@@ -100,7 +99,7 @@ final class SubTypeIndication(val resolutionFunction: Option[SelectedName], val 
   val position = resolutionFunction.getOrElse(typeName).position
 }
 
-final class Signature(val parameterList: Seq[SelectedName], val returnType: Option[SelectedName])
+final class Signature(val parameterList: Option[Seq[SelectedName]], val returnType: Option[SelectedName])
 
 object Aggregate {
   final case class ElementAssociation(choices: Option[Choices], expression: Expression)
@@ -338,7 +337,7 @@ object EntityClass extends Enumeration {
   LITERAL, UNITS, GROUP, NATURE, SUBNATURE, QUANTITY, TERMINAL = Value
 }
 
-final case class AliasDeclaration(position: Position, designator: Identifier, subType: Option[SubTypeIndication], name: Name, signature: Option[Signature]) extends DeclarativeItem
+final case class AliasDeclaration(position: Position, identifier: Identifier, subType: Option[SubTypeIndication], name: Name, signature: Option[Signature]) extends DeclarativeItem
 
 final case class AttributeSpecification(position: Position, identifier: Identifier, entityList: Either[Seq[(Identifier, Option[Signature])], Identifier], entityClass: EntityClass.Value, expression: Expression) extends DeclarativeItem
 
@@ -403,7 +402,7 @@ final case class ConfigurationDeclaration(identifier: Identifier, declarativeIte
         extends LibraryUnit
 
 final case class ArchitectureDeclaration(identifier: Identifier, declarativeItems: Seq[DeclarativeItem], entityName: SelectedName,
-                                         statementList: Seq[ConcurrentStatement], endIdentifier: Option[Identifier],
+                                         concurrentStatements: Seq[ConcurrentStatement], endIdentifier: Option[Identifier],
                                          symbol: ArchitectureSymbol = null, entitySymbol: EntitySymbol = null)
         extends LibraryUnit
 
