@@ -599,27 +599,20 @@ object ByteCodeGenerator {
               (relation.left.dataType: @unchecked) match {
                 case arrayType: ArrayType =>
                   relation.operator match {
-                    case EQ =>
+                    case EQ | NEQ =>
                       if (arrayType.dimensions.size == 1) INVOKESTATIC("java/util/Arrays", "equals", "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
                       else INVOKESTATIC("java/util/Arrays", "deepEquals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z")
+
+                      if (relation.operator == EQ) if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)
+                      else if (jumpInverted) IFNE(jumpLabel) else IFEQ(jumpLabel)
+                    case LT | LEQ =>
+                      INVOKESTATIC(RUNTIME, relation.operator.toString, "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
                       if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)
-                    case NEQ =>
-                      if (arrayType.dimensions.size == 1) INVOKESTATIC("java/util/Arrays", "equals", "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
-                      else INVOKESTATIC("java/util/Arrays", "deepEquals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z")
-                      if (jumpInverted) IFNE(jumpLabel) else IFEQ(jumpLabel)
-                    case LT =>
-                      INVOKESTATIC(RUNTIME, "LT", "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
-                      if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)
-                    case LEQ =>
-                      INVOKESTATIC(RUNTIME, "LEQ", "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
-                      if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)
-                    //The relations > (greater than) and >= (greater than or equal) are defined to be the complements of the <= and < operators,
-                    //respectively, for the same two operands.
-                    case GT =>
-                      INVOKESTATIC(RUNTIME, "LEQ", "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
-                      if (jumpInverted) IFNE(jumpLabel) else IFEQ(jumpLabel)
-                    case GEQ =>
-                      INVOKESTATIC(RUNTIME, "LT", "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
+                    case GT | GEQ =>
+                      //The relations > (greater than) and >= (greater than or equal) are defined to be the complements of the <= and < operators,
+                      //respectively, for the same two operands.
+                      val operatorName = if (relation.operator == GT) "LEQ" else "LT"
+                      INVOKESTATIC(RUNTIME, operatorName, "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
                       if (jumpInverted) IFNE(jumpLabel) else IFEQ(jumpLabel)
                   }
                 case recordType: RecordType =>
@@ -1684,7 +1677,8 @@ object ByteCodeGenerator {
                 case scalarType: ScalarType => INVOKEVIRTUAL("java/lang/StringBuilder", "append", "(" + getJVMDataType(fieldType) + ")Ljava/lang/StringBuilder;")
                 case _: AccessType | _: RecordType => INVOKEVIRTUAL("java/lang/StringBuilder", "append", "(Ljava/lang/Object;)Ljava/lang/StringBuilder;")
                 case arrayType: ArrayType =>
-                  INVOKESTATIC("java/util/Arrays", "toString", "(" + getJVMDataType(arrayType) + ")Ljava/lang/String;")
+                  if (arrayType.dimensions.size == 1) INVOKESTATIC("java/util/Arrays", "toString", "(" + getJVMDataType(arrayType) + ")Ljava/lang/String;")
+                  else INVOKESTATIC("java/util/Arrays", "deepToString", "([Ljava/lang/Object;)Ljava/lang/String;")
                   INVOKEVIRTUAL("java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;")
               }
             }
@@ -1825,7 +1819,8 @@ object ByteCodeGenerator {
                   INVOKEVIRTUAL(getJVMName(fieldType), "equals", "(Ljava/lang/Object;)Z")
                   IFEQ(falseLabel)
                 case arrayType: ArrayType =>
-                  INVOKESTATIC("java/util/Arrays", "equals", "(" + (getJVMDataType(arrayType) * 2) + ")Z")
+                  if (arrayType.dimensions.size == 1) INVOKESTATIC("java/util/Arrays", "equals", "(" + (getJVMDataType(arrayType) * 2) + ")Z")
+                  else INVOKESTATIC("java/util/Arrays", "deepEquals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z")
                   IFEQ(falseLabel)
               }
             }
