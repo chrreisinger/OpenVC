@@ -18,7 +18,7 @@
 
 package at.jku.ssw.openvc.codeGenerator
 
-import org.objectweb.asm.{ClassWriter, Label, Opcodes}
+import org.objectweb.asm.{ClassWriter, Label, Opcodes, Type}
 
 import at.jku.ssw.openvc.ast._
 import at.jku.ssw.openvc.ast.concurrentStatements._
@@ -30,7 +30,7 @@ import at.jku.ssw.openvc.VHDLCompiler.Configuration
 
 import at.jku.ssw.openvs.RuntimeAnnotations._
 import at.jku.ssw.openvs.VHDLRuntime
-import at.jku.ssw.openvs.VHDLRuntime._
+import at.jku.ssw.openvs.VHDLRuntime.{EnumerationType => EnumerationTypeInterface, RecordType => RecordTypeInterface, _}
 //http://groups.google.com/group/jvm-languages/browse_thread/thread/a355dfceb3fc56cb# Optimizations?
 //http://wikis.sun.com/display/HotSpotInternals/PerformanceTechniques
 //opcodes currently not used: jsr,monitorenter,monitorexit,pop2,ret,swap
@@ -290,8 +290,8 @@ object ByteCodeGenerator {
                     pushInt(dim.to)
                     INVOKESTATIC(RUNTIME, "getArrayIndex1D", "(III)I")
                   }
-                  i match {
-                    case 1 => arrayLoadInstruction(constrainedArrayType.elementType)
+                  indexes.size - 1 - i match {
+                    case 0 => arrayLoadInstruction(constrainedArrayType.elementType)
                     case _ => AALOAD
                   }
                 }
@@ -467,9 +467,7 @@ object ByteCodeGenerator {
                 arrayStoreInstruction(dataType)
               }
             }
-          case INTEGER_LITERAL => pushInt(literal.toInt)
-          case REAL_LITERAL => pushDouble(literal.toDouble)
-          case CHARACTER_LITERAL => pushInt(literal.dataType.asInstanceOf[EnumerationType].intValue(literal.text.replace("'", "")))
+          case INTEGER_LITERAL | REAL_LITERAL | CHARACTER_LITERAL => pushAnyVal(literal.value)
           case NULL_LITERAL => ACONST_NULL
         }
       }
@@ -783,7 +781,11 @@ object ByteCodeGenerator {
 
       val trueJumpLabel = RichLabel(mv)
       val falseJumpLabel = RichLabel(mv)
-      acceptExpression(assertStmt.condition, mv, Some(new ExpressionContext(trueJumpLabel = trueJumpLabel, falseJumpLabel = falseJumpLabel, kind = ExpressionContext.JumpKind.TrueJump)))
+      assertStmt.condition match {
+      //do not generate condition code for assert statements like assert false ..., assert true ...
+        case Literal(_, _, _, dataType, value) if ((value == 0 || value == 1) && dataType == SymbolTable.booleanType) =>
+        case _ => acceptExpression(assertStmt.condition, mv, Some(new ExpressionContext(trueJumpLabel = trueJumpLabel, falseJumpLabel = falseJumpLabel, kind = ExpressionContext.JumpKind.TrueJump)))
+      }
       falseJumpLabel()
 
       mv.LDC(context.designUnit)
@@ -1021,7 +1023,7 @@ object ByteCodeGenerator {
       mv.endMethod
 
       cw.createMethod(flags = Opcodes.ACC_ABSTRACT, name = "instantiate", parameters = getJVMParameterList(generics) + getJVMParameterList(ports), returnType = "V")
-      cw.writeToFile
+      cw.writeToFile()
     }
 
     def visitAliasDeclaration(aliasDeclaration: AliasDeclaration, context: Context) {
@@ -1031,13 +1033,13 @@ object ByteCodeGenerator {
     def visitPackageDeclaration(packageDeclaration: PackageDeclaration) {
       val cw = createClass(Opcodes.ACC_ABSTRACT, packageDeclaration.identifier.text + "_header", "java/lang/Object", classOf[PackageHeaderAnnotation])
       initItems(packageDeclaration.identifier.text, Opcodes.ACC_STATIC + Opcodes.ACC_FINAL, "<clinit>", packageDeclaration.declarativeItems, cw)
-      cw.writeToFile
+      cw.writeToFile()
     }
 
     def visitPackageBodyDeclaration(packageBodyDeclaration: PackageBodyDeclaration) {
       val cw = createClass(Opcodes.ACC_FINAL, packageBodyDeclaration.identifier.text, packageBodyDeclaration.identifier.text + "_header", classOf[PackageBodyAnnotation])
       initItems(packageBodyDeclaration.identifier.text, Opcodes.ACC_STATIC + Opcodes.ACC_FINAL, "<clinit>", packageBodyDeclaration.declarativeItems, cw)
-      cw.writeToFile
+      cw.writeToFile()
     }
 
     def visitArchitectureDeclaration(architectureDeclaration: ArchitectureDeclaration) {
@@ -1085,7 +1087,7 @@ object ByteCodeGenerator {
       }
       val newContext = Context(cw, null, Map(), architectureDeclaration.identifier.text)
       acceptList(architectureDeclaration.concurrentStatements, newContext)
-      cw.writeToFile
+      cw.writeToFile()
     }
 
     def visitConfigurationDeclaration(configurationDeclaration: ConfigurationDeclaration) {
@@ -1106,7 +1108,7 @@ object ByteCodeGenerator {
       mv.endMethod
 
       acceptList(entityDeclaration.concurrentStatements, Context(cw = cw, mv = null, loopLabels = Map(), designUnit = entityDeclaration.identifier.text))
-      cw.writeToFile
+      cw.writeToFile()
     }
 
     def visitReportStatement(reportStmt: ReportStatement, context: Context) {
@@ -1202,8 +1204,8 @@ object ByteCodeGenerator {
                   mv.pushInt(dim.to)
                   mv.INVOKESTATIC(RUNTIME, "getArrayIndex1D", "(III)I")
                 }
-                i match {
-                  case 1 => mv.arrayLoadInstruction(constraintArray.elementType)
+                indexes.size - 1 - i match {
+                  case 0 => mv.arrayLoadInstruction(constraintArray.elementType)
                   case _ => mv.AALOAD
                 }
               }
@@ -1226,25 +1228,26 @@ object ByteCodeGenerator {
           loadTarget(mv, expression)
       }
 
+    def checkIsInRange(mv: RichMethodVisitor, dataType: DataType) = dataType match {
+      case scalarType: ScalarType =>
+        if (scalarType.isSubType) {
+          import mv._
+
+          pushAnyVal(scalarType.lowerBound)
+          pushAnyVal(scalarType.upperBound)
+          scalarType match {
+            case _: IntegerType | _: RealType | _: PhysicalType =>
+              val typeString = getJVMDataType(scalarType)
+              INVOKESTATIC(RUNTIME, "checkIsInRange", "(" + (typeString * 3) + ")" + typeString)
+            case enumType: EnumerationType => INVOKESTATIC(enumType.baseType.get.fullName, "checkIsInRange", "(III)I")
+          }
+        }
+      //TODO add check for record and array types
+      case _ =>
+    }
+
     def visitVariableAssignmentStatement(varAssignStmt: VariableAssignmentStatement, context: Context) {
       import context._
-
-      def checkIsInRange(dataType: DataType) = dataType match {
-        case scalarType: ScalarType =>
-          if (scalarType.isSubType) {
-            import mv._
-
-            pushAnyVal(scalarType.lowerBound)
-            pushAnyVal(scalarType.upperBound)
-            scalarType match {
-              case _: IntegerType | _: RealType | _: PhysicalType =>
-                val typeString = getJVMDataType(scalarType)
-                INVOKESTATIC(RUNTIME, "checkIsInRange", "(" + (typeString * 3) + ")" + typeString)
-              case enumType: EnumerationType => INVOKESTATIC(enumType.baseType.get.fullName, "checkIsInRange", "(III)I")
-            }
-          }
-        case _ =>
-      }
 
       mv.createDebugLineNumberInformation(varAssignStmt)
       varAssignStmt match {
@@ -1253,11 +1256,11 @@ object ByteCodeGenerator {
             case Left(name) =>
               val (target, targetType) = loadTarget(mv, stmt.nameExpression)
               target.owner match {
-                case _: SubprogramSymbol | _: PackageBodySymbol | _: PackageHeaderSymbol =>
+                case _: SubprogramSymbol | _: PackageBodySymbol | _: PackageHeaderSymbol | _: RuntimeSymbol =>
                 case _ => mv.ALOAD(0)
               }
               acceptExpression(stmt.expression, mv)
-              checkIsInRange(targetType)
+              checkIsInRange(mv, targetType)
               storeSymbol(mv, target, targetType)
             case Right(aggregate) => error("not implemented")
           }
@@ -1355,7 +1358,7 @@ object ByteCodeGenerator {
 
       initItems(context.designUnit, Opcodes.ACC_STATIC, "init", blockStmt.declarativeItems, cw)
       acceptList(blockStmt.statementList, Context(cw = cw, mv = null, loopLabels = Map(), designUnit = context.designUnit))
-      cw.writeToFile
+      cw.writeToFile()
       error("not implemented")
     }
 
@@ -1504,7 +1507,7 @@ object ByteCodeGenerator {
         RETURN
         endMethod
       }
-      cw.writeToFile
+      cw.writeToFile()
     }
 
     def visitSignalAssignmentStatement(signalAssignStmt: SignalAssignmentStatement, context: Context) {
@@ -1516,13 +1519,11 @@ object ByteCodeGenerator {
     }
 
     def loadDefaultValue(dataType: DataType, mv: RichMethodVisitor) {
-      import mv._
-
       (dataType: @unchecked) match {
-        case scalarType: ScalarType => pushAnyVal(scalarType.left)
+        case scalarType: ScalarType => mv.pushAnyVal(scalarType.left)
         //case enumType: EnumerationType => GETSTATIC(enumType.fullName, enumType.elements.head.replace("\'", ""), getJVMDataType(enumType))
         /*case constrainedArrayType: ConstrainedArrayType =>
-          constrainedArrayType.dimensions.map {
+          constrainedArrayType.dimensions.foreach {
             dim =>
               pushInt((dim.from - dim.to).abs)
               pushInt(dim.from)
@@ -1532,16 +1533,47 @@ object ByteCodeGenerator {
           INVOKESTATIC(RUNTIME, "create" + name.split("/").last, "(" + ("I" * (3 * constrainedArrayType.dimensions.size)) + ")" + "L" + name + ";")
         case unconstrainedArrayType: UnconstrainedArrayType => ACONST_NULL //TODO
         */
-        case arrayType: ArrayType => ACONST_NULL //TODO
+        case arrayType: ConstrainedArrayType =>
+          //generates this code: int[] x = (int[])VHDLRuntime.fill(6, Integer.valueOf(Integer.MIN_VALUE), Manifest..MODULE$.Int());
+          arrayType.dimensions.foreach(dim => mv.pushInt(dim.size))
+          arrayType.elementType match {
+            case scalarType: ScalarType =>
+              val scalaType = scalarType match {
+                case _: IntegerType => "Int"
+                case _: RealType => "Double"
+                case _: PhysicalType => "Long"
+                case enumeration: EnumerationType =>
+                  if (enumeration == SymbolTable.booleanType || enumeration == SymbolTable.bitType) "Boolean"
+                  else if (enumeration.elements.size <= Byte.MaxValue) "Byte"
+                  else "Char"
+              }
+              loadDefaultValue(arrayType.elementType, mv)
+              import mv._
+              INVOKESTATIC(getBoxedName(arrayType.elementType), "valueOf", "(" + getJVMDataType(arrayType.elementType) + ")" + getBoxedType(arrayType.elementType))
+              GETSTATIC("scala/reflect/Manifest$", "MODULE$", "Lscala/reflect/Manifest$;")
+              INVOKEVIRTUAL("scala/reflect/Manifest$", scalaType, "()Lscala/reflect/AnyValManifest;")
+              INVOKESTATIC(RUNTIME, "fill", "(" + ("I" * arrayType.dimensions.size) + "Ljava/lang/Object;Lscala/reflect/ClassManifest;)" + ("[" * (arrayType.dimensions.size - 1)) + "Ljava/lang/Object;")
+            case dataType =>
+              //generates this code:record[] x = (record[])VHDLRuntime.fill(6, record.class, ClassManifest..MODULE$.classType(record.class));
+              import mv._
+              LDC(Type.getType(getJVMDataType(dataType)))
+              GETSTATIC("scala/reflect/ClassManifest$", "MODULE$", "Lscala/reflect/ClassManifest$;")
+              LDC(Type.getType(getJVMDataType(dataType)))
+              INVOKEVIRTUAL("scala/reflect/ClassManifest$", "classType", "(Ljava/lang/Class;)Lscala/reflect/ClassManifest;")
+              INVOKESTATIC(RUNTIME, "fill", "(" + ("I" * arrayType.dimensions.size) + "Ljava/lang/Class;Lscala/reflect/ClassManifest;)" + ("[" * (arrayType.dimensions.size - 1)) + "Ljava/lang/Object;")
+          }
+          mv.CHECKCAST(("[" * arrayType.dimensions.size) + getJVMDataType(arrayType.elementType))
         case _: RecordType | _: ProtectedType =>
+          import mv._
           NEW(dataType.fullName)
           DUP
           INVOKESPECIAL(dataType.fullName, "<init>", "()V")
         case fileType: FileType =>
+          import mv._
           NEW(getJVMName(dataType))
           DUP
           INVOKESPECIAL(getJVMName(dataType), "<init>", "()V")
-        case _: AccessType => ACONST_NULL
+        case _: AccessType => mv.ACONST_NULL
       }
     }
 
@@ -1564,7 +1596,9 @@ object ByteCodeGenerator {
           import context._
 
           variableDeclaration.initialValueExpression match {
-            case Some(expression) => acceptExpression(expression, mv)
+            case Some(expression) =>
+              acceptExpression(expression, mv)
+              checkIsInRange(mv, symbol.dataType)
             case None =>
               mv.createDebugLineNumberInformation(variableDeclaration)
               loadDefaultValue(symbol.dataType, mv)
@@ -1575,7 +1609,11 @@ object ByteCodeGenerator {
       error("not implemented") //initSymbols(signalDeclaration.symbols, context)
 
     def visitConstantDeclaration(constantDeclaration: ConstantDeclaration, context: Context) =
-      for (defaultExpression <- constantDeclaration.defaultExpression) initSymbols(constantDeclaration.symbols, context)(symbol => acceptExpression(defaultExpression, context.mv))
+      for (defaultExpression <- constantDeclaration.defaultExpression) initSymbols(constantDeclaration.symbols, context) {
+        symbol =>
+          acceptExpression(defaultExpression, context.mv)
+          checkIsInRange(context.mv, symbol.dataType)
+      }
 
     def visitFileDeclaration(fileDeclaration: FileDeclaration, context: Context) {
       import context._
@@ -1617,7 +1655,7 @@ object ByteCodeGenerator {
       }
       typeDeclaration.dataType match {
         case recordType: RecordType =>
-          val cw = createInnerClass(recordType, classOf[RecordAnnotation], createEmptyConstructor = false)
+          val cw = createInnerClass(recordType, classOf[RecordAnnotation], Array(p(classOf[RecordTypeInterface])), createEmptyConstructor = false)
           val methodDesc = recordType.elementList.map(element => getJVMDataType(element._2)).mkString
           for ((name, dataType) <- recordType.elementList) {
             cw.visitField(Opcodes.ACC_PUBLIC, name, getJVMDataType(dataType))
@@ -1687,6 +1725,25 @@ object ByteCodeGenerator {
             INVOKEVIRTUAL("java/lang/StringBuilder", "toString", "()Ljava/lang/String;")
             ARETURN
             endLabel
+            visitLocalVariable("this", "L" + recordType.fullName + ";", null, startLabel, endLabel, 0)
+            endMethod
+          }
+          {
+            /*
+            generates this code:
+              	public Object copy(){
+		              return copy();
+	            }
+            */
+            val mv = cw.createMethod(name = "copy", returnType = "Ljava/lang/Object;")
+            val startLabel = RichLabel(mv)
+            val endLabel = RichLabel(mv)
+            import mv._
+            startLabel()
+            ALOAD(0)
+            INVOKEVIRTUAL(getJVMName(recordType), "copy", "()" + getJVMDataType(recordType))
+            ARETURN
+            endLabel()
             visitLocalVariable("this", "L" + recordType.fullName + ";", null, startLabel, endLabel, 0)
             endMethod
           }
@@ -1838,9 +1895,9 @@ object ByteCodeGenerator {
             visitLocalVariable("that", "L" + recordType.fullName + ";", null, thatScopeLabel, afterIfStmtLabel, 2)
             endMethod
           }
-          cw.writeToFile
+          cw.writeToFile()
         case enumType: EnumerationType =>
-          val cw = createInnerClass(enumType, classOf[EnumerationAnnotation], Array(p(classOf[EnumType])))
+          val cw = createInnerClass(enumType, classOf[EnumerationAnnotation], Array(p(classOf[EnumerationTypeInterface])))
           cw.visitField(Opcodes.ACC_PRIVATE + Opcodes.ACC_FINAL + Opcodes.ACC_STATIC, "valuesArray", "[Ljava/lang/String;")
           val dataType = getJVMDataType(enumType)
           for ((enumValueName, index) <- enumType.elements.zipWithIndex) {
@@ -1954,7 +2011,7 @@ object ByteCodeGenerator {
             ARETURN
             endMethod
           }
-          cw.writeToFile
+          cw.writeToFile()
         case protectedType: ProtectedType if (typeDeclaration.isInstanceOf[ProtectedTypeBodyDeclaration]) =>
           val protectedTypeBody = typeDeclaration.asInstanceOf[ProtectedTypeBodyDeclaration]
           val cw = createInnerClass(protectedType, classOf[ProtectedTypeBodyAnnotation], createEmptyConstructor = false)
@@ -1965,7 +2022,7 @@ object ByteCodeGenerator {
           initItems(context.designUnit, 0, "<init>", protectedTypeBody.declarativeItems, cw, Some(mv))
           mv.RETURN
           mv.endMethod
-          cw.writeToFile
+          cw.writeToFile()
         case _ =>
       }
     }

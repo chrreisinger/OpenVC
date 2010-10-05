@@ -19,7 +19,6 @@
 package at.jku.ssw.openvc
 
 import at.jku.ssw.openvc.ast.expressions._
-import Numeric._
 import at.jku.ssw.openvc.symbolTable.{ScalarType, EnumerationType}
 
 object StaticExpressionCalculator {

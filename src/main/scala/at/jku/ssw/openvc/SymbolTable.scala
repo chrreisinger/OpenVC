@@ -184,7 +184,7 @@ abstract sealed class DataType extends Serializable {
 }
 
 @SerialVersionUID(-8688092999207243317L)
-final case class ProtectedType(name: String, val subprograms: Seq[SubprogramSymbol], owner: Symbol, implemented: Boolean) extends DataType with HasOwner
+final case class ProtectedType(name: String, subprograms: Seq[SubprogramSymbol], owner: Symbol, implemented: Boolean) extends DataType with HasOwner
 
 trait HasOwner {
   val owner: Symbol
@@ -221,7 +221,7 @@ final case class UnconstrainedRangeType(elementType: DataType) extends RangeType
 
 @SerialVersionUID(6084663176503609733L)
 final case class ConstrainedRangeType(elementType: DataType, from: Int, to: Int) extends RangeType {
-  val size = to - from + 1
+  val size = (to - from + 1).abs
 }
 
 abstract sealed class CompositeType extends DataType
@@ -317,6 +317,7 @@ final case class IntegerType(name: String, left: Int, right: Int, baseType: Opti
   val ascending = left < right
 
   val isSubType: Boolean = baseType.isDefined
+  override val toString = "foo"
 }
 
 @SerialVersionUID(5078432353614332831L)
@@ -379,10 +380,12 @@ abstract sealed class SubprogramSymbol extends Symbol {
   val parameters: Seq[RuntimeSymbol]
   val flags: BitSet
   val owner: Symbol
+  var implemented: Boolean
 }
 @SerialVersionUID(-7427096092567821868L)
 final case class FunctionSymbol(identifier: Identifier, parameters: Seq[RuntimeSymbol], returnType: DataType, owner: Symbol, flags: BitSet, isPure: Boolean) extends SubprogramSymbol {
   var implemented = false
+  override val toString = "FunctionSymbol"
 }
 
 @SerialVersionUID(1492091303227052136L)
@@ -455,25 +458,27 @@ abstract sealed class RuntimeSymbol extends Symbol {
   var owner: Symbol
   override lazy val attributes = dataType.attributes
 
-  def makeCopy(identifier: Identifier, dataType: DataType): RuntimeSymbol
+  def makeCopy(identifier: Identifier, dataType: DataType, owner: Symbol = this): RuntimeSymbol
 }
 
 @SerialVersionUID(6644707794631509820L)
 //isDefined is used for deferred constants
 final case class ConstantSymbol(identifier: Identifier, dataType: DataType, index: Int, var owner: Symbol, isOptional: Boolean = false, isDefined: Boolean = true, isDeferred: Boolean = false) extends RuntimeSymbol {
-  def makeCopy(identifier: Identifier, dataType: DataType) = this.copy(identifier = identifier, dataType = dataType, owner = this)
+  def makeCopy(identifier: Identifier, dataType: DataType, owner: Symbol = this) = this.copy(identifier = identifier, dataType = dataType, owner = owner)
+
+  override val toString = "ConstantSymbol"
 }
 
 @SerialVersionUID(2790429723019134248L)
 final case class FileSymbol(identifier: Identifier, dataType: DataType, index: Int, var owner: Symbol, isOptional: Boolean = false) extends RuntimeSymbol {
-  def makeCopy(identifier: Identifier, dataType: DataType) = this.copy(identifier = identifier, dataType = dataType, owner = this)
+  def makeCopy(identifier: Identifier, dataType: DataType, owner: Symbol = this) = this.copy(identifier = identifier, dataType = dataType, owner = owner)
 }
 
 @SerialVersionUID(3016929919136295810L)
 final case class SignalSymbol(identifier: Identifier, dataType: DataType, modifier: RuntimeSymbol.Modifier, signalType: Option[SignalDeclaration.Type], index: Int, var owner: Symbol, isOptional: Boolean = false) extends RuntimeSymbol {
   @transient var driver: ASTNode = null
 
-  def makeCopy(identifier: Identifier, dataType: DataType) = this.copy(identifier = identifier, dataType = dataType, owner = this)
+  def makeCopy(identifier: Identifier, dataType: DataType, owner: Symbol = this) = this.copy(identifier = identifier, dataType = dataType, owner = owner)
 
   val isResolved: Boolean = this.dataType.resolutionFunction.nonEmpty
 
@@ -498,5 +503,5 @@ final case class SignalSymbol(identifier: Identifier, dataType: DataType, modifi
 
 @SerialVersionUID(1933275516688445881L)
 final case class VariableSymbol(identifier: Identifier, dataType: DataType, modifier: RuntimeSymbol.Modifier, index: Int, var owner: Symbol, isOptional: Boolean = false) extends RuntimeSymbol {
-  def makeCopy(identifier: Identifier, dataType: DataType) = this.copy(identifier = identifier, dataType = dataType, owner = this)
+  def makeCopy(identifier: Identifier, dataType: DataType, owner: Symbol = this) = this.copy(identifier = identifier, dataType = dataType, owner = owner)
 }

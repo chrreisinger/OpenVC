@@ -42,11 +42,11 @@ object SemanticAnalyzer {
     else {
       dataType match {
         case i: IntegerType => expectedDataType match {
-          case ei: IntegerType => dataType == SymbolTable.universalIntegerType || i.baseType.getOrElse(i) == ei.baseType.getOrElse(ei)
+          case ei: IntegerType => expectedDataType == SymbolTable.universalIntegerType || dataType == SymbolTable.universalIntegerType || i.baseType.getOrElse(i) == ei.baseType.getOrElse(ei)
           case _ => false
         }
         case r: RealType => expectedDataType match {
-          case er: RealType => dataType == SymbolTable.universalRealType || r.baseType.getOrElse(r) == er.baseType.getOrElse(er)
+          case er: RealType => expectedDataType == SymbolTable.universalRealType || dataType == SymbolTable.universalRealType || r.baseType.getOrElse(r) == er.baseType.getOrElse(er)
           case _ => false
         }
         case e: EnumerationType => expectedDataType match {
@@ -55,7 +55,10 @@ object SemanticAnalyzer {
         }
         case NullType => expectedDataType.isInstanceOf[AccessType]
         case accessType: AccessType => expectedDataType == NullType
-        case a: ArrayType => isCompatible(a.elementType, expectedDataType) //TODO check element type and range
+        case a: ArrayType => expectedDataType match {
+          case ea: ArrayType => isCompatible(a.elementType, ea.elementType) //TODO check element type and range
+          case _ => false
+        }
         case _ => false
       }
     }
@@ -102,7 +105,7 @@ object SemanticAnalyzer {
           require(signature.isEmpty)
           require(expression.isEmpty)
           symbol.attributes.get(identifier.text) match {
-            case Some(attribute) => attribute.copy(parent = symbol)
+            case Some(attribute) => attribute.copy(owner = symbol)
             case None =>
               addError(identifier, SemanticMessage.NOT_FOUND, "attribute", identifier.text)
               null
@@ -264,8 +267,12 @@ object SemanticAnalyzer {
 
   type ReturnType = (ASTNode, Context)
 
-  def acceptDeclarativeItems(n: Seq[DeclarativeItem], parentSymbol: Symbol, context: Context): (Seq[DeclarativeItem], Context) = {
-    val (list, newContext) = acceptList(n, parentSymbol, context)
+  def acceptDeclarativeItems(n: Seq[DeclarativeItem], owner: Symbol, context: Context): (Seq[DeclarativeItem], Context) = {
+    def checkIfImplemented(symbol: SubprogramSymbol) =
+      if (!symbol.implemented && !owner.isInstanceOf[PackageHeaderSymbol])
+        addError(owner, SemanticMessage.NOT_FOUND, "body for function", symbol.name)
+
+    val (list, newContext) = acceptList(n, owner, context)
     newContext.symbolTable.currentScope.values.foreach {
       _ match {
         case typeSymbol: TypeSymbol => typeSymbol.dataType match {
@@ -276,25 +283,30 @@ object SemanticAnalyzer {
             //appearing immediately within a given declarative region must have exactly one corresponding protected
             //type declaration appearing immediately within the same declarative region and textually prior to the
             //protected type body.
-            if (!protectedType.implemented && !parentSymbol.isInstanceOf[PackageHeaderSymbol])
-              addError(parentSymbol, SemanticMessage.PROTECTED_TYPE_BODY_NOT_DEFINED, typeSymbol.name)
+            if (!protectedType.implemented && !owner.isInstanceOf[PackageHeaderSymbol])
+              addError(owner, SemanticMessage.PROTECTED_TYPE_BODY_NOT_DEFINED, typeSymbol.name)
           //For each incomplete type declaration there must be a corresponding full type declaration with the same identifier.
           // This full type declaration must occur later and immediately within the same declarative part as the incomplete type declaration to which it corresponds.
           case IncompleteType => addError(typeSymbol, SemanticMessage.INCOMPLETE_TYPE_NOT_DEFINED, typeSymbol.name)
           case _ =>
         }
+        //For each subprogram declaration, there shall be a corresponding body. If both a declaration and a body are given, the subprogram specification of the body
+        //shall conform (see 2.7) to the subprogram specification of the declaration. Furthermore, both the declaration and the body must occur immediately
+        //within the same declarative region (see 10.1).
+        case ListOfFunctions(_, functions) => functions.foreach(checkIfImplemented)
+        case ListOfProcedures(_, procedures) => procedures.foreach(checkIfImplemented)
         case _ =>
       }
     }
     (list, newContext)
   }
 
-  def acceptList[A <: ASTNode](n: Seq[A], parentSymbol: Symbol, context: Context): (Seq[A], Context) = {
+  def acceptList[A <: ASTNode](n: Seq[A], owner: Symbol, context: Context): (Seq[A], Context) = {
     @tailrec
     def acceptListInner(nodes: Seq[A], listBuffer: Buffer[A], contextInner: Context): (Seq[A], Context) = nodes match {
       case Seq() => (listBuffer.toList, contextInner)
       case Seq(head, tail@_*) =>
-        val (newNode, newContext) = acceptNode(head, parentSymbol, contextInner)
+        val (newNode, newContext) = acceptNode(head, owner, contextInner)
         newNode match {
           case LeafNode | null =>
           case node => listBuffer += node.asInstanceOf[A]
@@ -304,11 +316,11 @@ object SemanticAnalyzer {
     acceptListInner(n, new Buffer[A](), context)
   }
 
-  def acceptListOption[A <: ASTNode](listOption: Option[Seq[A]], parentSymbol: Symbol, context: Context): (Option[Seq[A]], Context) =
+  def acceptListOption[A <: ASTNode](listOption: Option[Seq[A]], owner: Symbol, context: Context): (Option[Seq[A]], Context) =
     listOption match {
       case None => (None, context)
       case Some(list) =>
-        val (resultList, resultContext) = acceptList(list, parentSymbol, context)
+        val (resultList, resultContext) = acceptList(list, owner, context)
         (Option(resultList), resultContext)
     }
 
@@ -379,7 +391,7 @@ object SemanticAnalyzer {
           addError(aggregateExpression, "expected a expression of an array or record type found %s", dataType.name)
           aggregateExpression.aggregate.elements
       }
-      new AggregateExpression(aggregate = new Aggregate(elements = elements), dataType = expectedType)
+      new AggregateExpression(aggregate = new Aggregate(aggregateExpression.aggregate.position, elements = elements), dataType = expectedType)
     }
 
     def visitFactor(factor: Factor): Expression = {
@@ -452,7 +464,7 @@ object SemanticAnalyzer {
             case Some(expr) => Option(checkExpression(context, expr, requiredDataType))
           }
           case true => attributeExpr.expression match {
-            case None => Some(Literal(attributeExpr.position, "1", Literal.Type.INTEGER_LITERAL, SymbolTable.universalIntegerType)) //this must be a array attribute where the dimension is optional
+            case None => Some(Literal(attributeExpr.position, "1", Literal.Type.INTEGER_LITERAL, SymbolTable.universalIntegerType, 1)) //this must be a array attribute where the dimension is optional
             case Some(expr) => Option(checkExpression(context, expr, requiredDataType))
           }
         }
@@ -481,8 +493,8 @@ object SemanticAnalyzer {
       import Literal.Type._
 
       literal.literalType match {
-        case INTEGER_LITERAL => literal.copy(dataType = SymbolTable.universalIntegerType)
-        case REAL_LITERAL => literal.copy(dataType = SymbolTable.universalRealType)
+        case INTEGER_LITERAL => literal.copy(dataType = SymbolTable.universalIntegerType, value = literal.toInt)
+        case REAL_LITERAL => literal.copy(dataType = SymbolTable.universalRealType, value = literal.toDouble)
         case STRING_LITERAL => expectedType match {
           case arrayType: ArrayType if (arrayType.elementType.isInstanceOf[EnumerationType] && arrayType.dimensions.size == 1) =>
             val enumType = arrayType.elementType.asInstanceOf[EnumerationType]
@@ -497,19 +509,20 @@ object SemanticAnalyzer {
             literal.copy(dataType = NoType)
         }
         case CHARACTER_LITERAL =>
-          val dataType = expectedType match {
-            case e: EnumerationType if (e.contains(literal.text.replace("'", ""))) => e
+          val text = literal.text.replace("'", "")
+          val (dataType, value) = expectedType match {
+            case e: EnumerationType if (e.contains(text)) => (e, e.intValue(text))
             case a: ArrayType => a.elementType match {
-              case e: EnumerationType if (e.contains(literal.text.replace("'", ""))) => e
+              case e: EnumerationType if (e.contains(text)) => (e, e.intValue(text))
               case dataType =>
                 addError(literal, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, expectedType.name, dataType.name)
-                NoType
+                (NoType, -1)
             }
             case dataType =>
               addError(literal, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, expectedType.name, dataType.name)
-              NoType
+              (NoType, -1)
           }
-          literal.copy(dataType = dataType)
+          literal.copy(dataType = dataType, value = value)
         case BIT_STRING_LITERAL =>
           val Regex = "(b|o|x)\"([a-f0-9]+)\"".r
           literal.text.replace("_", "").toLowerCase match {
@@ -571,13 +584,16 @@ object SemanticAnalyzer {
             case Regex(baseString, values, _, fractionString, _, sign, exponentString) =>
               val base = baseString.toInt
               val exponent = (if (exponentString != null) math.pow(base, Integer.parseInt(exponentString)).toInt else 1)
-              if (fractionString == null)
-                Literal(literal.position, (Integer.parseInt(values, base) * exponent).toString, INTEGER_LITERAL, SymbolTable.universalIntegerType)
+              if (fractionString == null) {
+                val value = (Integer.parseInt(values, base) * exponent)
+                Literal(literal.position, value.toString, INTEGER_LITERAL, SymbolTable.universalIntegerType, value)
+              }
               else {
                 val fraction = fractionString.zipWithIndex.map {
                   case (digit, i) => Integer.parseInt(digit.toString, base) / math.pow(base, i + 1)
                 }.sum
-                Literal(literal.position, ((Integer.parseInt(values, base) + fraction) * exponent).toString, REAL_LITERAL, SymbolTable.universalRealType)
+                val value = ((Integer.parseInt(values, base) + fraction) * exponent)
+                Literal(literal.position, value.toString, REAL_LITERAL, SymbolTable.universalRealType, value)
               }
           }
         case NULL_LITERAL => literal.copy(dataType = NullType)
@@ -618,7 +634,7 @@ object SemanticAnalyzer {
                     if (indexes.size != array.dimensions.size)
                       addError(part, SemanticMessage.INVALID_INDEXES_COUNT, indexes.size.toString, array.dimensions.size.toString)
                     val expressions = indexes.zip(array.dimensions).map(x => checkExpression(context, x._1, x._2.elementType))
-                    val newSymbol = VariableSymbol(Identifier(part.position, "array"), array.elementType, RuntimeSymbol.Modifier.IN_OUT, -1, symbol) //TODO change VariableSymbol and modifier
+                    val newSymbol = r.makeCopy(Identifier(part.position, "array"), array.elementType, symbol)
                     val expr = matchParts(xs, newSymbol)
                     new ArrayAccessExpression(r, expressions, if (expr eq EmptyExpression) array.elementType else expr.dataType, expr)
                   case _ =>
@@ -663,7 +679,7 @@ object SemanticAnalyzer {
                       addError(part, SemanticMessage.NOT_FOUND, "field", identifier.text)
                       EmptyExpression
                     case Some(dataType) =>
-                      val newSymbol = VariableSymbol(identifier, dataType, RuntimeSymbol.Modifier.IN_OUT, -1, symbol) //TODO change VariableSymbol and modifier
+                      val newSymbol = r.makeCopy(identifier, dataType, symbol)
                       val expr = matchParts(xs, newSymbol)
                       new FieldAccessExpression(r, identifier, dataType, if (expr eq EmptyExpression) dataType else expr.dataType, expr)
                   }
@@ -679,7 +695,7 @@ object SemanticAnalyzer {
           case Seq() => expectedType match {
             case _: PhysicalType => visitPhysicalLiteral(PhysicalLiteral(nameExpression.position, "1", name.identifier, Literal.Type.INTEGER_LITERAL))
             case enumType: EnumerationType =>
-              if (enumType.contains(name.identifier.text)) Literal(nameExpression.position, enumType.intValue(name.identifier.text).toString, Literal.Type.INTEGER_LITERAL, enumType)
+              if (enumType.contains(name.identifier.text)) Literal(nameExpression.position, name.identifier.text, Literal.Type.INTEGER_LITERAL, enumType, enumType.intValue(name.identifier.text))
               else {
                 addError(nameExpression.name, SemanticMessage.NO_ENUMERATION_VALUE, name.identifier.text, enumType.name)
                 EmptyExpression
@@ -725,7 +741,7 @@ object SemanticAnalyzer {
       //type_mark ' ( expression ) can also be an aggregate with one element without a choices part
       val dataType = context.findType(qualifiedExpression.typeName)
       val expressionToCheck = qualifiedExpression.expression match {
-        case AggregateExpression(Aggregate(Seq(Aggregate.ElementAssociation(None, expression))), _) => expression //expression is of type: type_mark ' ( expression )
+        case AggregateExpression(Aggregate(_, Seq(Aggregate.ElementAssociation(None, expression))), _) => expression //expression is of type: type_mark ' ( expression )
         case _ => qualifiedExpression.expression //expression is of type: type_mark ' aggregate
       }
       checkExpression(context, expressionToCheck, dataType)
@@ -849,13 +865,26 @@ object SemanticAnalyzer {
   }
 
   def checkDiscreteRange(context: Context, discreteRange: DiscreteRange, calcValues: Boolean): DiscreteRange =
-    discreteRange.rangeOrSubTypeIndication match { // TODO
+    discreteRange.rangeOrSubTypeIndication match {
       case Left(range) =>
         val newRange = checkRange(context, range, calcValues)
-        new DiscreteRange(Left(newRange), dataType = new ConstrainedRangeType(newRange.fromExpression.dataType, lowLong.toInt, highLong.toInt))
-      case Right(subTypeIndication) => error("not implemented")
+        if (!newRange.dataType.isInstanceOf[DiscreteType]) addError(newRange, SemanticMessage.EXPECTED_TYPE, "discrete")
+        new DiscreteRange(Left(newRange), dataType = new ConstrainedRangeType(newRange.dataType, lowLong.toInt, highLong.toInt))
+      case Right(subTypeIndication) =>
+        // TODO
+        val dataType = context.findType(subTypeIndication.typeName)
+        for (resolutionFunction <- subTypeIndication.resolutionFunction) addError(resolutionFunction, "resolution function")
+        subTypeIndication.constraint.map {
+          _ match {
+            case Left(range) =>
+              val newRange = checkRange(context, range, calcValues)
+              new DiscreteRange(Left(newRange), dataType = new ConstrainedRangeType(dataType, lowLong.toInt, highLong.toInt))
+            case _ =>
+              addError(subTypeIndication.typeName, "index constraint")
+              discreteRange
+          }
+        }.getOrElse(discreteRange)
     }
-
 
   def checkLoopLabel(context: Context, loopLabelOption: Option[Identifier], node: ASTNode, stmtName: String): (Int, Int) =
     return (0, 0) //TODO
@@ -884,9 +913,9 @@ object SemanticAnalyzer {
       findLoop(ancestorList)
   }*/
 
-  def checkPure(context: Context, node: ASTNode, parentSymbol: Symbol, symbol: Symbol) = parentSymbol match {
+  def checkPure(context: Context, node: ASTNode, owner: Symbol, symbol: Symbol) = owner match {
     case functionSymbol: FunctionSymbol =>
-      if (functionSymbol.isPure && context.symbolTable.currentScope.get(symbol.name).isEmpty) {
+      if (functionSymbol.isPure && (symbol.owner ne owner)) {
         addError(node, SemanticMessage.ASSIGN_IN_PURE_FUNCTION, symbol.getClass.toString, functionSymbol.name, symbol.name)
       }
     case _ =>
@@ -922,7 +951,7 @@ object SemanticAnalyzer {
           case _ => addError(fromExpression, SemanticMessage.INVALID_SIMPLE_EXPRESSION)
         }
       }
-      new Range(fromExpression = fromExpression, toExpression = toExpression, direction = range.direction, attributeNameOption = None)
+      new Range(fromExpression, range.direction, toExpression, attributeNameOption = None, dataType = fromExpression.dataType)
     case Some(attributeName) =>
       range
   /* TODO context.find(attributeName) match {
@@ -947,8 +976,8 @@ object SemanticAnalyzer {
           case rangeType: UnconstrainedRangeType =>
             //TODO  symbol and Expression
             val dimension = Literal(attributeName.position, "1", Literal.Type.DECIMAL_LITERAL, SymbolTable.integerType)
-            val fromExpression = AttributeExpression(attributeName.position, attribute.parent, new AttributeSymbol("left", rangeType.elementType, None), Some(dimension), rangeType.elementType)
-            val toExpression = AttributeExpression(attributeName.position, attribute.parent, new AttributeSymbol("right", rangeType.elementType, None), Some(dimension), rangeType.elementType)
+            val fromExpression = AttributeExpression(attributeName.position, attribute.owner, new AttributeSymbol("left", rangeType.elementType, None), Some(dimension), rangeType.elementType)
+            val toExpression = AttributeExpression(attributeName.position, attribute.owner, new AttributeSymbol("right", rangeType.elementType, None), Some(dimension), rangeType.elementType)
             new Range(fromExpression = fromExpression, toExpression = toExpression, direction = if (attribute.name == "range") Range.Direction.To else Range.Direction.Downto, attributeNameOption = None)
           case dataType =>
             addError(attributeName, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, "range", dataType.name)
@@ -1001,8 +1030,8 @@ object SemanticAnalyzer {
 
   }
 
-  def getSymbolListFromInterfaceList(context: Context, interfaceListOption: Option[InterfaceList], parentSymbol: Symbol): (Seq[RuntimeSymbol], Int) = {
-    val startIndex = parentSymbol match {
+  def getSymbolListFromInterfaceList(context: Context, interfaceListOption: Option[InterfaceList], owner: Symbol): (Seq[RuntimeSymbol], Int) = {
+    val startIndex = owner match {
       case _: PackageHeaderSymbol | _: PackageBodySymbol | null => 0
       case _: ArchitectureSymbol | _: ProcessSymbol | _: TypeSymbol => 1
     }
@@ -1029,10 +1058,10 @@ object SemanticAnalyzer {
             element.identifierList.map {
               identifier =>
                 val (symbol, indexChange) = element match {
-                  case variableDeclaration: InterfaceVariableDeclaration => (new VariableSymbol(identifier, dataType, mod, varIndex, parentSymbol, isOptional), nextIndex)
-                  case signalDeclaration: InterfaceSignalDeclaration => (new SignalSymbol(identifier, dataType, mod, None, varIndex, parentSymbol, isOptional), 1)
-                  case fileDeclaration: InterfaceFileDeclaration => (new FileSymbol(identifier, dataType, varIndex, parentSymbol, isOptional), 1)
-                  case constantDeclaration: InterfaceConstantDeclaration => (new ConstantSymbol(identifier, dataType, varIndex, parentSymbol, isOptional), nextIndex)
+                  case variableDeclaration: InterfaceVariableDeclaration => (new VariableSymbol(identifier, dataType, mod, varIndex, owner, isOptional), nextIndex)
+                  case signalDeclaration: InterfaceSignalDeclaration => (new SignalSymbol(identifier, dataType, mod, None, varIndex, owner, isOptional), 1)
+                  case fileDeclaration: InterfaceFileDeclaration => (new FileSymbol(identifier, dataType, varIndex, owner, isOptional), 1)
+                  case constantDeclaration: InterfaceConstantDeclaration => (new ConstantSymbol(identifier, dataType, varIndex, owner, isOptional), nextIndex)
                 }
                 varIndex += indexChange
                 symbol
@@ -1045,7 +1074,7 @@ object SemanticAnalyzer {
   def createType(context: Context, subtypeIndication: SubTypeIndication, subTypeName: String = "subtype", isAccessTypeDefinition: Boolean = false): DataType = {
     def createEnumerationSubType(range: Range, baseType: EnumerationType): DataType = {
       def getEnumEntry(expr: Expression): Option[Int] = acceptExpression(expr, baseType, context) match {
-        case literal: Literal if (literal.dataType eq baseType) => Some(literal.text.toInt)
+        case literal: Literal if (literal.dataType eq baseType) => Some(literal.value.asInstanceOf[Int])
         case _ => None
       }
 
@@ -1061,7 +1090,7 @@ object SemanticAnalyzer {
 
     def createIntegerOrRealSubType[T <: DataType](sourceRange: Range, baseType: DataType): DataType = {
       val range = checkRange(context, sourceRange, true)
-      val dataType = range.fromExpression.dataType
+      val dataType = range.dataType
       if (dataType.getClass eq baseType.getClass) {
         (baseType: @unchecked) match {
           case intBaseType: IntegerType =>
@@ -1100,7 +1129,14 @@ object SemanticAnalyzer {
               addError(subtypeIndication.typeName, SemanticMessage.EXPECTED_TYPE, "integer, real or enumeration")
               NoType
           }
-          case Right(arrayConstraint) => error("not implemented")
+          case Right(arrayConstraint) => baseType match {
+            case unconstrainedArrayType: UnconstrainedArrayType =>
+              val x = arrayConstraint.map(checkDiscreteRange(context, _, true).dataType)
+              new ConstrainedArrayType(unconstrainedArrayType.name, unconstrainedArrayType.elementType, x)
+            case _ =>
+              addError(subtypeIndication.typeName, SemanticMessage.NOT_ALLOWED, "access subtype with a range constraint")
+              NoType
+          } //error("not implemented")
         }
       }
     }
@@ -1140,10 +1176,10 @@ object SemanticAnalyzer {
       originalSymbol =>
         val newSymbol = originalSymbol match {
           case typeSymbol: TypeSymbol => new TypeSymbol(name, dataType.getOrElse(typeSymbol.dataType))
-          case constSymbol: ConstantSymbol => new ConstantSymbol(name, dataType.getOrElse(constSymbol.dataType), constSymbol.index, constSymbol.parent)
-          case varSymbol: VariableSymbol => new VariableSymbol(name, dataType.getOrElse(varSymbol.dataType), varSymbol.modifier, varSymbol.index, varSymbol.parent)
-          case signalSymbol: SignalSymbol => new SignalSymbol(name, dataType.getOrElse(signalSymbol.dataType), signalSymbol.modifier, signalSymbol.signalType, signalSymbol.index, signalSymbol.parent)
-          case fileSymbol: FileSymbol => new FileSymbol(name, dataType.getOrElse(fileSymbol.dataType), fileSymbol.index, fileSymbol.parent)
+          case constSymbol: ConstantSymbol => new ConstantSymbol(name, dataType.getOrElse(constSymbol.dataType), constSymbol.index, constSymbol.owner)
+          case varSymbol: VariableSymbol => new VariableSymbol(name, dataType.getOrElse(varSymbol.dataType), varSymbol.modifier, varSymbol.index, varSymbol.owner)
+          case signalSymbol: SignalSymbol => new SignalSymbol(name, dataType.getOrElse(signalSymbol.dataType), signalSymbol.modifier, signalSymbol.signalType, signalSymbol.index, signalSymbol.owner)
+          case fileSymbol: FileSymbol => new FileSymbol(name, dataType.getOrElse(fileSymbol.dataType), fileSymbol.index, fileSymbol.owner)
         }
         context.insertSymbol(newSymbol)
     }
@@ -1185,10 +1221,10 @@ object SemanticAnalyzer {
     (assertStmt.copy(condition = condition, reportExpression = reportExpression, severityExpression = severityExpression), context)
   }
 
-  def visitAttributeDeclaration(attributeDeclaration: AttributeDeclaration, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitAttributeDeclaration(attributeDeclaration: AttributeDeclaration, owner: Symbol, context: Context): ReturnType = {
     val dataType = context.findType(attributeDeclaration.typeName)
     checkIfNotFileProtectedAccessType(attributeDeclaration.typeName, dataType)
-    val symbol = new AttributeSymbol(attributeDeclaration.identifier, dataType, parameter = None, isParameterOptional = false, owner = parentSymbol, isPredefined = false)
+    val symbol = new AttributeSymbol(attributeDeclaration.identifier, dataType, parameter = None, isParameterOptional = false, owner = owner, isPredefined = false)
     (attributeDeclaration, context.insertSymbol(symbol))
   }
 
@@ -1200,11 +1236,11 @@ object SemanticAnalyzer {
     (attributeSpec, context)
   }
 
-  def visitBlockStatement(blockStmt: BlockStatement, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitBlockStatement(blockStmt: BlockStatement, owner: Symbol, context: Context): ReturnType = {
     checkIdentifiersOption(blockStmt.label, blockStmt.endLabel)
 
-    val (generics, lastGenericIndex) = getSymbolListFromInterfaceList(context, blockStmt.genericInterfaceList, parentSymbol)
-    val (ports, lastPortIndex) = getSymbolListFromInterfaceList(context, blockStmt.portInterfaceList, parentSymbol)
+    val (generics, lastGenericIndex) = getSymbolListFromInterfaceList(context, blockStmt.genericInterfaceList, owner)
+    val (ports, lastPortIndex) = getSymbolListFromInterfaceList(context, blockStmt.portInterfaceList, owner)
     val newContext = context.insertSymbols(generics).insertSymbols(ports)
 
     // TODO
@@ -1212,14 +1248,15 @@ object SemanticAnalyzer {
     val portsList = checkAssociationList(newContext, blockStmt.portAssociationList, ports, blockStmt)
     val guardExpression = checkExpressionOption(newContext, blockStmt.guardExpression, SymbolTable.booleanType)
 
-    val (declarativeItems, c) = acceptDeclarativeItems(blockStmt.declarativeItems, parentSymbol, newContext.copy(varIndex = lastPortIndex))
-    val (statementList, _) = acceptList(blockStmt.statementList, parentSymbol, c)
+    val cx = blockStmt.guardExpression.map(expr => newContext.insertSymbol(new SignalSymbol(Identifier(expr.position, "guard"), SymbolTable.booleanType, RuntimeSymbol.Modifier.IN, None, -1, owner))).getOrElse(newContext)
+    val (declarativeItems, c) = acceptDeclarativeItems(blockStmt.declarativeItems, owner, cx.copy(varIndex = lastPortIndex))
+    val (statementList, _) = acceptList(blockStmt.statementList, owner, c)
 
     (blockStmt.copy(generics = genericsList, ports = portsList, guardExpression = guardExpression,
       declarativeItems = declarativeItems, statementList = statementList), context)
   }
 
-  def visitCaseStatement(caseStmt: CaseStatement, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitCaseStatement(caseStmt: CaseStatement, owner: Symbol, context: Context): ReturnType = {
     checkIdentifiersOption(caseStmt.label, caseStmt.endLabel)
     val caseStmtExpression = checkExpression(context, caseStmt.expression, NoType)
     val containsOthers = caseStmt.alternatives.exists(when => when.choices.elements.exists(choice => choice.isOthers))
@@ -1243,7 +1280,7 @@ object SemanticAnalyzer {
               choice
           }
         }
-        val (statements, _) = acceptList(when.statements, parentSymbol, context)
+        val (statements, _) = acceptList(when.statements, owner, context)
         new CaseStatement.When(choices = new Choices(choices), statements)
     }
 
@@ -1283,13 +1320,13 @@ object SemanticAnalyzer {
     }
   }
 
-  def visitComponentDeclaration(componentDeclaration: ComponentDeclaration, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitComponentDeclaration(componentDeclaration: ComponentDeclaration, owner: Symbol, context: Context): ReturnType = {
     checkIdentifiers(componentDeclaration.identifier, componentDeclaration.endIdentifier)
 
     val (genericSymbolList, _) = getSymbolListFromInterfaceList(context, componentDeclaration.genericInterfaceList, null)
     val (portSymbolList, _) = getSymbolListFromInterfaceList(context, componentDeclaration.portInterfaceList, null)
 
-    val symbol = new ComponentSymbol(componentDeclaration.identifier, genericSymbolList, portSymbolList, parentSymbol)
+    val symbol = new ComponentSymbol(componentDeclaration.identifier, genericSymbolList, portSymbolList, owner)
     portSymbolList.foreach(port => port.owner = symbol)
     genericSymbolList.foreach(generic => generic.owner = symbol)
 
@@ -1319,24 +1356,24 @@ object SemanticAnalyzer {
 
   def expressionToSensitivityList(expr: Expression): Seq[SignalSymbol] = Seq() //TODO
 
-  def toProcessStatement(statement: SequentialStatement, sensitivityList: Seq[SignalSymbol], label: Option[Identifier], postponed: Boolean, parentSymbol: Symbol, context: Context): ReturnType = {
+  def toProcessStatement(statement: SequentialStatement, sensitivityList: Seq[SignalSymbol], label: Option[Identifier], postponed: Boolean, owner: Symbol, context: Context): ReturnType = {
     val waitStatement = WaitStatement(statement.position, label = None, sensitivityList = None, untilCondition = None, forExpression = None, sensitivitySignalList = sensitivityList)
     visitProcessStatement(ProcessStatement(statement.position, label = label, postponed = postponed, sensitivityList = None, declarativeItems = Seq(),
-      sequentialStatementList = Seq(statement, waitStatement), endLabel = None), parentSymbol, context)
+      sequentialStatementList = Seq(statement, waitStatement), endLabel = None), owner, context)
   }
 
-  def visitConcurrentAssertionStatement(concurrentAssertStmt: ConcurrentAssertionStatement, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitConcurrentAssertionStatement(concurrentAssertStmt: ConcurrentAssertionStatement, owner: Symbol, context: Context): ReturnType = {
     val assertStmt = AssertStatement(concurrentAssertStmt.position, None, concurrentAssertStmt.condition, concurrentAssertStmt.reportExpression, concurrentAssertStmt.severityExpression)
-    toProcessStatement(assertStmt, expressionToSensitivityList(concurrentAssertStmt.condition), concurrentAssertStmt.label, concurrentAssertStmt.postponed, parentSymbol, context)
+    toProcessStatement(assertStmt, expressionToSensitivityList(concurrentAssertStmt.condition), concurrentAssertStmt.label, concurrentAssertStmt.postponed, owner, context)
   }
 
-  def visitConcurrentProcedureCallStatement(concurrentProcedureCallStmt: ConcurrentProcedureCallStatement, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitConcurrentProcedureCallStatement(concurrentProcedureCallStmt: ConcurrentProcedureCallStatement, owner: Symbol, context: Context): ReturnType = {
     val procedureCallStmt = ProcedureCallStatement(None, concurrentProcedureCallStmt.procedureName, concurrentProcedureCallStmt.parameterAssociationList)
     val sensitivityList = concurrentProcedureCallStmt.parameterAssociationList.map {_.elements.flatMap {_.actualPart.map(expressionToSensitivityList(_)).toList.flatten}}.toList.flatten
-    toProcessStatement(procedureCallStmt, sensitivityList, concurrentProcedureCallStmt.label, concurrentProcedureCallStmt.postponed, parentSymbol, context)
+    toProcessStatement(procedureCallStmt, sensitivityList, concurrentProcedureCallStmt.label, concurrentProcedureCallStmt.postponed, owner, context)
   }
 
-  def visitConcurrentSignalAssignmentStatement(signalAssignStmt: ConcurrentSignalAssignmentStatement, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitConcurrentSignalAssignmentStatement(signalAssignStmt: ConcurrentSignalAssignmentStatement, owner: Symbol, context: Context): ReturnType = {
     require(!signalAssignStmt.guarded)
 
     def waveTransform(waveForm: Waveform): SequentialStatement =
@@ -1364,14 +1401,14 @@ object SemanticAnalyzer {
         val caseStmtAlternatives = selectedSignalAssignment.alternatives.map(alternative => new CaseStatement.When(alternative.choices, Seq(waveTransform(alternative.waveForm))))
         CaseStatement(selectedSignalAssignment.position, label = None, expression = selectedSignalAssignment.expression, alternatives = caseStmtAlternatives, endLabel = None)
     }
-    toProcessStatement(newStatement, Seq(), signalAssignStmt.label, signalAssignStmt.postponed, parentSymbol, context)
+    toProcessStatement(newStatement, Seq(), signalAssignStmt.label, signalAssignStmt.postponed, owner, context)
   }
 
-  def visitConstantDeclaration(constantDeclaration: ConstantDeclaration, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitConstantDeclaration(constantDeclaration: ConstantDeclaration, owner: Symbol, context: Context): ReturnType = {
     val dataType = createType(context, constantDeclaration.subType)
     checkIfNotFileProtectedAccessType(constantDeclaration.subType, dataType)
 
-    if (constantDeclaration.defaultExpression.isEmpty && !parentSymbol.isInstanceOf[PackageHeaderSymbol])
+    if (constantDeclaration.defaultExpression.isEmpty && !owner.isInstanceOf[PackageHeaderSymbol])
       addError(constantDeclaration, SemanticMessage.DEFERRED_CONSTANT_NOT_ALLOWED)
 
     val defaultExpression = checkExpressionOption(context, constantDeclaration.defaultExpression, dataType)
@@ -1383,7 +1420,7 @@ object SemanticAnalyzer {
           if (symbol.dataType != dataType) addError(constantDeclaration.subType, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, symbol.dataType.name, dataType.name)
           symbol.copy(isDefined = constantDeclaration.defaultExpression.isDefined)
         case _ =>
-          new ConstantSymbol(identifier, dataType, context.varIndex + (i * multiplier), parentSymbol, false, constantDeclaration.defaultExpression.isDefined, constantDeclaration.defaultExpression.isEmpty)
+          new ConstantSymbol(identifier, dataType, context.varIndex + (i * multiplier), owner, false, constantDeclaration.defaultExpression.isDefined, constantDeclaration.defaultExpression.isEmpty)
       }
     }
     val newNode = constantDeclaration.copy(defaultExpression = defaultExpression, symbols = symbols)
@@ -1391,7 +1428,7 @@ object SemanticAnalyzer {
     (newNode, newContext)
   }
 
-  def visitDesignUnit(designUnit: DesignUnit, parentSymbol: Symbol, context: Context): ReturnType =
+  def visitDesignUnit(designUnit: DesignUnit, owner: Symbol, context: Context): ReturnType =
     designUnit.libraryUnit.map {
       unit =>
         checkIdentifiers(unit.identifier, unit.endIdentifier)
@@ -1423,8 +1460,8 @@ object SemanticAnalyzer {
         } else {
           context.symbolTable.openScope
         }
-        val (useClauses, c1) = acceptList(designUnit.useClauses, parentSymbol, context.copy(libraries = libraries, symbolTable = newSymbolTable))
-        val (libraryUnit, newContext) = acceptNode(unit, parentSymbol, c1.copy(libraries = libraries))
+        val (useClauses, c1) = acceptList(designUnit.useClauses, owner, context.copy(libraries = libraries, symbolTable = newSymbolTable))
+        val (libraryUnit, newContext) = acceptNode(unit, owner, c1.copy(libraries = libraries))
         libraries.valuesIterator.foreach(_.close)
         (designUnit.copy(useClauses = useClauses, libraryUnit = Some(libraryUnit.asInstanceOf[LibraryUnit])), newContext)
     }.getOrElse((LeafNode, context))
@@ -1469,67 +1506,63 @@ object SemanticAnalyzer {
     (exitStmt.copy(condition = condition, loopStatement = loopStatement), context)
   }
 
-  def visitFileDeclaration(fileDeclaration: FileDeclaration, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitFileDeclaration(fileDeclaration: FileDeclaration, owner: Symbol, context: Context): ReturnType = {
     val fileOpenKindExpression = checkExpressionOption(context, fileDeclaration.fileOpenKindExpression, SymbolTable.fileOpenKind)
     val fileLogicalName = checkExpressionOption(context, fileDeclaration.fileLogicalName, SymbolTable.stringType)
     val dataType = createType(context, fileDeclaration.subType)
     if (!dataType.isInstanceOf[FileType]) addError(fileDeclaration.subType, SemanticMessage.EXPECTED_TYPE, "file")
     val symbols = fileDeclaration.identifierList.zipWithIndex.map {
-      case (identifier, i) => new FileSymbol(identifier, dataType, context.varIndex + i, parentSymbol)
+      case (identifier, i) => new FileSymbol(identifier, dataType, context.varIndex + i, owner)
     }
     val newNode = fileDeclaration.copy(fileOpenKindExpression = fileOpenKindExpression, fileLogicalName = fileLogicalName, symbols = symbols)
     val newContext = context.insertSymbols(symbols).copy(varIndex = context.varIndex + fileDeclaration.identifierList.size + 1)
     (newNode, newContext)
   }
 
-  def visitForGenerateStatement(forGenerateStmt: ForGenerateStatement, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitForGenerateStatement(forGenerateStmt: ForGenerateStatement, owner: Symbol, context: Context): ReturnType = {
     checkIdentifiersOption(forGenerateStmt.label, forGenerateStmt.endLabel)
     val discreteRange = checkDiscreteRange(context, forGenerateStmt.discreteRange, false)
-    val symbol = new ConstantSymbol(forGenerateStmt.loopIdentifier, discreteRange.dataType.elementType, -1, parentSymbol)
-    context.insertSymbol(symbol)
-    // TODO symbolTable.remove(symbol)
-    val (declarativeItems, c1) = acceptDeclarativeItems(forGenerateStmt.declarativeItems, parentSymbol, context)
-    val (statementList, _) = acceptList(forGenerateStmt.statementList, parentSymbol, c1)
+    val symbol = new ConstantSymbol(forGenerateStmt.loopIdentifier, discreteRange.dataType.elementType, -1, owner)
+    val (declarativeItems, c1) = acceptDeclarativeItems(forGenerateStmt.declarativeItems, owner, context.openScope.insertSymbol(symbol))
+    val (statementList, _) = acceptList(forGenerateStmt.statementList, owner, c1)
     (forGenerateStmt.copy(declarativeItems = declarativeItems, statementList = statementList), context)
   }
 
-  def visitForStatement(forStmt: ForStatement, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitForStatement(forStmt: ForStatement, owner: Symbol, context: Context): ReturnType = {
     checkIdentifiersOption(forStmt.label, forStmt.endLabel)
     val discreteRange = checkDiscreteRange(context, forStmt.discreteRange, false)
-    val symbol = new ConstantSymbol(forStmt.identifier, discreteRange.dataType.elementType, context.varIndex + 1, parentSymbol)
-    // TODO context.symbolTable.openScope()
-    val (sequentialStatementList, _) = acceptList(forStmt.sequentialStatementList, parentSymbol, context.insertSymbol(symbol).copy(varIndex = context.varIndex + 1))
+    val symbol = new ConstantSymbol(forStmt.identifier, discreteRange.dataType.elementType, context.varIndex + 1, owner)
+    val (sequentialStatementList, _) = acceptList(forStmt.sequentialStatementList, owner, context.openScope.insertSymbol(symbol).copy(varIndex = context.varIndex + 1))
     (forStmt.copy(sequentialStatementList = sequentialStatementList, symbol = symbol, discreteRange = discreteRange), context)
   }
 
-  def visitFunctionDeclaration(functionDeclaration: FunctionDeclaration, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitFunctionDeclaration(functionDeclaration: FunctionDeclaration, owner: Symbol, context: Context): ReturnType = {
     val returnType = context.findType(functionDeclaration.returnType)
-    val (parameters, _) = getSymbolListFromInterfaceList(context, functionDeclaration.parameterInterfaceList, parentSymbol)
+    val (parameters, _) = getSymbolListFromInterfaceList(context, functionDeclaration.parameterInterfaceList, owner)
     context.insertSymbols(parameters)
     val name = getMangledName(functionDeclaration.identifier)
-    val symbol = new FunctionSymbol(name, parameters, returnType, parentSymbol, getFlags(parentSymbol), functionDeclaration.pure)
+    val symbol = new FunctionSymbol(name, parameters, returnType, owner, getFlags(owner), functionDeclaration.pure)
     parameters.foreach(s => s.owner = symbol)
     (functionDeclaration.copy(symbol = symbol), context.insertSymbol(symbol))
   }
 
-  def visitFunctionDefinition(functionDefinition: FunctionDefinition, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitFunctionDefinition(functionDefinition: FunctionDefinition, owner: Symbol, context: Context): ReturnType = {
     checkIdentifiers(functionDefinition.identifier, functionDefinition.endIdentifier)
     val returnType = context.findType(functionDefinition.returnType)
-    val (parameters, lastIndex) = getSymbolListFromInterfaceList(context, functionDefinition.parameterInterfaceList, parentSymbol)
+    val (parameters, lastIndex) = getSymbolListFromInterfaceList(context, functionDefinition.parameterInterfaceList, owner)
     val name = getMangledName(functionDefinition.identifier)
-    if (parentSymbol.isInstanceOf[TypeSymbol]) {
+    if (owner.isInstanceOf[TypeSymbol]) {
       //this is a method in a protected Type
       parameters.foreach(p => checkIfNotFileAccessType(p.identifier, p.dataType))
       checkIfNotFileAccessType(functionDefinition.returnType, returnType)
     }
     val (symbol, tmpContext) = context.findFunction(name.text, parameters.map(_.dataType), returnType) match {
-      case Some(existingSymbol) if (!existingSymbol.implemented) =>
-        existingSymbol.implemented = true
-        (existingSymbol, context)
+      case Some(existingSymbol) if (!existingSymbol.implemented) => (existingSymbol, context)
       case _ =>
-        val symbol = new FunctionSymbol(name, parameters, returnType, parentSymbol, getFlags(parentSymbol), functionDefinition.pure)
+        val symbol = new FunctionSymbol(name, parameters, returnType, owner, getFlags(owner), functionDefinition.pure)
         (symbol, context.insertSymbol(symbol))
     }
+    symbol.implemented = true
     parameters.foreach(s => s.owner = symbol)
     val newContext = tmpContext.openScope.insertSymbols(parameters)
     val (declarativeItems, c1) = acceptDeclarativeItems(functionDefinition.declarativeItems, symbol, newContext.copy(varIndex = lastIndex))
@@ -1545,8 +1578,8 @@ object SemanticAnalyzer {
       symbol = symbol, localSymbols = localSymbols), tmpContext)
   }
 
-  def visitGroupDeclaration(groupDeclaration: GroupDeclaration, parentSymbol: Symbol, context: Context): ReturnType = {
-    val symbol = new GroupSymbol(groupDeclaration.identifier, parentSymbol)
+  def visitGroupDeclaration(groupDeclaration: GroupDeclaration, owner: Symbol, context: Context): ReturnType = {
+    val symbol = new GroupSymbol(groupDeclaration.identifier, owner)
     /*
     * final Symbol groupTemplateSymbol = find(groupDeclaration.getGroupName(), SymbolObjectType.GROUP_TEMPLATE); if
     * (groupTemplateSymbol != null) { // TODO }
@@ -1554,36 +1587,36 @@ object SemanticAnalyzer {
     (groupDeclaration, context.insertSymbol(symbol))
   }
 
-  def visitGroupTemplateDeclaration(groupTemplateDeclaration: GroupTemplateDeclaration, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitGroupTemplateDeclaration(groupTemplateDeclaration: GroupTemplateDeclaration, owner: Symbol, context: Context): ReturnType = {
     val lastElement = groupTemplateDeclaration.elements.last
     val items = groupTemplateDeclaration.elements.init.map {
       element =>
         if (element.box) addError(groupTemplateDeclaration, SemanticMessage.NOT_ALLOWED, "infinite elements, it its only allowed at the last element")
         element.entityClass
     }
-    val groupTemplateSymbol = new GroupTemplateSymbol(groupTemplateDeclaration.identifier, items :+ lastElement.entityClass, lastElement.box, parentSymbol)
+    val groupTemplateSymbol = new GroupTemplateSymbol(groupTemplateDeclaration.identifier, items :+ lastElement.entityClass, lastElement.box, owner)
     (groupTemplateDeclaration, context.insertSymbol(groupTemplateSymbol))
   }
 
-  def visitIfGenerateStatement(ifGenerateStmt: IfGenerateStatement, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitIfGenerateStatement(ifGenerateStmt: IfGenerateStatement, owner: Symbol, context: Context): ReturnType = {
     checkIdentifiersOption(ifGenerateStmt.label, ifGenerateStmt.endLabel)
     val condition = checkExpression(context, ifGenerateStmt.condition, SymbolTable.booleanType)
     //TODO ifGenerateStmt.value=StaticExpressionCalculator.calcBooleanValue(condition)
-    val (declarativeItems, c1) = acceptDeclarativeItems(ifGenerateStmt.declarativeItems, parentSymbol, context)
-    val (statementList, _) = acceptList(ifGenerateStmt.statementList, parentSymbol, c1)
+    val (declarativeItems, c1) = acceptDeclarativeItems(ifGenerateStmt.declarativeItems, owner, context)
+    val (statementList, _) = acceptList(ifGenerateStmt.statementList, owner, c1)
     (ifGenerateStmt.copy(declarativeItems = declarativeItems, statementList = statementList), context)
   }
 
-  def visitIfStatement(ifStmt: IfStatement, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitIfStatement(ifStmt: IfStatement, owner: Symbol, context: Context): ReturnType = {
     checkIdentifiersOption(ifStmt.label, ifStmt.endLabel)
-    val ifThenList = ifStmt.ifThenList.map(ifThen => new IfStatement.IfThenPart(checkExpression(context, ifThen.condition, SymbolTable.booleanType), acceptList(ifThen.statements, parentSymbol, context)._1))
-    val (elseSequentialStatementList, _) = acceptListOption(ifStmt.elseSequentialStatementList, parentSymbol, context)
+    val ifThenList = ifStmt.ifThenList.map(ifThen => new IfStatement.IfThenPart(checkExpression(context, ifThen.condition, SymbolTable.booleanType), acceptList(ifThen.statements, owner, context)._1))
+    val (elseSequentialStatementList, _) = acceptListOption(ifStmt.elseSequentialStatementList, owner, context)
     (ifStmt.copy(ifThenList = ifThenList, elseSequentialStatementList = elseSequentialStatementList), context)
   }
 
-  def visitLoopStatement(loopStmt: LoopStatement, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitLoopStatement(loopStmt: LoopStatement, owner: Symbol, context: Context): ReturnType = {
     checkIdentifiersOption(loopStmt.label, loopStmt.endLabel)
-    val (sequentialStatementList, _) = acceptList(loopStmt.sequentialStatementList, parentSymbol, context)
+    val (sequentialStatementList, _) = acceptList(loopStmt.sequentialStatementList, owner, context)
     (loopStmt.copy(sequentialStatementList = sequentialStatementList), context)
   }
 
@@ -1599,7 +1632,6 @@ object SemanticAnalyzer {
     val newSymbolTable = try {
       val scopes = SymbolTable.getScopesFromInputStream(new FileInputStream(configuration.designLibrary + File.separator + "package_" + packageName + ".sym"))
       //require(scopes.size == 2)
-      println(scopes.size)
       val table = context.symbolTable.insertScopes(scopes)
       setUpTypes(context.copy(symbolTable = table))
       table
@@ -1635,32 +1667,31 @@ object SemanticAnalyzer {
     }
   }
 
-  def visitProcedureDeclaration(procedureDeclaration: ProcedureDeclaration, parentSymbol: Symbol, context: Context): ReturnType = {
-    val (parameters, _) = getSymbolListFromInterfaceList(context, procedureDeclaration.parameterInterfaceList, parentSymbol)
+  def visitProcedureDeclaration(procedureDeclaration: ProcedureDeclaration, owner: Symbol, context: Context): ReturnType = {
+    val (parameters, _) = getSymbolListFromInterfaceList(context, procedureDeclaration.parameterInterfaceList, owner)
     context.insertSymbols(parameters)
     val name = getMangledName(procedureDeclaration.identifier)
-    val symbol = new ProcedureSymbol(name, parameters, parentSymbol, getFlags(parentSymbol), false)
+    val symbol = new ProcedureSymbol(name, parameters, owner, getFlags(owner), false)
     parameters.foreach(s => s.owner = symbol)
     parameters.foreach(s => s.owner = symbol)
     (procedureDeclaration.copy(symbol = symbol), context.insertSymbol(symbol))
   }
 
-  def visitProcedureDefinition(procedureDefinition: ProcedureDefinition, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitProcedureDefinition(procedureDefinition: ProcedureDefinition, owner: Symbol, context: Context): ReturnType = {
     checkIdentifiers(procedureDefinition.identifier, procedureDefinition.endIdentifier)
-    val (parameters, lastIndex) = getSymbolListFromInterfaceList(context, procedureDefinition.parameterInterfaceList, parentSymbol)
-    if (parentSymbol.isInstanceOf[TypeSymbol]) {
+    val (parameters, lastIndex) = getSymbolListFromInterfaceList(context, procedureDefinition.parameterInterfaceList, owner)
+    if (owner.isInstanceOf[TypeSymbol]) {
       //this is a method in a protected Type
       parameters.foreach(p => checkIfNotFileAccessType(p.identifier, p.dataType))
     }
     val name = getMangledName(procedureDefinition.identifier)
     val (symbol, tmpContext) = context.findProcedure(name.text, parameters.map(_.dataType)) match {
-      case Some(existingSymbol) if (!existingSymbol.implemented) =>
-        existingSymbol.implemented = true
-        (existingSymbol, context)
+      case Some(existingSymbol) if (!existingSymbol.implemented) => (existingSymbol, context)
       case _ =>
-        val symbol = new ProcedureSymbol(procedureDefinition.identifier, parameters, parentSymbol, getFlags(parentSymbol), false)
+        val symbol = new ProcedureSymbol(procedureDefinition.identifier, parameters, owner, getFlags(owner), false)
         (symbol, context.insertSymbol(symbol))
     }
+    symbol.implemented = true;
     parameters.foreach(s => s.owner = symbol)
     val newContext = context.openScope.insertSymbols(parameters)
     val (declarativeItems, c1) = acceptDeclarativeItems(procedureDefinition.declarativeItems, symbol, newContext.copy(varIndex = lastIndex))
@@ -1704,12 +1735,12 @@ object SemanticAnalyzer {
     toLinearListInner(sequentialStatementList, new Buffer[SequentialStatement]())
   }
 
-  def visitProcessStatement(processStatement: ProcessStatement, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitProcessStatement(processStatement: ProcessStatement, owner: Symbol, context: Context): ReturnType = {
     checkIdentifiersOption(processStatement.label, processStatement.endLabel)
 
     val newSymbolTable = context.symbolTable.openScope
     val name = processStatement.label.getOrElse(Identifier(processStatement.position, "process_" + processStatement.position.line))
-    val symbol = new ProcessSymbol(name, parentSymbol.asInstanceOf[ArchitectureSymbol], false)
+    val symbol = new ProcessSymbol(name, owner.asInstanceOf[ArchitectureSymbol], false)
 
     val (declarativeItems, newContext) = acceptDeclarativeItems(processStatement.declarativeItems, symbol, context.copy(symbolTable = newSymbolTable))
     val (newSequentialStatementList, c2) = acceptList(processStatement.sequentialStatementList, symbol, newContext)
@@ -1739,8 +1770,8 @@ object SemanticAnalyzer {
     (reportStmt.copy(reportExpression = reportExpression, severityExpression = severityExpression), context)
   }
 
-  def visitReturnStatement(returnStmt: ReturnStatement, parentSymbol: Symbol, context: Context): ReturnType = {
-    parentSymbol match {
+  def visitReturnStatement(returnStmt: ReturnStatement, owner: Symbol, context: Context): ReturnType = {
+    owner match {
       case _: ProcessSymbol => addError(returnStmt, SemanticMessage.RETURN_STMT_IN_PROCESS)
       case functionSymbol: FunctionSymbol => returnStmt.expression match {
         case None => addError(returnStmt, SemanticMessage.FUNCTION_RETURN_WITHOUT_EXPRESSION)
@@ -1756,7 +1787,7 @@ object SemanticAnalyzer {
     (returnStmt, context)
   }
 
-  def visitSignalAssignmentStatement(signalAssignStmt: SignalAssignmentStatement, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitSignalAssignmentStatement(signalAssignStmt: SignalAssignmentStatement, owner: Symbol, context: Context): ReturnType = {
     def checkWaveform(waveForm: Waveform, dataType: DataType): Waveform = {
       val elements = waveForm.elements.map {
         element =>
@@ -1783,7 +1814,7 @@ object SemanticAnalyzer {
               case w: WithSymbol[_] if (w.symbol.isInstanceOf[SignalSymbol]) =>
                 val signalSymbol = w.symbol.asInstanceOf[SignalSymbol]
                 if (signalSymbol.modifier == RuntimeSymbol.Modifier.IN) addError(signalAssignStmt, SemanticMessage.ASSIGN_READ_ONLY, "signal", signalSymbol.name)
-                parentSymbol match {
+                owner match {
                   case processSymbol: ProcessSymbol =>
                     if (signalSymbol.isUnresolved && signalSymbol.driver != null
                             && (signalSymbol.driver ne processSymbol)) {
@@ -1794,7 +1825,7 @@ object SemanticAnalyzer {
                   case _ =>
                 }
                 signalSymbol.used = true
-                checkPure(context, signalAssignStmt, parentSymbol, signalSymbol)
+                checkPure(context, signalAssignStmt, owner, signalSymbol)
                 val delayMechanism = checkDelayMechanism(stmt.delayMechanism)
                 val waveForm = checkWaveform(stmt.waveForm, signalSymbol.dataType)
                 (stmt.copy(waveForm = waveForm, delayMechanism = delayMechanism), context)
@@ -1807,12 +1838,12 @@ object SemanticAnalyzer {
     }
   }
 
-  def visitSignalDeclaration(signalDeclaration: SignalDeclaration, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitSignalDeclaration(signalDeclaration: SignalDeclaration, owner: Symbol, context: Context): ReturnType = {
     val dataType = createType(context, signalDeclaration.subType)
     checkIfNotFileProtectedAccessType(signalDeclaration.subType, dataType)
     val defaultExpression = checkExpressionOption(context, signalDeclaration.defaultExpression, dataType)
     val symbols = signalDeclaration.identifierList.zipWithIndex.map {
-      case (identifier, i) => new SignalSymbol(identifier, dataType, RuntimeSymbol.Modifier.IN_OUT, signalDeclaration.signalType, context.varIndex + i, parentSymbol)
+      case (identifier, i) => new SignalSymbol(identifier, dataType, RuntimeSymbol.Modifier.IN_OUT, signalDeclaration.signalType, context.varIndex + i, owner)
     }
     val newNode = signalDeclaration.copy(defaultExpression = defaultExpression, symbols = symbols)
     val newContext = context.insertSymbols(symbols).copy(varIndex = context.varIndex + signalDeclaration.identifierList.size + 1)
@@ -1844,7 +1875,7 @@ object SemanticAnalyzer {
     case _ =>
   }
 
-  def visitTypeDeclaration(typeDeclaration: AbstractTypeDeclaration, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitTypeDeclaration(typeDeclaration: AbstractTypeDeclaration, owner: Symbol, context: Context): ReturnType = {
     def checkDuplicateIdentifiers(identifiers: Seq[Identifier], message: String) = identifiers.diff(identifiers.distinct).foreach(identifier => addError(identifier, message, identifier))
 
     val name = typeDeclaration.identifier.text
@@ -1854,7 +1885,7 @@ object SemanticAnalyzer {
         val elements = enumerationType.elements.map(id => id.text.replace("'", ""))
         require(enumerationType.elements.size <= Char.MaxValue)
         checkDuplicateIdentifiers(enumerationType.elements, SemanticMessage.DUPLICATE_ENUMERATION_VALUE)
-        (enumerationType.copy(dataType = new EnumerationType(name, elements, None, parentSymbol)), Seq())
+        (enumerationType.copy(dataType = new EnumerationType(name, elements, None, owner)), Seq())
       case physicalType: PhysicalTypeDefinition =>
         checkIdentifiers(physicalType.identifier, physicalType.endIdentifier)
         checkDuplicateIdentifiers(physicalType.elements.map(_.identifier), SemanticMessage.DUPLICATE_PHYSICAL_UNIT)
@@ -1881,11 +1912,11 @@ object SemanticAnalyzer {
         (physicalType.copy(dataType = phyType), Seq())
       case integerOrRealType: IntegerOrFloatingPointTypeDefinition =>
         val range = checkRange(context, integerOrRealType.range, true)
-        val dataType = range.fromExpression.dataType match {
+        val dataType = range.dataType match {
           case _: IntegerType => new IntegerType(name, lowLong.toInt, highLong.toInt, None)
           case _: RealType => new RealType(name, lowDouble, highDouble, None)
           case otherType =>
-            addError(range.fromExpression, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, "integer or real", otherType.name)
+            addError(range, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, "integer or real", otherType.name)
             NoType
         }
         (integerOrRealType.copy(dataType = dataType), Seq())
@@ -1914,7 +1945,7 @@ object SemanticAnalyzer {
             checkIfNotFileProtectedType(element.subType, dataType)
             element.identifierList.map(id => id.text -> dataType)
         }
-        (recordType.copy(dataType = new RecordType(name, elements, parentSymbol)), Seq())
+        (recordType.copy(dataType = new RecordType(name, elements, owner)), Seq())
       case accessType: AccessTypeDefinition =>
         val dataType = createType(context, accessType.subType, isAccessTypeDefinition = true)
         checkIfNotFileProtectedType(accessType.subType, dataType)
@@ -1931,42 +1962,43 @@ object SemanticAnalyzer {
         val staticBitSet = BitSet(SubProgramFlags.Static)
 
         import RuntimeSymbol.Modifier._
+        val pos = fileTypeDefinition.identifier.position
         val fileSymbol = FileSymbol(Identifier("f"), fileType, 0, null)
-        val file_open1 = new ProcedureSymbol(Identifier("file_open"),
+        val file_open1 = new ProcedureSymbol(Identifier(pos, "file_open"),
           Seq(fileSymbol, ConstantSymbol(Identifier("external_name"), SymbolTable.stringType, 0, null), ConstantSymbol(Identifier("open_kind"), SymbolTable.fileOpenKind, 0, null, isOptional = true)),
           Runtime, staticBitSet, true)
 
-        val file_open2 = new ProcedureSymbol(Identifier("file_open"),
+        val file_open2 = new ProcedureSymbol(Identifier(pos, "file_open"),
           Seq(VariableSymbol(Identifier("status"), SymbolTable.fileOpenStatus, OUT, 0, null, isOptional = true), fileSymbol, ConstantSymbol(Identifier("external_name"), SymbolTable.stringType, 0, null),
             ConstantSymbol(Identifier("open_kind"), SymbolTable.fileOpenKind, 0, null, isOptional = true)), Runtime, staticBitSet, true)
 
-        val file_close = new ProcedureSymbol(Identifier("file_close"), Seq(fileSymbol), Runtime, staticBitSet, true)
+        val file_close = new ProcedureSymbol(Identifier(pos, "file_close"), Seq(fileSymbol), Runtime, staticBitSet, true)
         val read = if (dataType.isInstanceOf[ArrayType])
-          new ProcedureSymbol(Identifier("read"), Seq(fileSymbol, VariableSymbol(Identifier("value"), dataType, OUT, 0, null), VariableSymbol(Identifier("length"), SymbolTable.naturalType, OUT, 0, null)), Runtime, staticBitSet, true)
-        else new ProcedureSymbol(Identifier("read"), Seq(fileSymbol, VariableSymbol(Identifier("value"), dataType, OUT, 0, null)), Runtime, staticBitSet, true)
-        val write = new ProcedureSymbol(Identifier("write"), Seq(fileSymbol, ConstantSymbol(Identifier("value"), dataType, 0, null)), Runtime, staticBitSet, true)
-        val endfile = new FunctionSymbol(Identifier("endfile"), Seq(fileSymbol), SymbolTable.booleanType, Runtime, staticBitSet, true)
+          new ProcedureSymbol(Identifier(pos, "read"), Seq(fileSymbol, VariableSymbol(Identifier("value"), dataType, OUT, 0, null), VariableSymbol(Identifier("length"), SymbolTable.naturalType, OUT, 0, null)), Runtime, staticBitSet, true)
+        else new ProcedureSymbol(Identifier(pos, "read"), Seq(fileSymbol, VariableSymbol(Identifier("value"), dataType, OUT, 0, null)), Runtime, staticBitSet, true)
+        val write = new ProcedureSymbol(Identifier(pos, "write"), Seq(fileSymbol, ConstantSymbol(Identifier("value"), dataType, 0, null)), Runtime, staticBitSet, true)
+        val endfile = new FunctionSymbol(Identifier(pos, "endfile"), Seq(fileSymbol), SymbolTable.booleanType, Runtime, staticBitSet, true)
 
         (fileTypeDefinition.copy(dataType = fileType), Seq(file_open1, file_open2, file_close, read, write, endfile))
       case protectedType: ProtectedTypeDeclaration =>
         checkIdentifiers(protectedType.identifier, protectedType.endIdentifier)
-        val (declarativeItems, c) = acceptDeclarativeItems(protectedType.declarativeItems, parentSymbol, context.openScope)
+        val (declarativeItems, c) = acceptDeclarativeItems(protectedType.declarativeItems, owner, context.openScope)
         val dataType = new ProtectedType(name, c.symbolTable.currentScope.values.flatMap {
           _ match {
             case ListOfFunctions(_, functions) => functions.toList
             case ListOfProcedures(_, procedures) => procedures.toList
             case _ => Seq()
           }
-        }.toSeq, parentSymbol, false)
+        }.toSeq, owner, false)
         (protectedType.copy(declarativeItems = declarativeItems, dataType = dataType), Seq())
       case protectedTypeBody: ProtectedTypeBodyDeclaration =>
-        if (parentSymbol.isInstanceOf[PackageHeaderSymbol]) addError(protectedTypeBody, SemanticMessage.PROTECTED_TYPE_BODY_IN_PACKAGE)
+        if (owner.isInstanceOf[PackageHeaderSymbol]) addError(protectedTypeBody, SemanticMessage.PROTECTED_TYPE_BODY_IN_PACKAGE)
         checkIdentifiers(protectedTypeBody.identifier, protectedTypeBody.endIdentifier)
 
         val (declarativeItems, protectedType) = context.findSymbol(protectedTypeBody.identifier, classOf[TypeSymbol]) match {
           case None => (protectedTypeBody.declarativeItems, null)
           case Some(typeSymbol) => typeSymbol.dataType match {
-            case protectedType: ProtectedType => (acceptDeclarativeItems(protectedTypeBody.declarativeItems, typeSymbol, context.openScope)._1, protectedType.copy(implemented = true))
+            case protectedType: ProtectedType => (acceptDeclarativeItems(protectedTypeBody.declarativeItems, typeSymbol, context.openScope.insertSymbols(protectedType.subprograms))._1, protectedType.copy(implemented = true))
             case _ =>
               addError(protectedTypeBody.identifier, SemanticMessage.NOT_A, protectedTypeBody.identifier, "protected type")
               (protectedTypeBody.declarativeItems, null)
@@ -1982,15 +2014,15 @@ object SemanticAnalyzer {
         accessTypes.foreach(accessType => accessType.pointerType = newTypeDeclaration.dataType)
         //we can now add the deallocate procedure, as the type is now defined
         val deallocateProcedures = accessTypes.map(accessType => new ProcedureSymbol(Identifier("deallocate"), Seq(VariableSymbol(Identifier("p"), accessType, RuntimeSymbol.Modifier.IN_OUT, 0, null)), Runtime, BitSet(SubProgramFlags.Static), true))
-        (newTypeDeclaration, context.copy(symbolTable = context.insertSymbols(deallocateProcedures).symbolTable.insert(new TypeSymbol(typeDeclaration.identifier, newTypeDeclaration.dataType, parentSymbol))))
+        (newTypeDeclaration, context.copy(symbolTable = context.insertSymbols(deallocateProcedures).symbolTable.insert(new TypeSymbol(typeDeclaration.identifier, newTypeDeclaration.dataType, owner))))
       case _ =>
-        (newTypeDeclaration, if (newTypeDeclaration.dataType == NoType) context else context.insertSymbols(new TypeSymbol(typeDeclaration.identifier, newTypeDeclaration.dataType, parentSymbol) +: newSymbols))
+        (newTypeDeclaration, if (newTypeDeclaration.dataType == NoType) context else context.insertSymbols(new TypeSymbol(typeDeclaration.identifier, newTypeDeclaration.dataType, owner) +: newSymbols))
     }
   }
 
-  def visitSubTypeDeclaration(subTypeDeclaration: SubTypeDeclaration, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitSubTypeDeclaration(subTypeDeclaration: SubTypeDeclaration, owner: Symbol, context: Context): ReturnType = {
     val dataType = createType(context, subTypeDeclaration.subTypeIndication, subTypeDeclaration.identifier.text)
-    val symbol = new TypeSymbol(subTypeDeclaration.identifier, dataType, parentSymbol)
+    val symbol = new TypeSymbol(subTypeDeclaration.identifier, dataType, owner)
     (subTypeDeclaration, context.insertSymbol(symbol))
   }
 
@@ -2044,7 +2076,7 @@ object SemanticAnalyzer {
     (useClause, context.copy(symbolTable = context.symbolTable.insertWithoutCheck(symbolList)))
   }
 
-  def visitVariableAssignmentStatement(varAssignStmt: VariableAssignmentStatement, parentSymbol: Symbol, context: Context): ReturnType = varAssignStmt match {
+  def visitVariableAssignmentStatement(varAssignStmt: VariableAssignmentStatement, owner: Symbol, context: Context): ReturnType = varAssignStmt match {
     case stmt: SimpleVariableAssignmentStatement =>
       stmt.target.nameOrAggregate match {
         case Left(name) =>
@@ -2054,7 +2086,7 @@ object SemanticAnalyzer {
               val varSymbol = w.symbol.asInstanceOf[VariableSymbol]
               if (varSymbol.modifier == RuntimeSymbol.Modifier.IN) addError(varAssignStmt, SemanticMessage.ASSIGN_READ_ONLY, "variable", varSymbol.name)
               varSymbol.used = true
-              checkPure(context, varAssignStmt, parentSymbol, varSymbol)
+              checkPure(context, varAssignStmt, owner, varSymbol)
             case _ => addError(name.identifier, SemanticMessage.NOT_A, name.identifier.text, "variable")
           }
           val expression = checkExpression(context, stmt.expression, nameExpression.dataType)
@@ -2064,9 +2096,9 @@ object SemanticAnalyzer {
   }
 
 
-  def visitVariableDeclaration(variableDeclaration: VariableDeclaration, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitVariableDeclaration(variableDeclaration: VariableDeclaration, owner: Symbol, context: Context): ReturnType = {
     val dataType = createType(context, variableDeclaration.subType)
-    parentSymbol match {
+    owner match {
       case _: ArchitectureSymbol | _: PackageHeaderSymbol | _: PackageBodySymbol | _: EntitySymbol =>
         if (!variableDeclaration.shared) addError(variableDeclaration, SemanticMessage.NOT_ALLOWED, "non shared variable")
         else {
@@ -2085,7 +2117,7 @@ object SemanticAnalyzer {
     }
     val multiplier = getNextIndex(dataType) //+2 for real and physical, +1 for all other variables
     val symbols = variableDeclaration.identifierList.zipWithIndex.map {
-      case (identifier, i) => new VariableSymbol(identifier, dataType, RuntimeSymbol.Modifier.IN_OUT, context.varIndex + (i * multiplier), parentSymbol)
+      case (identifier, i) => new VariableSymbol(identifier, dataType, RuntimeSymbol.Modifier.IN_OUT, context.varIndex + (i * multiplier), owner)
     }
     val newNode = variableDeclaration.copy(initialValueExpression = initialValueExpression, symbols = symbols)
     val newContext = context.insertSymbols(symbols).copy(varIndex = context.varIndex + (variableDeclaration.identifierList.size * multiplier) + 1)
@@ -2103,10 +2135,10 @@ object SemanticAnalyzer {
     (waitStmt.copy(untilCondition = untilCondition, forExpression = forExpression), context)
   }
 
-  def visitWhileStatement(whileStmt: WhileStatement, parentSymbol: Symbol, context: Context): ReturnType = {
+  def visitWhileStatement(whileStmt: WhileStatement, owner: Symbol, context: Context): ReturnType = {
     checkIdentifiersOption(whileStmt.label, whileStmt.endLabel)
     val condition = checkExpression(context, whileStmt.condition, SymbolTable.booleanType)
-    val (sequentialStatementList, _) = acceptList(whileStmt.sequentialStatementList, parentSymbol, context)
+    val (sequentialStatementList, _) = acceptList(whileStmt.sequentialStatementList, owner, context)
     (whileStmt.copy(condition = condition, sequentialStatementList = sequentialStatementList), context)
   }
 

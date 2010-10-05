@@ -38,11 +38,8 @@ object Term {
 }
 final case class Term(position: Position, left: Expression, operator: Term.Operator, right: Expression, dataType: DataType = NoType) extends Expression
 
-final case class AggregateExpression(aggregate: Aggregate, dataType: DataType = NoType) extends Expression {
-  val position = aggregate.elements.head.choices match {
-    case None => aggregate.elements.head.expression.position
-    case Some(choices) => choices.elements.head.position
-  }
+final case class AggregateExpression(aggregate: Aggregate, dataType: DataType = NoType) extends Expression{
+  val position=aggregate.position
 }
 
 final case class TypeCastExpression(expression: Expression, dataType: DataType = NoType) extends Expression {
@@ -141,7 +138,7 @@ object Literal {
   }
 }
 
-final case class Literal(position: Position, text: String, literalType: Literal.Type, dataType: DataType = NoType)
+final case class Literal(position: Position, text: String, literalType: Literal.Type, dataType: DataType = NoType, value: AnyVal = -1)
         extends Expression {
   import Literal.Type
 

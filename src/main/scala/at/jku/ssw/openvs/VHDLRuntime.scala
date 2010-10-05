@@ -21,8 +21,12 @@ package at.jku.ssw.openvs
 object VHDLRuntime {
   import reflect.BeanProperty
 
-  trait EnumType {
+  trait EnumerationType {
     def getValue(value: Int): String
+  }
+
+  trait RecordType {
+    def copy(): AnyRef
   }
 
   final class VHDLRuntimeException(message: String) extends RuntimeException(message) {
@@ -326,6 +330,25 @@ object VHDLRuntime {
     return if ((mod < 0 && y > 0) || (mod > 0 && y < 0)) mod + y else mod
   }
 
+  def fill[A](n: Int, clazz: Class[A])(implicit m: ClassManifest[A]) = Array.tabulate(n)(i => clazz.newInstance)
+
+  def fill[A](n1: Int, n2: Int, clazz: Class[A])(implicit m: ClassManifest[A]) = Array.tabulate(n1, n2)((i, j) => clazz.newInstance)
+
+  def fill[A](n1: Int, n2: Int, n3: Int, clazz: Class[A])(implicit m: ClassManifest[A]) = Array.tabulate(n1, n2, n3)((i, j, k) => clazz.newInstance)
+
+  def fill[A](n1: Int, n2: Int, n3: Int, n4: Int, clazz: Class[A])(implicit m: ClassManifest[A]) = Array.tabulate(n1, n2, n3, n4)((i, j, k, l) => clazz.newInstance)
+
+  def fill[A](n1: Int, n2: Int, n3: Int, n4: Int, n5: Int, clazz: Class[A])(implicit m: ClassManifest[A]) = Array.tabulate(n1, n2, n3, n4, n5)((i, j, k, l, m) => clazz.newInstance)
+
+  def fill[A](n: Int, value: A)(implicit m: ClassManifest[A]) = Array.fill[A](n)(value)
+
+  def fill[A](n1: Int, n2: Int, value: A)(implicit m: ClassManifest[A]) = Array.fill[A](n1, n2)(value)
+
+  def fill[A](n1: Int, n2: Int, n3: Int, value: A)(implicit m: ClassManifest[A]) = Array.fill[A](n1, n2, n3)(value)
+
+  def fill[A](n1: Int, n2: Int, n3: Int, n4: Int, value: A)(implicit m: ClassManifest[A]) = Array.fill[A](n1, n2, n3, n4)(value)
+
+  def fill[A](n1: Int, n2: Int, n3: Int, n4: Int, n5: Int, value: A)(implicit m: ClassManifest[A]) = Array.fill[A](n1, n2, n3, n4, n5)(value)
 
   def NOT(data: Array[Boolean]): Array[Boolean] = data.map(!_)
 

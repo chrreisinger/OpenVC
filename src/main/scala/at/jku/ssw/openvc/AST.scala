@@ -73,7 +73,7 @@ object Range {
     val To, Downto = Value
   }
 }
-final class Range(val fromExpression: Expression, val direction: Range.Direction, val toExpression: Expression, val attributeNameOption: Option[Name]) extends Locatable {
+final class Range(val fromExpression: Expression, val direction: Range.Direction, val toExpression: Expression, val attributeNameOption: Option[Name], val dataType: DataType = NoType) extends Locatable {
   val position = attributeNameOption match {
     case None => fromExpression.position
     case Some(attribute) => attribute.position
@@ -104,7 +104,7 @@ final class Signature(val parameterList: Option[Seq[SelectedName]], val returnTy
 object Aggregate {
   final case class ElementAssociation(choices: Option[Choices], expression: Expression)
 }
-final case class Aggregate(elements: Seq[Aggregate.ElementAssociation])
+final case class Aggregate(position:Position,elements: Seq[Aggregate.ElementAssociation])
 
 object Waveform {
   final class Element(val valueExpression: Expression, val timeExpression: Option[Expression])

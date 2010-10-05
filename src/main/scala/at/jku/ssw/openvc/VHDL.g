@@ -20,7 +20,7 @@ grammar VHDL;
 
 options{
 	language=Java;
-	TokenLabelType = CommonToken;
+	memoize=true;
 }
 tokens{
 	//includes only VHDL 2002 keywords
@@ -571,14 +571,14 @@ subprogram_body[SubProgramDeclaration subprogramDecl] returns [SubProgramDefinit
 	:	IS
 			(subprogram_declarative_item{declItems += $subprogram_declarative_item.node})* 
 		BEGIN
-			sequential_statement_list
-		END (PROCEDURE | FUNCTION)? endIdent=designator?
+			sequence_of_statements
+		END ({$subprogramDecl.isInstanceOf[ProcedureDeclaration]}?=>PROCEDURE | {$subprogramDecl.isInstanceOf[FunctionDeclaration]}?=>FUNCTION)? endIdent=designator?
 		{
 			$subProgramDef = $subprogramDecl match {
 				case procDecl : ProcedureDeclaration => 
-					new ProcedureDefinition($subprogramDecl.position,procDecl.identifier,procDecl.parameterInterfaceList,declItems.toList,$sequential_statement_list.list,endIdent)
+					new ProcedureDefinition($subprogramDecl.position,procDecl.identifier,procDecl.parameterInterfaceList,declItems.toList,$sequence_of_statements.list,endIdent)
 				case funcDecl : FunctionDeclaration =>
-					new FunctionDefinition($subprogramDecl.position,funcDecl.pure,funcDecl.identifier,funcDecl.parameterInterfaceList,funcDecl.returnType,declItems.toList,$sequential_statement_list.list,endIdent)
+					new FunctionDefinition($subprogramDecl.position,funcDecl.pure,funcDecl.identifier,funcDecl.parameterInterfaceList,funcDecl.returnType,declItems.toList,$sequence_of_statements.list,endIdent)
 			}	
 		}
 		;
@@ -1207,9 +1207,9 @@ process_statement[Identifier label,Boolean postponed] returns [ProcessStatement 
 	:	process=PROCESS (LPAREN name_list RPAREN)? IS?
 			(process_declarative_item {declItem += $process_declarative_item.node})*
 		BEGIN
-			sequential_statement_list
+			sequence_of_statements
 		END POSTPONED? PROCESS end_process_label=identifier? SEMICOLON
-		{$processStmt=new ProcessStatement(toPosition($process),$label,$postponed,$name_list.list,declItem.toList,$sequential_statement_list.list,$end_process_label.id)}
+		{$processStmt=new ProcessStatement(toPosition($process),$label,$postponed,$name_list.list,declItem.toList,$sequence_of_statements.list,$end_process_label.id)}
 		;
     	
 process_declarative_item returns [DeclarativeItem node]
@@ -1402,9 +1402,9 @@ ams_simultaneous_procedural_statement[Identifier label] returns [SimultaneousPro
 	:	procedural=PROCEDURAL IS?
 			(ams_simultaneous_procedural_declarative_item{items += $ams_simultaneous_procedural_declarative_item.node})*
 		BEGIN
-			sequential_statement_list
+			sequence_of_statements
 		END PROCEDURAL end_procedural_label=identifier? SEMICOLON
-		{$proceduralStmt=new SimultaneousProceduralStatement(toPosition($procedural),$label,items.toList,$sequential_statement_list.list,$end_procedural_label.id)}
+		{$proceduralStmt=new SimultaneousProceduralStatement(toPosition($procedural),$label,items.toList,$sequence_of_statements.list,$end_procedural_label.id)}
 		;
 		
 ams_simultaneous_procedural_declarative_item returns [DeclarativeItem node]
@@ -1427,7 +1427,7 @@ ams_simultaneous_null_statement[Identifier label] returns [SimultaneousNullState
 		;
 
 // B.6 Sequential Statments
-sequential_statement_list returns [Seq[SequentialStatement\] list]
+sequence_of_statements returns [Seq[SequentialStatement\] list]
 @init{
 	val tmpList=new Buffer[SequentialStatement]()
 	list=List()
@@ -1578,13 +1578,13 @@ if_statement[Identifier label] returns [IfStatement ifStmt]
 	val ifList=new Buffer[IfStatement.IfThenPart]()
 }
 	:	ifToken=IF if_condition=condition THEN
-			if_sequential_statement=sequential_statement_list {ifList += new IfStatement.IfThenPart($if_condition.con,$if_sequential_statement.list)}
+			if_sequential_statement=sequence_of_statements {ifList += new IfStatement.IfThenPart($if_condition.con,$if_sequential_statement.list)}
 		(ELSIF elsif_condition=condition THEN
-			 elsif_sequential_statement=sequential_statement_list
+			 elsif_sequential_statement=sequence_of_statements
 			 {ifList += new IfStatement.IfThenPart($elsif_condition.con,$elsif_sequential_statement.list)}
 			 )*
 		(ELSE	
-			else_sequential_statement=sequential_statement_list)?
+			else_sequential_statement=sequence_of_statements)?
 		END IF end_if_label=identifier? SEMICOLON 
 		{$ifStmt=new IfStatement(toPosition($ifToken),$label,ifList.toList,$else_sequential_statement.list,$end_if_label.id)}
 		;
@@ -1594,7 +1594,7 @@ case_statement[Identifier label] returns [CaseStatement caseStmt]
 	val alternatives=new Buffer[CaseStatement.When]()
 }
 	:	caseToken=CASE /*{vhdl2008}?=>QMARK?*/ expression IS
-			(WHEN choices ARROW sequential_statement_list {alternatives += new CaseStatement.When($choices.choices_,$sequential_statement_list.list)})+
+			(WHEN choices ARROW sequence_of_statements {alternatives += new CaseStatement.When($choices.choices_,$sequence_of_statements.list)})+
 		END CASE /*{vhdl2008}?=>QMARK?*/ end_case_label=identifier? SEMICOLON
 		{$caseStmt=new CaseStatement(toPosition($caseToken),$label,$expression.expr,alternatives.toList,$end_case_label.id)}
 		;
@@ -1609,16 +1609,16 @@ loop_statement[Identifier label] returns [SequentialStatement loopStmt]
 	val firstToken=input.LT(1)
 }
 	:	stmtType=iteration_scheme? LOOP
-			sequential_statement_list
+			sequence_of_statements
 		END LOOP end_loop_label=identifier? SEMICOLON
 		{		
 			val position=toPosition(firstToken)
 			loopStmt=Option(stmtType) match {
 				case Some(x)=> x match {
-					case Left(condition)=>new WhileStatement(position,$label,condition,$sequential_statement_list.list,$end_loop_label.id)
-					case Right((identifier,discreteRange)) =>new ForStatement(position,$label,identifier,discreteRange,$sequential_statement_list.list,$end_loop_label.id)
+					case Left(condition)=>new WhileStatement(position,$label,condition,$sequence_of_statements.list,$end_loop_label.id)
+					case Right((identifier,discreteRange)) =>new ForStatement(position,$label,identifier,discreteRange,$sequence_of_statements.list,$end_loop_label.id)
 				}
-				case None =>new LoopStatement(position,$label,$sequential_statement_list.list,$end_loop_label.id)
+				case None =>new LoopStatement(position,$label,$sequence_of_statements.list,$end_loop_label.id)
 			}
 		}
 		;
@@ -2090,7 +2090,7 @@ aggregate returns [Aggregate aggregate_]
 	val elements=new Buffer[Aggregate.ElementAssociation]()
 }
 	:	LPAREN  e1=element_association{elements += $e1.element} (COMMA e2=element_association {elements += $e2.element})* RPAREN
-		{aggregate_ =new Aggregate(elements.toList)}
+		{aggregate_ =new Aggregate(toPosition($LPAREN),elements.toList)}
 		;
 
 
