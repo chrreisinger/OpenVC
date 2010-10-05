@@ -2023,7 +2023,7 @@ name_attribute_part returns [Name.AttributePart part]
 		
 signature returns [Signature signature_]
 	:	LBRACKET selected_name_list? (RETURN type_mark)? RBRACKET
-		{$signature_ =new Signature($selected_name_list.list,$type_mark.typeName)}
+		{$signature_ =new Signature(toPosition($LBRACKET),$selected_name_list.list,$type_mark.typeName)}
 		;
 /* VHDL 2008	
 external_name 

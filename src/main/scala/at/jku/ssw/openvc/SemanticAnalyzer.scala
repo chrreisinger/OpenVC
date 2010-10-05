@@ -79,10 +79,12 @@ object SemanticAnalyzer {
     (newDesignFile.asInstanceOf[DesignFile], semanticErrors.toList, semanticWarnings.toList)
   }
 
-  def addError(stmt: Locatable, msg: String, messageParameters: AnyRef*) = addErrorPosition(stmt.position, msg, messageParameters: _*)
+  def addError(stmt: Locatable, msg: String, messageParameters: AnyRef*): Option[Nothing] = addErrorPosition(stmt.position, msg, messageParameters: _*)
 
-  def addErrorPosition(position: Position, msg: String, messageParameters: AnyRef*) =
+  def addErrorPosition(position: Position, msg: String, messageParameters: AnyRef*): Option[Nothing] = {
     semanticErrors += new CompilerMessage(position, String.format(msg, messageParameters.toArray: _*))
+    None
+  }
 
   def addWarning(stmt: Locatable, msg: String, messageParameters: AnyRef*) = semanticWarnings += new CompilerMessage(stmt.position, String.format(msg, messageParameters.toArray: _*))
 
@@ -96,9 +98,8 @@ object SemanticAnalyzer {
 
   case class Context(libraries: Map[String, AbstractLibraryArchive], varIndex: Int, symbolTable: SymbolTable) {
     def find(name: SelectedName): Option[Symbol] = {
-      require(name != null)
-      def matchParts(parts: Seq[Identifier], symbol: Symbol): Symbol = parts match {
-        case Seq() => symbol
+      def matchParts(parts: Seq[Identifier], symbol: Symbol): Option[Symbol] = parts match {
+        case Seq() => Option(symbol)
         case Seq(identifier, xs@_*) =>
           /*
         case Name.AttributePart(signature, identifier, expression) =>
@@ -111,36 +112,24 @@ object SemanticAnalyzer {
               null
           }
           */
-          val newSymbol = symbol match {
+          val newSymbol: Option[Symbol] = symbol match {
             case packageSymbol: PackageHeaderSymbol =>
-              packageSymbol.localSymbols.get(identifier.text).getOrElse {
-                addError(identifier, SemanticMessage.NOT_FOUND, "item", identifier.text)
-                null
+              packageSymbol.localSymbols.get(identifier.text).orElse(addError(identifier, SemanticMessage.NOT_FOUND, "item", identifier.text))
+            case r: RuntimeSymbol => r.dataType match {
+              case recordType: RecordType => recordType.elementsMap.get(identifier.text) match {
+                case None => addError(identifier, SemanticMessage.NO_FIELD, identifier.text)
+                case Some(t) =>
+                  symbol match {
+                    case v: VariableSymbol => Option(new VariableSymbol(identifier, t, v.modifier, varIndex, symbol))
+                    case s: SignalSymbol => Option(new SignalSymbol(identifier, t, s.modifier, null, varIndex, symbol))
+                  }
               }
-            case r: RuntimeSymbol =>
-              if (r.dataType.isInstanceOf[RecordType]) {
-                r.dataType.asInstanceOf[RecordType].elementsMap.get(identifier.text) match {
-                  case None =>
-                    addError(identifier, SemanticMessage.NO_FIELD, identifier.text)
-                    null
-                  case Some(t) =>
-                    symbol match {
-                      case v: VariableSymbol => new VariableSymbol(identifier, t, v.modifier, varIndex, symbol)
-                      case s: SignalSymbol => new SignalSymbol(identifier, t, s.modifier, null, varIndex, symbol)
-                    }
-                }
-              } else {
-                addError(identifier, SemanticMessage.NO_FIELD, identifier.text)
-                null
-              }
+              case _ => addError(identifier, SemanticMessage.NO_FIELD, identifier.text)
+            }
           }
-          matchParts(xs, newSymbol)
+          newSymbol.flatMap(symbol => matchParts(xs, symbol))
       }
-      val symbol = symbolTable.find(name.identifiers.head.text) match {
-        case None => null
-        case Some(symbol) => matchParts(name.identifiers.tail, symbol)
-      }
-      Option(symbol)
+      symbolTable.find(name.identifiers.head.text).flatMap(symbol => matchParts(name.identifiers.tail, symbol))
     }
 
     def findSymbol[A >: Null <: Symbol](identifier: Identifier, symbolClass: Class[A]): Option[A] =
@@ -148,14 +137,14 @@ object SemanticAnalyzer {
 
     def findSymbol[A >: Null <: Symbol](typeName: SelectedName, symbolClass: Class[A]): Option[A] =
       find(typeName) match {
-        case None =>
-          addError(typeName, SemanticMessage.NOT_FOUND, symbolClass.toString, typeName.toString)
-          None
-        case Some(symbol) =>
-          if (symbol.getClass ne symbolClass) {
-            addError(typeName, SemanticMessage.INVALID_SYMBOL_TYPE, symbol.name, symbolClass.toString, symbol.getClass.toString)
-            None
-          } else Some(symbol.asInstanceOf[A])
+        case None => addError(typeName, SemanticMessage.NOT_FOUND, symbolClass.toString, typeName.toString)
+        case Some(s) =>
+          val symbol = s match {
+            case AliasSymbol(_, destination) => destination
+            case _ => s
+          }
+          if (symbol.getClass ne symbolClass) addError(typeName, SemanticMessage.INVALID_SYMBOL_TYPE, symbol.name, symbolClass.toString, symbol.getClass.toString)
+          else Some(symbol.asInstanceOf[A])
       }
 
     def findType(dataType: SelectedName, isAccessTypeDefinition: Boolean = false): DataType = find(dataType) match {
@@ -163,6 +152,7 @@ object SemanticAnalyzer {
         addError(dataType, SemanticMessage.NOT_FOUND, "type", dataType.toString)
         NoType
       case Some(symbol) => symbol match {
+        case aliasSymbol: AliasSymbol if (aliasSymbol.destination.isInstanceOf[TypeSymbol]) => aliasSymbol.destination.asInstanceOf[TypeSymbol].dataType
         case typeSymbol: TypeSymbol =>
           if (!isAccessTypeDefinition && typeSymbol.dataType == IncompleteType) addError(dataType, "can not use incomplete type %s", typeSymbol.name)
           typeSymbol.dataType
@@ -223,6 +213,9 @@ object SemanticAnalyzer {
       }
       insertSymbolsInner(this, list)
     }
+
+    def insertSymbol(optionSymbol: Option[Symbol]): Context =
+      optionSymbol.map(insertSymbol).getOrElse(this)
 
     def insertSymbol(symbol: Symbol): Context =
       symbolTable.currentScope.get(symbol.name) match {
@@ -458,9 +451,7 @@ object SemanticAnalyzer {
       val newExpr = attributeExpr.attribute.parameter match {
         case Some(requiredDataType) => attributeExpr.attribute.isParameterOptional match {
           case false => attributeExpr.expression match {
-            case None =>
-              addError(attributeExpr, SemanticMessage.ATTRIBUTE_PARAMETER_REQUIRED, attributeExpr.attribute.name, requiredDataType.name)
-              None
+            case None => addError(attributeExpr, SemanticMessage.ATTRIBUTE_PARAMETER_REQUIRED, attributeExpr.attribute.name, requiredDataType.name)
             case Some(expr) => Option(checkExpression(context, expr, requiredDataType))
           }
           case true => attributeExpr.expression match {
@@ -1158,34 +1149,54 @@ object SemanticAnalyzer {
     SymbolTable.fileOpenStatus = context.findType("file_open_status")
   }
 
-  /* def findSubProgramSymbolFromSignature(siganture:Signature):SubProgramSymbol={
-
-  }*/
   def visitAliasDeclaration(aliasDeclaration: AliasDeclaration, context: Context): ReturnType = {
-    /*TODO def signatureToTypes(sig: Signature): (Seq[DataType], Option[DataType]) = {
-      val p = sig.parameterList.map(parameter => context.findType(parameter))
-      (p, sig.returnType.map(context.findType))
-    }
-    val name = aliasDeclaration.identifier
-    if (aliasDeclaration.signature.isDefined) {
-      val (parameters, returnType) = signatureToTypes(aliasDeclaration.signature.get)
-      throw new UnsupportedOperationException()
-    }
-    val dataType = aliasDeclaration.subType.map(createType(context, _))
-    val newContext = context.find(aliasDeclaration.name) map {
-      originalSymbol =>
-        val newSymbol = originalSymbol match {
-          case typeSymbol: TypeSymbol => new TypeSymbol(name, dataType.getOrElse(typeSymbol.dataType))
-          case constSymbol: ConstantSymbol => new ConstantSymbol(name, dataType.getOrElse(constSymbol.dataType), constSymbol.index, constSymbol.owner)
-          case varSymbol: VariableSymbol => new VariableSymbol(name, dataType.getOrElse(varSymbol.dataType), varSymbol.modifier, varSymbol.index, varSymbol.owner)
-          case signalSymbol: SignalSymbol => new SignalSymbol(name, dataType.getOrElse(signalSymbol.dataType), signalSymbol.modifier, signalSymbol.signalType, signalSymbol.index, signalSymbol.owner)
-          case fileSymbol: FileSymbol => new FileSymbol(name, dataType.getOrElse(fileSymbol.dataType), fileSymbol.index, fileSymbol.owner)
+    val (identifierList, rest) = aliasDeclaration.name.parts.span(_.isInstanceOf[Name.SelectedPart])
+    val identifier = new SelectedName(aliasDeclaration.name.identifier +: identifierList.map(_.asInstanceOf[Name.SelectedPart].identifier))
+
+    def signatureToTypes(signature: Signature): (Seq[DataType], Option[DataType]) =
+      (signature.parameterList.map(list => list.map(parameter => context.findType(parameter))).flatten.toSeq, signature.returnType.map(returnType => context.findType(returnType)))
+
+    def createAliasSymbol(symbol: Symbol): Option[AliasSymbol] =
+      symbol match {
+      /*
+      TODO
+      case constSymbol: ConstantSymbol => new ConstantSymbol(name, dataType.getOrElse(constSymbol.dataType), constSymbol.index, constSymbol.owner)
+      case varSymbol: VariableSymbol => new VariableSymbol(name, dataType.getOrElse(varSymbol.dataType), varSymbol.modifier, varSymbol.index, varSymbol.owner)
+      case signalSymbol: SignalSymbol => new SignalSymbol(name, dataType.getOrElse(signalSymbol.dataType), signalSymbol.modifier, signalSymbol.signalType, signalSymbol.index, signalSymbol.owner)
+      case fileSymbol: FileSymbol => new FileSymbol(name, dataType.getOrElse(fileSymbol.dataType), fileSymbol.index, fileSymbol.owner)
+      */
+        case r: RuntimeSymbol => None
+        case ListOfFunctions(_, _) => aliasDeclaration.signature match {
+          case Some(signature) =>
+            val (dataTypes, returnTypeOption) = signatureToTypes(signature)
+            returnTypeOption match {
+              case Some(returnType) => context.findFunctionInList(symbol, dataTypes, returnType) match {
+                case Some(functionSymbol) => Some(new AliasSymbol(aliasDeclaration.identifier, functionSymbol))
+                case None => addError(signature, "no function found with this signature")
+              }
+              case None => addError(aliasDeclaration.identifier, "a signature of a function needs return type")
+            }
+          case None => addError(aliasDeclaration.name, "an alias for a procedure needs signature")
         }
-        context.insertSymbol(newSymbol)
-    }
-    (aliasDeclaration, newContext.getOrElse(context))
-    */
-    (aliasDeclaration, context)
+        case ListOfProcedures(_, _) => aliasDeclaration.signature match {
+          case Some(signature) =>
+            val (dataTypes, returnTypeOption) = signatureToTypes(signature)
+            returnTypeOption match {
+              case Some(returnType) => addError(signature, "a signature of procedure can not have return type")
+              case None => context.findProcedureInList(symbol, dataTypes) match {
+                case Some(procedureSymbol) => Some(new AliasSymbol(aliasDeclaration.identifier, procedureSymbol))
+                case None => addError(signature, "no procedure found with this siganture")
+              }
+            }
+          case None => addError(aliasDeclaration.name, "an alias for a functions needs a signature")
+        }
+        case AliasSymbol(_, destination) => createAliasSymbol(destination)
+        case _ =>
+          for (subType <- aliasDeclaration.subType) addError(subType, "subtype indication not allowed for non object alias")
+          for (signature <- aliasDeclaration.signature) addError(signature, "signature not allowed for non subprogram alias")
+          Some(new AliasSymbol(aliasDeclaration.identifier, symbol))
+      }
+    (aliasDeclaration, context.insertSymbol(context.find(identifier).orElse(addError(identifier, "no object found")).flatMap(createAliasSymbol)))
   }
 
   def visitArchitectureDeclaration(architectureDeclaration: ArchitectureDeclaration, context: Context): ReturnType = {
@@ -1197,8 +1208,7 @@ object SemanticAnalyzer {
       val sb = context.symbolTable.insertScopes(scopes).openScope
       (context.copy(symbolTable = sb).findSymbol(architectureDeclaration.entityName, classOf[EntitySymbol]), sb)
     } catch {
-      case e: IOException => addError(architectureDeclaration, SemanticMessage.NOT_FOUND, "entitySymbol", entity)
-      (None, context.symbolTable.openScope)
+      case e: IOException => (addError(architectureDeclaration, SemanticMessage.NOT_FOUND, "entitySymbol", entity), context.symbolTable.openScope)
     }
     val newContext = context.copy(symbolTable = newSymbolTable)
     setUpTypes(newContext)
@@ -1286,7 +1296,7 @@ object SemanticAnalyzer {
 
     val alternatives = if (!containsOthers) {
       //add default error handling
-      val caseError = new CaseStatement.When(new Choices(List(new Choices.Choice(null, None))), List(ThrowStatement(lastAlternative.choices.elements.head.position.addLineOffset(1), "case fall through")))
+      val caseError = new CaseStatement.When(new Choices(List(new Choices.Choice(Position.Empty, None))), List(ThrowStatement(lastAlternative.choices.elements.head.position.addLineOffset(1), "case fall through")))
       alternativesMapped :+ caseError
     } else {
       alternativesMapped
@@ -1296,7 +1306,9 @@ object SemanticAnalyzer {
       case _: EnumerationType | _: IntegerType =>
         val keys = alternatives.flatMap(when =>
           when.choices.elements.collect(_ match {
-            case choice: Choices.Choice if (!choice.isOthers) => choice.rangeOrExpression.get match {case Right(expression) => StaticExpressionCalculator.calcValue(expression)(IntIsIntegral)}
+            case choice: Choices.Choice if (!choice.isOthers) => choice.rangeOrExpression.get match {
+              case Right(expression) => StaticExpressionCalculator.calcValue(expression)(IntIsIntegral)
+            }
           }))
 
         (caseStmt.copy(expression = caseStmtExpression, keys = keys, alternatives = alternatives), context)
@@ -1369,7 +1381,11 @@ object SemanticAnalyzer {
 
   def visitConcurrentProcedureCallStatement(concurrentProcedureCallStmt: ConcurrentProcedureCallStatement, owner: Symbol, context: Context): ReturnType = {
     val procedureCallStmt = ProcedureCallStatement(None, concurrentProcedureCallStmt.procedureName, concurrentProcedureCallStmt.parameterAssociationList)
-    val sensitivityList = concurrentProcedureCallStmt.parameterAssociationList.map {_.elements.flatMap {_.actualPart.map(expressionToSensitivityList(_)).toList.flatten}}.toList.flatten
+    val sensitivityList = concurrentProcedureCallStmt.parameterAssociationList.map {
+      _.elements.flatMap {
+        _.actualPart.map(expressionToSensitivityList(_)).toList.flatten
+      }
+    }.toList.flatten
     toProcessStatement(procedureCallStmt, sensitivityList, concurrentProcedureCallStmt.label, concurrentProcedureCallStmt.postponed, owner, context)
   }
 
@@ -1437,9 +1453,7 @@ object SemanticAnalyzer {
             try {
               Some(id.text -> new JarFileLibraryArchive(id.text + ".jar"))
             } catch {
-              case e: IOException =>
-                addError(id, SemanticMessage.NOT_FOUND, "library", id)
-                None
+              case e: IOException => addError(id, SemanticMessage.NOT_FOUND, "library", id)
             }
         }).toMap + ("work" -> new DirectoryLibraryArchive("work"))
 
@@ -1641,7 +1655,11 @@ object SemanticAnalyzer {
         context.symbolTable
     }
     val (declarativeItems, c1) = acceptDeclarativeItems(packageBodyDeclaration.declarativeItems, symbol, context.copy(symbolTable = newSymbolTable))
-    c1.closeScope().collect {_ match {case c: ConstantSymbol if (!c.isDefined) => c}}.foreach(symbol => addError(packageBodyDeclaration, SemanticMessage.DEFERRED_CONSTANT_NOT_DECLARED, symbol.name))
+    c1.closeScope().collect {
+      _ match {
+        case c: ConstantSymbol if (!c.isDefined) => c
+      }
+    }.foreach(symbol => addError(packageBodyDeclaration, SemanticMessage.DEFERRED_CONSTANT_NOT_DECLARED, symbol.name))
     (packageBodyDeclaration.copy(declarativeItems = declarativeItems, symbol = symbol), context)
   }
 
@@ -1708,7 +1726,7 @@ object SemanticAnalyzer {
       case caseStmt: CaseStatement => caseStmt.alternatives.forall(alternative => isPassive(alternative.statements))
       case ifStmt: IfStatement => ifStmt.ifThenList.forall(ifThen => isPassive(ifThen.statements)) && ifStmt.elseSequentialStatementList.map(isPassive).getOrElse(true)
       case _: SignalAssignmentStatement => false
-      case procedureCallStmt: ProcedureCallStatement => procedureCallStmt.symbol.isPassive
+      case procedureCallStmt: ProcedureCallStatement => if (procedureCallStmt.symbol != null) procedureCallStmt.symbol.isPassive else true
       case _ => true
     }
   }
@@ -1771,20 +1789,16 @@ object SemanticAnalyzer {
   }
 
   def visitReturnStatement(returnStmt: ReturnStatement, owner: Symbol, context: Context): ReturnType = {
-    owner match {
+    val expression = owner match {
       case _: ProcessSymbol => addError(returnStmt, SemanticMessage.RETURN_STMT_IN_PROCESS)
       case functionSymbol: FunctionSymbol => returnStmt.expression match {
         case None => addError(returnStmt, SemanticMessage.FUNCTION_RETURN_WITHOUT_EXPRESSION)
-        case Some(_) =>
-          val expression = checkExpressionOption(context, returnStmt.expression, functionSymbol.returnType)
-          return (returnStmt.copy(expression = expression), context)
+        case Some(_) =>checkExpressionOption(context, returnStmt.expression, functionSymbol.returnType)
       }
-      case procedureSymbol: ProcedureSymbol =>
-        returnStmt.expression.foreach(expression => addError(expression, SemanticMessage.PROCEDURE_RETURN_VALUE))
-        return (returnStmt.copy(procedureSymbol = procedureSymbol), context)
+      case procedureSymbol: ProcedureSymbol => returnStmt.expression.flatMap(expression => addError(expression, SemanticMessage.PROCEDURE_RETURN_VALUE))
       case _ => addError(returnStmt, "return statement is only in functions and procedures allowed")
     }
-    (returnStmt, context)
+    (returnStmt.copy(expression = expression), context)
   }
 
   def visitSignalAssignmentStatement(signalAssignStmt: SignalAssignmentStatement, owner: Symbol, context: Context): ReturnType = {
@@ -2010,7 +2024,9 @@ object SemanticAnalyzer {
     context.symbolTable.findInCurrentScope(typeDeclaration.identifier.text, classOf[TypeSymbol]) match {
       case Some(symbol) if (symbol.dataType == IncompleteType) =>
         //we found an incomplete type declaration (TypeSymbol where dataType == IncompleteType), now we must update all access types where this incomplete type is used, so that the point to the new defined type
-        val accessTypes = context.symbolTable.currentScope.values.collect(_ match {case typeSymbol: TypeSymbol if (typeSymbol.dataType.isInstanceOf[AccessType] && typeSymbol.dataType.asInstanceOf[AccessType].pointerType == IncompleteType) => typeSymbol.dataType.asInstanceOf[AccessType]}).toSeq
+        val accessTypes = context.symbolTable.currentScope.values.collect(_ match {
+          case typeSymbol: TypeSymbol if (typeSymbol.dataType.isInstanceOf[AccessType] && typeSymbol.dataType.asInstanceOf[AccessType].pointerType == IncompleteType) => typeSymbol.dataType.asInstanceOf[AccessType]
+        }).toSeq
         accessTypes.foreach(accessType => accessType.pointerType = newTypeDeclaration.dataType)
         //we can now add the deallocate procedure, as the type is now defined
         val deallocateProcedures = accessTypes.map(accessType => new ProcedureSymbol(Identifier("deallocate"), Seq(VariableSymbol(Identifier("p"), accessType, RuntimeSymbol.Modifier.IN_OUT, 0, null)), Runtime, BitSet(SubProgramFlags.Static), true))
@@ -2038,9 +2054,7 @@ object SemanticAnalyzer {
           }
           context.libraries.get(library) match {
             case some@Some(arch) => some
-            case None =>
-              addError(name.identifiers.head, SemanticMessage.NOT_FOUND, "library", library)
-              None
+            case None => addError(name.identifiers.head, SemanticMessage.NOT_FOUND, "library", library)
           }
         }
         val packagePart = name.identifiers(1)
@@ -2050,9 +2064,7 @@ object SemanticAnalyzer {
           case Some(arch) =>
             arch.getInputStream(fileName) match {
               case Some(stream) => SymbolTable.getScopesFromInputStream(stream)
-              case None =>
-                addError(packagePart, SemanticMessage.NOT_FOUND, "package", packagePart.text);
-                List()
+              case None => addError(packagePart, SemanticMessage.NOT_FOUND, "package", packagePart.text).toList
             }
         }
         val scopeSize = scopes.size
@@ -2067,8 +2079,7 @@ object SemanticAnalyzer {
           } else {
             scopes(scopeSize - 1).get(id.text) match {
               case Some(symbol) => List(symbol)
-              case None => addError(id, SemanticMessage.NOT_FOUND, "symbol", id.text);
-              List()
+              case None => addError(id, SemanticMessage.NOT_FOUND, "symbol", id.text).toList
             }
           }
         }
@@ -2110,9 +2121,7 @@ object SemanticAnalyzer {
       case _ => if (variableDeclaration.shared) addError(variableDeclaration, SemanticMessage.NOT_ALLOWED, "shared variable")
     }
     val initialValueExpression = dataType match {
-      case _: ProtectedType =>
-        variableDeclaration.initialValueExpression.foreach(expression => addError(expression, SemanticMessage.PROTECTED_TYPE_INITIAL_VALUE_EXPRESSION))
-        None
+      case _: ProtectedType => variableDeclaration.initialValueExpression.flatMap(expression => addError(expression, SemanticMessage.PROTECTED_TYPE_INITIAL_VALUE_EXPRESSION))
       case _ => checkExpressionOption(context, variableDeclaration.initialValueExpression, dataType)
     }
     val multiplier = getNextIndex(dataType) //+2 for real and physical, +1 for all other variables

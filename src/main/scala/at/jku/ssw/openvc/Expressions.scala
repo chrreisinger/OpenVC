@@ -38,8 +38,8 @@ object Term {
 }
 final case class Term(position: Position, left: Expression, operator: Term.Operator, right: Expression, dataType: DataType = NoType) extends Expression
 
-final case class AggregateExpression(aggregate: Aggregate, dataType: DataType = NoType) extends Expression{
-  val position=aggregate.position
+final case class AggregateExpression(aggregate: Aggregate, dataType: DataType = NoType) extends Expression {
+  val position = aggregate.position
 }
 
 final case class TypeCastExpression(expression: Expression, dataType: DataType = NoType) extends Expression {

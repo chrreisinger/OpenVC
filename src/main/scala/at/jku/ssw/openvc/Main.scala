@@ -32,7 +32,7 @@ object Main {
       }
       val fileOption = arguments.find(argument => !argument.startsWith("--") && (argument.endsWith(".vhd") || argument.endsWith(".vhdl")))
       //val files = List("math_real.vhd", "math_real-body.vhd")
-      val files=List("math_complex.vhd","math_complex-body.vhd")
+      val files = List("math_complex.vhd", "math_complex-body.vhd")
       //val files = List("std_logic_1164.vhd", "std_logic_1164_body.vhd")
       //val files = List("numeric_bit.vhd", "numeric_bit-body.vhd")
       //val files = List("numeric_std.vhd", "numeric_std-body.vhd")

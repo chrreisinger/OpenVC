@@ -99,12 +99,12 @@ final class SubTypeIndication(val resolutionFunction: Option[SelectedName], val 
   val position = resolutionFunction.getOrElse(typeName).position
 }
 
-final class Signature(val parameterList: Option[Seq[SelectedName]], val returnType: Option[SelectedName])
+final class Signature(val position: Position, val parameterList: Option[Seq[SelectedName]], val returnType: Option[SelectedName]) extends Locatable
 
 object Aggregate {
   final case class ElementAssociation(choices: Option[Choices], expression: Expression)
 }
-final case class Aggregate(position:Position,elements: Seq[Aggregate.ElementAssociation])
+final case class Aggregate(position: Position, elements: Seq[Aggregate.ElementAssociation])
 
 object Waveform {
   final class Element(val valueExpression: Expression, val timeExpression: Option[Expression])
@@ -140,7 +140,7 @@ object Name {
     val position = range.position
   }
   final case class AttributePart(signature: Option[Signature], identifier: Identifier, expression: Option[Expression]) extends Part {
-    val position = identifier.position
+    val position = signature.map(_.position).getOrElse(identifier.position)
   }
 }
 

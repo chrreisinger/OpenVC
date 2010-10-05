@@ -355,6 +355,11 @@ case object NoSymbol extends Symbol {
   val owner = null
 }
 
+@SerialVersionUID(7944297999105157076L)
+final case class AliasSymbol(identifier: Identifier, destination: Symbol) extends Symbol {
+  val owner = NoSymbol
+}
+
 @SerialVersionUID(7013029205564976456L)
 final case class ListOfFunctions(identifier: Identifier, functions: mutable.ListBuffer[FunctionSymbol]) extends Symbol {
   val owner = NoSymbol

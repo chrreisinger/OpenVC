@@ -1,4 +1,4 @@
-// $ANTLR 3.2 Sep 23, 2009 12:02:23 C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g 2010-10-05 13:12:02
+// $ANTLR 3.2 Sep 23, 2009 12:02:23 C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g 2010-10-05 16:31:28
 
 /*
  *     OpenVC, an open source VHDL compiler/simulator
@@ -19888,9 +19888,10 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
     @throws(classOf[RecognitionException])
     def signature():Signature = {
          var signature_ :Signature = null;val signature_StartIndex:Int = input.index()
-        var selected_name_list505:Seq[SelectedName] = null
+        var LBRACKET505 :Token=null
+        var selected_name_list506:Seq[SelectedName] = null
 
-        var type_mark506:SelectedName = null
+        var type_mark507:SelectedName = null
 
 
         try {
@@ -19898,7 +19899,7 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
             // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:2025:2: ( LBRACKET ( selected_name_list )? ( RETURN type_mark )? RBRACKET )
             // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:2025:4: LBRACKET ( selected_name_list )? ( RETURN type_mark )? RBRACKET
             {
-            	`match`(input,LBRACKET,FOLLOW_LBRACKET_in_signature11114); if (state.failed) return signature_;
+            	LBRACKET505=`match`(input,LBRACKET,FOLLOW_LBRACKET_in_signature11114).asInstanceOf[Token]; if (state.failed) return signature_;
             	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:2025:13: ( selected_name_list )?
             	var alt274 :Int=2
             	val LA274_0:Int = input.LA(1)
@@ -19911,7 +19912,7 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
             	        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:2025:13: selected_name_list
             	        {
             	        	pushFollow(FOLLOW_selected_name_list_in_signature11116)
-            	        	selected_name_list505=selected_name_list();
+            	        	selected_name_list506=selected_name_list();
 
             	        	state._fsp-=1
             	        	if (state.failed) return signature_;
@@ -19933,7 +19934,7 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
             	        {
             	        	`match`(input,RETURN,FOLLOW_RETURN_in_signature11120); if (state.failed) return signature_;
             	        	pushFollow(FOLLOW_type_mark_in_signature11122)
-            	        	type_mark506=type_mark();
+            	        	type_mark507=type_mark();
 
             	        	state._fsp-=1
             	        	if (state.failed) return signature_;
@@ -19944,7 +19945,7 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
 
             	`match`(input,RBRACKET,FOLLOW_RBRACKET_in_signature11126); if (state.failed) return signature_;
             	if ( state.backtracking==0 ) {
-            	  signature_ =new Signature(selected_name_list505,type_mark506)
+            	  signature_ =new Signature(toPosition(LBRACKET505),selected_name_list506,type_mark507)
             	}
 
             }
@@ -19968,7 +19969,7 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
     @throws(classOf[RecognitionException])
     def literal():Expression = {
          var literal_ :Expression = null;val literal_StartIndex:Int = input.index()
-        var identifier507:Identifier = null
+        var identifier508:Identifier = null
 
 
 
@@ -20098,12 +20099,12 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
             	        	    throw new FailedPredicateException(input, "literal", "input.LA(-1)==INTEGER_LITERAL || input.LA(-1)==REAL_LITERAL /*|| input.LA(-1)==BASED_LITERAL*/")
             	        	}
             	        	pushFollow(FOLLOW_identifier_in_literal11225)
-            	        	identifier507=identifier();
+            	        	identifier508=identifier();
 
             	        	state._fsp-=1
             	        	if (state.failed) return literal_;
             	        	if ( state.backtracking==0 ) {
-            	        	  literal_ = new PhysicalLiteral(literal_.asInstanceOf[Literal],identifier507)
+            	        	  literal_ = new PhysicalLiteral(literal_.asInstanceOf[Literal],identifier508)
             	        	}
 
             	        }
@@ -20212,9 +20213,9 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
     @throws(classOf[RecognitionException])
     def element_association():Aggregate.ElementAssociation = {
          var element :Aggregate.ElementAssociation = null;val element_association_StartIndex:Int = input.index()
-        var choices508:Choices = null
+        var choices509:Choices = null
 
-        var expression509:Expression = null
+        var expression510:Expression = null
 
 
         try {
@@ -20230,7 +20231,7 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
             	        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:2084:8: ( choices ARROW )=> choices ARROW
             	        {
             	        	pushFollow(FOLLOW_choices_in_element_association11305)
-            	        	choices508=choices();
+            	        	choices509=choices();
 
             	        	state._fsp-=1
             	        	if (state.failed) return element;
@@ -20241,12 +20242,12 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
             	}
 
             	pushFollow(FOLLOW_expression_in_element_association11312)
-            	expression509=expression();
+            	expression510=expression();
 
             	state._fsp-=1
             	if (state.failed) return element;
             	if ( state.backtracking==0 ) {
-            	  element=new Aggregate.ElementAssociation(choices508,expression509)
+            	  element=new Aggregate.ElementAssociation(choices509,expression510)
             	}
 
             }
@@ -20270,7 +20271,7 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
     @throws(classOf[RecognitionException])
     def aggregate():Aggregate = {
          var aggregate_ :Aggregate = null;val aggregate_StartIndex:Int = input.index()
-        var LPAREN510 :Token=null
+        var LPAREN511 :Token=null
         var e1:Aggregate.ElementAssociation = null
 
         var e2:Aggregate.ElementAssociation = null
@@ -20284,7 +20285,7 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
             // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:2092:2: ( LPAREN e1= element_association ( COMMA e2= element_association )* RPAREN )
             // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:2092:4: LPAREN e1= element_association ( COMMA e2= element_association )* RPAREN
             {
-            	LPAREN510=`match`(input,LPAREN,FOLLOW_LPAREN_in_aggregate11342).asInstanceOf[Token]; if (state.failed) return aggregate_;
+            	LPAREN511=`match`(input,LPAREN,FOLLOW_LPAREN_in_aggregate11342).asInstanceOf[Token]; if (state.failed) return aggregate_;
             	pushFollow(FOLLOW_element_association_in_aggregate11347)
             	e1=element_association();
 
@@ -20325,7 +20326,7 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
 
             	`match`(input,RPAREN,FOLLOW_RPAREN_in_aggregate11361); if (state.failed) return aggregate_;
             	if ( state.backtracking==0 ) {
-            	  aggregate_ =new Aggregate(toPosition(LPAREN510),elements.toList)
+            	  aggregate_ =new Aggregate(toPosition(LPAREN511),elements.toList)
             	}
 
             }
@@ -20627,7 +20628,7 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
     @throws(classOf[RecognitionException])
     def label_colon():Identifier = {
          var label :Identifier = null;val label_colon_StartIndex:Int = input.index()
-        var identifier511:Identifier = null
+        var identifier512:Identifier = null
 
 
         try {
@@ -20636,13 +20637,13 @@ final class VHDLParser(input:TokenStream, state:RecognizerSharedState) extends P
             // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g:2152:4: identifier COLON
             {
             	pushFollow(FOLLOW_identifier_in_label_colon11552)
-            	identifier511=identifier();
+            	identifier512=identifier();
 
             	state._fsp-=1
             	if (state.failed) return label;
             	`match`(input,COLON,FOLLOW_COLON_in_label_colon11554); if (state.failed) return label;
             	if ( state.backtracking==0 ) {
-            	  label=identifier511
+            	  label=identifier512
             	}
 
             }

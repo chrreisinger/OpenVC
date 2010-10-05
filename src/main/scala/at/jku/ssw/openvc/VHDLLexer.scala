@@ -1,4 +1,4 @@
-// $ANTLR 3.2 Sep 23, 2009 12:02:23 C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g 2010-10-05 13:12:04
+// $ANTLR 3.2 Sep 23, 2009 12:02:23 C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\VHDL.g 2010-10-05 16:31:29
 
 /*
  *     OpenVC, an open source VHDL compiler/simulator
