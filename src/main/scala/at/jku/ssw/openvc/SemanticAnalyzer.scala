@@ -391,10 +391,8 @@ object SemanticAnalyzer {
       val newDataType = factor.operator match {
         case Factor.Operator.ABS =>
           factor.left.dataType match {
-            case numericType: NumericType => numericType
-            case dataType =>
-              addError(factor.left, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, "integer,real or physical", dataType.name)
-              NoType
+            case numericType: NumericType => Option(numericType)
+            case dataType => addError(factor.left, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, "integer,real or physical", dataType.name)
           }
         case Factor.Operator.POW =>
           for (rightExpression <- factor.rightOption) {
@@ -402,23 +400,18 @@ object SemanticAnalyzer {
               addError(rightExpression, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, "integer", rightExpression.dataType.name)
           }
           factor.left.dataType match {
-            case _: IntegerType | _: RealType => factor.left.dataType
-            case dataType =>
-              addError(factor.left, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, "integer or real", dataType.name)
-              NoType
+            case _: IntegerType | _: RealType => Option(factor.left.dataType)
+            case dataType => addError(factor.left, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, "integer or real", dataType.name)
           }
         case Factor.Operator.NOT =>
           factor.left.dataType match {
-            case arrayType: ArrayType if (arrayType.dimensions.size == 1 && (arrayType.elementType == SymbolTable.bitType || arrayType.elementType == SymbolTable.booleanType)) => factor.left.dataType
+            case arrayType: ArrayType if (arrayType.dimensions.size == 1 && (arrayType.elementType == SymbolTable.bitType || arrayType.elementType == SymbolTable.booleanType)) => Option(factor.left.dataType)
             case otherType =>
-              if (otherType == SymbolTable.bitType || otherType == SymbolTable.booleanType) factor.left.dataType
-              else {
-                addError(factor, SemanticMessage.UNARY_OPERATOR_NOT_DEFINED, factor.operator.toString, factor.left.dataType.name)
-                NoType
-              }
+              if (otherType == SymbolTable.bitType || otherType == SymbolTable.booleanType) Option(factor.left.dataType)
+              else addError(factor, SemanticMessage.UNARY_OPERATOR_NOT_DEFINED, factor.operator.toString, factor.left.dataType.name)
           }
       }
-      factor.copy(dataType = newDataType)
+      factor.copy(dataType = newDataType.getOrElse(NoType))
     }
 
     def visitFunctionCallExpression(functionCallExpr: FunctionCallExpression): Expression = {
@@ -444,7 +437,6 @@ object SemanticAnalyzer {
         }
         case _ => EmptyExpression
       }
-
     }
 
     def visitAttributeExpression(attributeExpr: AttributeExpression): Expression = {
@@ -459,9 +451,7 @@ object SemanticAnalyzer {
             case Some(expr) => Option(checkExpression(context, expr, requiredDataType))
           }
         }
-        case None =>
-          attributeExpr.expression.foreach(addError(_, SemanticMessage.ATTRIBUTE_NO_PARAMETER, attributeExpr.attribute.name))
-          None
+        case None => attributeExpr.expression.flatMap(addError(_, SemanticMessage.ATTRIBUTE_NO_PARAMETER, attributeExpr.attribute.name))
       }
       attributeExpr.copy(expression = newExpr)
     }
@@ -469,15 +459,11 @@ object SemanticAnalyzer {
     def visitPhysicalLiteral(literal: PhysicalLiteral): Expression = {
       val dataType = expectedType match {
         case physicalType: PhysicalType =>
-          if (!physicalType.containsUnit(literal.unitName.text)) {
-            addError(literal, SemanticMessage.UNIT_NOT_FOUND, expectedType.name, literal.unitName.text)
-            NoType
-          } else expectedType
-        case dataType =>
-          addError(literal, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, expectedType.name, "physical")
-          NoType
+          if (!physicalType.containsUnit(literal.unitName.text)) addError(literal, SemanticMessage.UNIT_NOT_FOUND, expectedType.name, literal.unitName.text)
+          else Some(expectedType)
+        case dataType => addError(literal, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, expectedType.name, "physical")
       }
-      literal.copy(dataType = dataType)
+      literal.copy(dataType = dataType.getOrElse(NoType))
     }
 
     def visitLiteral(literal: Literal): Expression = {
@@ -606,39 +592,31 @@ object SemanticAnalyzer {
     def visitNameExpression(nameExpression: NameExpression): Expression = {
       val name = nameExpression.name
 
-      def matchParts(parts: Seq[Name.Part], symbol: Symbol): Expression = {
+      def matchParts(parts: Seq[Name.Part], symbol: Symbol): Option[Expression] = {
         parts match {
-          case Seq() => EmptyExpression
+          case Seq() => None
           case Seq(part, xs@_*) =>
             part match {
               case Name.IndexPart(indexes) => symbol match {
                 case typeSymbol: TypeSymbol =>
                   require(xs.isEmpty)
-                  if (indexes.size == 1) {
-                    visitTypeCastExpression(TypeCastExpression(indexes.head, typeSymbol.dataType))
-                  } else {
-                    addError(nameExpression.name, SemanticMessage.INVALID_TYPE_CAST)
-                    EmptyExpression
-                  }
+                  if (indexes.size == 1) Option(visitTypeCastExpression(TypeCastExpression(indexes.head, typeSymbol.dataType)))
+                  addError(nameExpression.name, SemanticMessage.INVALID_TYPE_CAST)
                 case r: RuntimeSymbol => r.dataType match {
                   case array: ArrayType =>
                     if (indexes.size != array.dimensions.size)
                       addError(part, SemanticMessage.INVALID_INDEXES_COUNT, indexes.size.toString, array.dimensions.size.toString)
                     val expressions = indexes.zip(array.dimensions).map(x => checkExpression(context, x._1, x._2.elementType))
                     val newSymbol = r.makeCopy(Identifier(part.position, "array"), array.elementType, symbol)
-                    val expr = matchParts(xs, newSymbol)
-                    new ArrayAccessExpression(r, expressions, if (expr eq EmptyExpression) array.elementType else expr.dataType, expr)
-                  case _ =>
-                    addError(part, SemanticMessage.NOT_A, r.name, "array")
-                    EmptyExpression
+                    val expr = matchParts(xs, newSymbol).getOrElse(EmptyExpression)
+                    Option(new ArrayAccessExpression(r, expressions, if (expr eq EmptyExpression) array.elementType else expr.dataType, expr))
+                  case _ => addError(part, SemanticMessage.NOT_A, r.name, "array")
                 }
                 case list: ListOfFunctions =>
                   require(xs.isEmpty)
                   val parameterList = indexes.map(expr => new AssociationList.Element(formalPart = None, actualPart = Some(expr)))
-                  visitFunctionCallExpression(FunctionCallExpression(new SelectedName(Seq(name.identifier)), Some(new AssociationList(parameterList))))
-                case symbol =>
-                  addError(nameExpression.name, SemanticMessage.NOT_A, symbol.name, "function")
-                  EmptyExpression
+                  Option(visitFunctionCallExpression(FunctionCallExpression(new SelectedName(Seq(name.identifier)), Some(new AssociationList(parameterList)))))
+                case symbol => addError(nameExpression.name, SemanticMessage.NOT_A, symbol.name, "function")
               }
               case Name.AttributePart(signature, identifier, expression) =>
                 require(signature.isEmpty)
@@ -647,17 +625,14 @@ object SemanticAnalyzer {
                   case None =>
                     expression.foreach(acceptExpression(_, NoType, context))
                     addError(part, SemanticMessage.NOT_FOUND, "attribute", identifier.text)
-                    EmptyExpression
                   case Some(attribute) =>
-                    visitAttributeExpression(AttributeExpression(identifier.position, symbol, attribute, expression, attribute.dataType))
+                    Option(visitAttributeExpression(AttributeExpression(identifier.position, symbol, attribute, expression, attribute.dataType)))
                 }
               case Name.SlicePart(range) =>
                 require(xs.isEmpty)
                 symbol match {
-                  case r: RuntimeSymbol if (r.dataType.isInstanceOf[ArrayType]) => new RangeAccessExpression(r, range, r.dataType)
-                  case s =>
-                    addError(part, SemanticMessage.NOT_A, "array", s.name)
-                    EmptyExpression
+                  case r: RuntimeSymbol if (r.dataType.isInstanceOf[ArrayType]) => Option(new RangeAccessExpression(r, range, r.dataType))
+                  case s => addError(part, SemanticMessage.NOT_A, "array", s.name)
                 }
               case Name.SelectedPart(identifier) => symbol match {
                 case r: RuntimeSymbol if (r.dataType.isInstanceOf[RecordType] || (r.dataType.isInstanceOf[AccessType] && r.dataType.asInstanceOf[AccessType].pointerType.isInstanceOf[RecordType])) =>
@@ -666,17 +641,13 @@ object SemanticAnalyzer {
                     case accessType: AccessType => accessType.pointerType.asInstanceOf[RecordType]
                   }
                   record.elementsMap.get(identifier.text) match {
-                    case None =>
-                      addError(part, SemanticMessage.NOT_FOUND, "field", identifier.text)
-                      EmptyExpression
+                    case None => addError(part, SemanticMessage.NOT_FOUND, "field", identifier.text)
                     case Some(dataType) =>
                       val newSymbol = r.makeCopy(identifier, dataType, symbol)
-                      val expr = matchParts(xs, newSymbol)
-                      new FieldAccessExpression(r, identifier, dataType, if (expr eq EmptyExpression) dataType else expr.dataType, expr)
+                      val expr = matchParts(xs, newSymbol).getOrElse(EmptyExpression)
+                      Option(new FieldAccessExpression(r, identifier, dataType, if (expr eq EmptyExpression) dataType else expr.dataType, expr))
                   }
-                case s =>
-                  addError(part, SemanticMessage.NOT_A, s.name, "record")
-                  EmptyExpression
+                case s => addError(part, SemanticMessage.NOT_A, s.name, "record")
               }
             }
         }
@@ -692,20 +663,22 @@ object SemanticAnalyzer {
                 EmptyExpression
               }
             case arrayType: ArrayType => visitLiteral(Literal(nameExpression.position, name.identifier.text, Literal.Type.STRING_LITERAL)) //TODO
-            case _ =>
+            case _ => {
               addError(nameExpression.name, SemanticMessage.NOT_FOUND, "type,variable,signal,constant or function", name.identifier)
               EmptyExpression
+            }
           }
-          case xs =>
+          case xs => {
             addError(nameExpression.name, SemanticMessage.NOT_FOUND, "type,variable,signal,constant or function", name.identifier)
             EmptyExpression
+          }
         }
         case Some(symbol) => name.parts match {
           case Seq() => symbol match {
             case list: ListOfFunctions => visitFunctionCallExpression(FunctionCallExpression(new SelectedName(Seq(name.identifier)), None))
             case r: RuntimeSymbol => ItemExpression(name.position, r)
           }
-          case xs => matchParts(xs, symbol)
+          case xs => matchParts(xs, symbol).getOrElse(EmptyExpression)
         }
       }
     }
@@ -1793,7 +1766,7 @@ object SemanticAnalyzer {
       case _: ProcessSymbol => addError(returnStmt, SemanticMessage.RETURN_STMT_IN_PROCESS)
       case functionSymbol: FunctionSymbol => returnStmt.expression match {
         case None => addError(returnStmt, SemanticMessage.FUNCTION_RETURN_WITHOUT_EXPRESSION)
-        case Some(_) =>checkExpressionOption(context, returnStmt.expression, functionSymbol.returnType)
+        case Some(_) => checkExpressionOption(context, returnStmt.expression, functionSymbol.returnType)
       }
       case procedureSymbol: ProcedureSymbol => returnStmt.expression.flatMap(expression => addError(expression, SemanticMessage.PROCEDURE_RETURN_VALUE))
       case _ => addError(returnStmt, "return statement is only in functions and procedures allowed")
