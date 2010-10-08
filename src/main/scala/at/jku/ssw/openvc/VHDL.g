@@ -1094,11 +1094,10 @@ record_constraint
 
 discrete_range returns [DiscreteRange discreteRange]
 	:
-		(simple_expression direction)=>r=range {$discreteRange=new DiscreteRange(Left($r.range_))}
-		|(selected_name range_constraint)=>discrete_subtype_indication=subtype_indication {$discreteRange=new DiscreteRange(Right($discrete_subtype_indication.subType))}
-		| r=range {$discreteRange=new DiscreteRange(Left($r.range_))}
-		;
-		
+		(selected_name RANGE)=>discrete_subtype_indication=subtype_indication {$discreteRange=new DiscreteRange(Right($discrete_subtype_indication.subType))}
+		| range {$discreteRange=new DiscreteRange(Left($range.range_))}
+		;		
+
 type_mark returns [SelectedName typeName]
 	:	selected_name {$typeName=$selected_name.name_} // could be type_name or subtype_name;
 		;
@@ -1677,7 +1676,7 @@ interface_element_procedure returns [InterfaceList.AbstractInterfaceElement elem
 		;
 		
 interface_element_function returns [InterfaceList.AbstractInterfaceElement element]
-	:	(CONSTANT? identifier_list)=> interface_constant_declaration  {$element=$interface_constant_declaration.constElement}
+	:	interface_constant_declaration  {$element=$interface_constant_declaration.constElement}
 		| interface_signal_declaration_function {$element=$interface_signal_declaration_function.signalElement}
 		| interface_file_declaration  {$element=$interface_file_declaration.fileElement}
 		| {ams}?=> (
@@ -1716,7 +1715,7 @@ interface_signal_declaration_procedure returns [InterfaceList.InterfaceSignalDec
 		;
 		
 interface_signal_declaration_function returns [InterfaceList.InterfaceSignalDeclaration signalElement]
-	:	SIGNAL? identifier_list COLON IN? subtype_indication BUS? (VAR_ASSIGN expression)?
+	:	SIGNAL identifier_list COLON IN? subtype_indication BUS? (VAR_ASSIGN expression)?
 		{$signalElement=new InterfaceList.InterfaceSignalDeclaration($identifier_list.list,InterfaceList.InterfaceMode.IN,$subtype_indication.subType,$BUS!=null,$expression.expr)}
 		;
 	
@@ -1905,23 +1904,9 @@ factor returns [Expression factor_]
 	*/
 	;
 
-/*
 primary returns [Expression obj]
 	:
-	 (qualified_expression)=>qualified_expression {$obj=$qualified_expression.expr}
-	 | (name LPAREN association_list RPAREN)=>function_call {$obj=$function_call.functionCall}
-	 | (name)=>name {$obj=new NameExpression($name.name_)}
-	 | (LPAREN expression RPAREN)=> LPAREN expression RPAREN {$obj=$expression.expr}
-	 | allocator {$obj=$allocator.newExpression}
-	 | (physical_literal)=>physical_literal {$obj=$physical_literal.literal_}
-	 | literal {$obj=$literal.literal_}
-	 | aggregate {$obj=new AggregateExpression($aggregate.aggregate_)}
-	 | type_mark LPAREN expression RPAREN {$obj=new TypeCastExpression($type_mark.typeName,$expression.expr)}
-	;
-*/
-primary returns [Expression obj]
-	:
-	 (selected_name qualified_expression[null]) =>selected_name qualified_expression[$selected_name.name_] {$obj=$qualified_expression.expr}
+	 (selected_name APOSTROPHE LPAREN) =>selected_name qualified_expression[$selected_name.name_] {$obj=$qualified_expression.expr}
 	 | (name)=>name {$obj=new NameExpression($name.name_)}
   	 | (selected_name LPAREN association_list RPAREN)=>function_call {$obj=$function_call.functionCall}
 	 | literal {$obj=$literal.literal_} 
@@ -1978,7 +1963,7 @@ name returns [Name name_]
 @init{
 	val parts=new Buffer[Name.Part]()
 }
-	:	name_prefix ( (name_part)=> name_part {parts += $name_part.part})*
+	:	name_prefix (name_part {parts += $name_part.part})*
 	  	{$name_ =new Name($name_prefix.id,parts.toList)}
   		;
 
@@ -1993,7 +1978,7 @@ name_part returns [Name.Part part]
    	 | name_attribute_part {$part = $name_attribute_part.part}
    	 | (name_indexed_part)=>name_indexed_part {$part = $name_indexed_part.part}
   	 | name_slice_part {$part = $name_slice_part.part}
-  ; 
+  	 ; 
 
 			
 name_selected_part returns [Name.SelectedPart part]
