@@ -139,17 +139,11 @@ object Literal {
   }
 }
 
-final case class Literal(position: Position, text: String, literalType: Literal.Type, dataType: DataType = NoType, value: AnyVal = -1)
-        extends Expression {
+trait LiteralConverter {
+  val text: String
+  val literalType: Literal.Type
+
   import Literal.Type
-
-  def toDouble: Double = {
-    require(literalType == Type.REAL_LITERAL)
-    // REAL_LITERAL : INTEGER DOT INTEGER EXPONENT? ;
-    this.text.replace("_", "").toDouble
-  }
-
-  def toInt: Int = toLong.toInt
 
   def toLong: Long = {
     require(literalType == Type.INTEGER_LITERAL)
@@ -160,28 +154,18 @@ final case class Literal(position: Position, text: String, literalType: Literal.
       this.text.replace("_", "").toLong
   }
 
-  def toAnyVal: AnyVal = {
-    require(literalType == Type.INTEGER_LITERAL || literalType == Type.REAL_LITERAL)
-    if (literalType == Type.INTEGER_LITERAL) toLong
-    else toDouble
-  }
-}
-
-final case class PhysicalLiteral(position: Position, text: String, unitName: Identifier, literalType: Literal.Type, dataType: DataType = NoType) extends Expression {
-  def this(literal: Literal, unitName: Identifier) = this (literal.position, literal.text, unitName, literal.literalType)
-
-  def toLong: Long = {
-    require(literalType == Literal.Type.INTEGER_LITERAL)
-    // DECIMAL_LITERAL : INTEGER;
-    if (text.contains("E"))
-      this.text.replace("_", "").toDouble.toLong
-    else
-      this.text.replace("_", "").toLong
-  }
-
   def toDouble: Double = {
-    require(literalType == Literal.Type.REAL_LITERAL)
+    require(literalType == Type.REAL_LITERAL)
     // REAL_LITERAL : INTEGER DOT INTEGER EXPONENT? ;
     this.text.replace("_", "").toDouble
   }
+}
+
+final case class Literal(position: Position, text: String, literalType: Literal.Type, dataType: DataType = NoType, value: AnyVal = -1)
+        extends Expression with LiteralConverter {
+  def toInt: Int = toLong.toInt
+}
+
+final case class PhysicalLiteral(position: Position, text: String, unitName: Identifier, literalType: Literal.Type, dataType: DataType = NoType) extends Expression with LiteralConverter {
+  def this(literal: Literal, unitName: Identifier) = this (literal.position, literal.text, unitName, literal.literalType)
 }
