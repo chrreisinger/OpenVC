@@ -13,15 +13,15 @@ class Project(info: ProjectInfo) extends DefaultProject(info) with Eclipsify wit
   override val mainResources = super.mainResources +++ "NOTICE.txt" +++ "LICENSE.txt" +++ (path("licenses") * "*")
 
   override val proguardInJars = super.proguardInJars.filter(!_.asFile.getName.contains("scalatest")) +++ Path.fromFile(scalaLibraryJar)
-  
+
   //override val minJarName = artifactBaseName + ".min.jar"
-  
+
   val proguardKeepMain = """-keepclasseswithmembers public class at.jku.ssw.openvc.* {
     public static void main(java.lang.String[]);
   }"""
 
   val proguardKeepRuntime = """-keep public class at.jku.ssw.openvs.*"""
-  
+
   override val proguardOptions = List(proguardKeepMain, proguardKeepRuntime, "-dontskipnonpubliclibraryclasses", "-dontskipnonpubliclibraryclassmembers",
     "-printconfiguration", "-whyareyoukeeping class org.antlr.runtime.CommonTree")
 }

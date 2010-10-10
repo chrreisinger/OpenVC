@@ -16,7 +16,7 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package at.jku.ssw.openvc
+package at.jku.ssw.openvc.semanticAnalyzer
 
 object SemanticMessage {
   val ATTRIBUTE_NO_PARAMETER = "The attribute %s does not take a parameter"

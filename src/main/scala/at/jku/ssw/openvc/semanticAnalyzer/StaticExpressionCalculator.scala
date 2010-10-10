@@ -16,10 +16,10 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package at.jku.ssw.openvc
+package at.jku.ssw.openvc.semanticAnalyzer
 
 import at.jku.ssw.openvc.ast.expressions._
-import at.jku.ssw.openvc.symbolTable.{ScalarType, EnumerationType}
+import at.jku.ssw.openvc.symbolTable.dataTypes. {EnumerationType, ScalarType}
 
 object StaticExpressionCalculator {
   def calcValue[A](e: Expression)(implicit numeric: Integral[A]): A = {

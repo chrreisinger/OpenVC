@@ -205,7 +205,7 @@ tokens{
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package at.jku.ssw.openvc.ast.parser
+package at.jku.ssw.openvc.parser
 }
 @lexer::members{
 	var ams=false
@@ -229,7 +229,7 @@ package at.jku.ssw.openvc.ast.parser
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package at.jku.ssw.openvc.ast.parser
+package at.jku.ssw.openvc.parser
 
 import at.jku.ssw.openvc._
 import at.jku.ssw.openvc.ast._
@@ -1074,10 +1074,9 @@ index_constraint returns [Seq[DiscreteRange\] ranges]
 		
 range returns [Range range_]
 	:	(
-		(simple_expression direction)=> from=simple_expression direction to=simple_expression 
-		| name
+		(simple_expression direction)=> from=simple_expression direction to=simple_expression {$range_ =new Range(Left($from.simpleExpr,$direction.rangeDirection,$to.simpleExpr))}
+		| name {$range_ =new Range(Right($name.name_))}
 		)
-		{$range_ =new Range($from.simpleExpr,$direction.rangeDirection,$to.simpleExpr,$name.name_)}
 		;
 
 constraint returns [Either[Range,Seq[DiscreteRange\]\] constraint_]
@@ -1907,10 +1906,9 @@ factor returns [Expression factor_]
 primary returns [Expression obj]
 	:
 	 (selected_name APOSTROPHE LPAREN) =>selected_name qualified_expression[$selected_name.name_] {$obj=$qualified_expression.expr}
-	 | (name)=>name {$obj=new NameExpression($name.name_)}
-  	 | (selected_name LPAREN association_list RPAREN)=>function_call {$obj=$function_call.functionCall}
+	 | name {$obj=new NameExpression($name.name_)}
 	 | literal {$obj=$literal.literal_} 
-	 | (LPAREN expression RPAREN)=> LPAREN expression RPAREN {$obj=$expression.expr}
+	 //| (LPAREN expression RPAREN)=> LPAREN expression RPAREN {$obj=$expression.expr} handled by aggregate
 	 | allocator {$obj=$allocator.newExpression}
 	 | aggregate {$obj=new AggregateExpression($aggregate.aggregate_)}
 	;
@@ -1922,11 +1920,6 @@ allocator returns [Expression newExpression]
 	 	| index_constraint? {$newExpression=new NewExpression(toPosition($NEW),Right(new SubTypeIndication(None,$selected_name.name_,Right($index_constraint.ranges))))}
 	 	)
 	;
-
-function_call returns [FunctionCallExpression functionCall]
-	:	function_name=selected_name (LPAREN parameter_association_list=association_list RPAREN)?
-		{$functionCall=new FunctionCallExpression($function_name.name_,$parameter_association_list.list)}
-		;
 	
 qualified_expression[SelectedName typeName] returns [QualifiedExpression expr]
 	:	APOSTROPHE aggregate
@@ -1976,8 +1969,8 @@ name_part returns [Name.Part part]
   	: 
   	 name_selected_part {$part = $name_selected_part.part}
    	 | name_attribute_part {$part = $name_attribute_part.part}
-   	 | (name_indexed_part)=>name_indexed_part {$part = $name_indexed_part.part}
-  	 | name_slice_part {$part = $name_slice_part.part}
+ 	 | (name_slice_part)=>name_slice_part {$part = $name_slice_part.part}
+   	 | name_association_list_part {$part = $name_association_list_part.part}
   	 ; 
 
 			
@@ -1989,16 +1982,14 @@ name_selected_part returns [Name.SelectedPart part]
 		|ALL{$part= new Name.SelectedPart(toIdentifier($ALL))}
 		)
 		;
-		
-name_slice_part returns [Name.SlicePart part]
-	:	LPAREN discrete_range RPAREN  {$part=new Name.SlicePart($discrete_range.discreteRange)}
+
+name_association_list_part returns [Name.AssociationListPart part]
+ 	:
+		LPAREN association_list RPAREN {$part=new Name.AssociationListPart(toPosition($LPAREN),$association_list.list)}
 		;
 				
-name_indexed_part returns [Name.IndexPart part]
-@init{
-	val indexes=new Buffer[Expression]
-}
-	:	 LPAREN e1=expression {indexes += $e1.expr}(COMMA e2=expression {indexes += $e2.expr})* RPAREN {$part=new Name.IndexPart(indexes.toList)} 
+name_slice_part returns [Name.SlicePart part]
+	:	LPAREN discrete_range RPAREN  {$part=new Name.SlicePart($discrete_range.discreteRange)}
 		;
 
 name_attribute_part returns [Name.AttributePart part]
@@ -2043,7 +2034,7 @@ literal returns [Expression literal_]
 		| INTEGER_LITERAL {literalType=Literal.Type.INTEGER_LITERAL}
 		| BASED_LITERAL {literalType=Literal.Type.BASED_LITERAL}
 		| CHARACTER_LITERAL {literalType=Literal.Type.CHARACTER_LITERAL}
-		| STRING_LITERAL {literalType=Literal.Type.STRING_LITERAL}
+		//| STRING_LITERAL {literalType=Literal.Type.STRING_LITERAL} handled by name_prefix
 		| BIT_STRING_LITERAL {literalType=Literal.Type.BIT_STRING_LITERAL}
 		| NULL {literalType=Literal.Type.NULL_LITERAL}
 		)

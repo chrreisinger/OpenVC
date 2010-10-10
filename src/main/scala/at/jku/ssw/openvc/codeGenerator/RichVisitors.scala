@@ -18,7 +18,9 @@
 
 package at.jku.ssw.openvc.codeGenerator
 
-import at.jku.ssw.openvc.symbolTable._
+import at.jku.ssw.openvc.symbolTable.dataTypes._
+import at.jku.ssw.openvc.symbolTable.symbols._
+
 import java.io.{FileOutputStream}
 import org.objectweb.asm._
 

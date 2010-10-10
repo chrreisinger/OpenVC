@@ -26,13 +26,14 @@ import at.jku.ssw.openvc.ast.sequentialStatements._
 import at.jku.ssw.openvc.ast.declarations._
 import at.jku.ssw.openvc.ast.expressions._
 import at.jku.ssw.openvc.symbolTable._
+import at.jku.ssw.openvc.symbolTable.symbols._
+import at.jku.ssw.openvc.symbolTable.dataTypes._
 import at.jku.ssw.openvc.VHDLCompiler.Configuration
 
 import at.jku.ssw.openvs.RuntimeAnnotations._
 import at.jku.ssw.openvs.VHDLRuntime
 import at.jku.ssw.openvs.VHDLRuntime.{EnumerationType => EnumerationTypeInterface, RecordType => RecordTypeInterface, _}
-//http://groups.google.com/group/jvm-languages/browse_thread/thread/a355dfceb3fc56cb# Optimizations?
-//http://wikis.sun.com/display/HotSpotInternals/PerformanceTechniques
+
 //opcodes currently not used: jsr,monitorenter,monitorexit,pop2,ret,swap
 object ByteCodeGenerator {
   val RUNTIME = p(VHDLRuntime.getClass).init //remove $ from class name
@@ -115,6 +116,10 @@ object ByteCodeGenerator {
   def getJVMName(symbol: RuntimeSymbol): String = symbol match {
     case signal: SignalSymbol => p(classOf[AbstractSignal[_]])
     case _ => getJVMName(symbol.dataType)
+  }
+
+  private def doBox(mv: RichMethodVisitor, dataType: DataType) = dataType match {
+    case scalarType: ScalarType => mv.INVOKESTATIC(getBoxedName(scalarType), "valueOf", "(" + getJVMDataType(scalarType) + ")" + getBoxedType(scalarType))
   }
 
   private def getJVMName(dataType: DataType): String = dataType match {
@@ -430,11 +435,11 @@ object ByteCodeGenerator {
 
       def visitFunctionCallExpression(functionCallExpr: FunctionCallExpression) {
         val functionSymbol = functionCallExpr.symbol
-        val functionCallType = if (functionSymbol.flags(Opcodes.ACC_STATIC)) Opcodes.INVOKESTATIC else {
+        val functionCallType = if (functionSymbol.isStatic) Opcodes.INVOKESTATIC else {
           mv.ALOAD(0)
           Opcodes.INVOKEVIRTUAL
         }
-        loadParameters(functionCallExpr.parameters, mv)
+        loadParameters(functionCallExpr.parameterAssociationList, mv)
         mv.visitMethodInsn(functionCallType, functionSymbol.owner.name, functionSymbol.name, "(" + getJVMParameterList(functionSymbol.parameters) + ")" + getJVMDataType(functionSymbol.returnType))
       }
 
@@ -877,54 +882,57 @@ object ByteCodeGenerator {
       startLabel()
 
       forStmt.discreteRange.rangeOrSubTypeIndication match {
-        case Left(range) =>
-          require(range.attributeNameOption.isEmpty)
-          (forStmt.symbol.owner: @unchecked) match {
-            case _: SubprogramSymbol =>
-              acceptExpression(range.fromExpression, mv)
-              mv.ISTORE(varIndex)
-            case _: ProcessSymbol =>
-              mv.ALOAD(0)
-              acceptExpression(range.fromExpression, mv)
-              mv.PUTFIELD(cw.className, forStmt.symbol.name, "I")
-          }
+        case Left(range) => range.expressionsOrName match {
+          case Right(attributeName) => error("not implemented")
+          case Left((fromExpression, direction, toExpression)) =>
+            (forStmt.symbol.owner: @unchecked) match {
+              case _: SubprogramSymbol =>
+                acceptExpression(fromExpression, mv)
+                mv.ISTORE(varIndex)
+              case _: ProcessSymbol =>
+                mv.ALOAD(0)
+                acceptExpression(fromExpression, mv)
+                mv.PUTFIELD(cw.className, forStmt.symbol.name, "I")
+            }
 
-          mv.GOTO(conditionTestLabel)
-          continueLabel()
+            mv.GOTO(conditionTestLabel)
+            continueLabel()
 
-          val newContext = context.copy(loopLabels = context.loopLabels + ((forStmt.position.line, forStmt.position.charPosition) -> new LoopLabels(continueLabel, breakLabel)))
-          acceptList(forStmt.sequentialStatementList, newContext)
-          mv.createDebugLineNumberInformation(range.fromExpression)
-          (forStmt.symbol.owner: @unchecked) match {
-            case _: SubprogramSymbol =>
-              range.direction match {
-                case To => mv.IINC(varIndex, 1)
-                case Downto => mv.IINC(varIndex, -1)
-              }
-              conditionTestLabel()
-              mv.ILOAD(varIndex)
-            case _: ProcessSymbol =>
-              cw.visitField(Opcodes.ACC_PRIVATE, forStmt.symbol.name, "I", null)
-              mv.ALOAD(0)
-              mv.DUP
-              mv.GETFIELD(cw.className, forStmt.symbol.name, "I")
-              mv.ICONST_1
-              range.direction match {
-                case To => mv.IADD
-                case Downto => mv.ISUB
-              }
-              mv.PUTFIELD(cw.className, forStmt.symbol.name, "I")
-              conditionTestLabel()
-              mv.ALOAD(0)
-              mv.GETFIELD(cw.className, forStmt.symbol.name, "I")
-          }
-          acceptExpression(range.toExpression, mv)
-          range.direction match {
-            case To => mv.IF_ICMPLE(continueLabel)
-            case Downto => mv.IF_ICMPGE(continueLabel)
-          }
-          breakLabel()
-          if (forStmt.symbol.owner.isInstanceOf[SubprogramSymbol]) mv.visitLocalVariable(forStmt.symbol.name, "I", null, startLabel, breakLabel, varIndex)
+            val newContext = context.copy(loopLabels = context.loopLabels + ((forStmt.position.line, forStmt.position.charPosition) -> new LoopLabels(continueLabel, breakLabel)))
+            acceptList(forStmt.sequentialStatementList, newContext)
+            mv.createDebugLineNumberInformation(fromExpression)
+            (forStmt.symbol.owner: @unchecked) match {
+              case _: SubprogramSymbol =>
+                direction match {
+                  case To => mv.IINC(varIndex, 1)
+                  case Downto => mv.IINC(varIndex, -1)
+                }
+                conditionTestLabel()
+                mv.ILOAD(varIndex)
+              case _: ProcessSymbol =>
+                cw.visitField(Opcodes.ACC_PRIVATE, forStmt.symbol.name, "I", null)
+                mv.ALOAD(0)
+                mv.DUP
+                mv.GETFIELD(cw.className, forStmt.symbol.name, "I")
+                mv.ICONST_1
+                direction match {
+                  case To => mv.IADD
+                  case Downto => mv.ISUB
+                }
+                mv.PUTFIELD(cw.className, forStmt.symbol.name, "I")
+                conditionTestLabel()
+                mv.ALOAD(0)
+                mv.GETFIELD(cw.className, forStmt.symbol.name, "I")
+            }
+            acceptExpression(toExpression, mv)
+            direction match {
+              case To => mv.IF_ICMPLE(continueLabel)
+              case Downto => mv.IF_ICMPGE(continueLabel)
+            }
+            breakLabel()
+            if (forStmt.symbol.owner.isInstanceOf[SubprogramSymbol]) mv.visitLocalVariable(forStmt.symbol.name, "I", null, startLabel, breakLabel, varIndex)
+        }
+        case Right(subTypeIndication) => error("not implemented")
       }
     }
 
@@ -1136,6 +1144,7 @@ object ByteCodeGenerator {
       returnStmt.expression match {
         case None =>
           val procedureSymbol = returnStmt.procedureSymbol
+          val xmv = context.mv
           import context.mv._
           //returns the copyBack Symbols
           procedureSymbol.copyBackSymbols match {
@@ -1154,7 +1163,7 @@ object ByteCodeGenerator {
               DUP
               for (symbol <- procedureSymbol.copyBackSymbols) {
                 loadSymbol(symbol)
-                INVOKESTATIC(getBoxedName(symbol.dataType), "valueOf", "(" + getJVMDataType(symbol.dataType) + ")" + getBoxedType(symbol.dataType))
+                doBox(xmv, symbol.dataType)
               }
               INVOKESPECIAL("scala/Tuple" + procedureSymbol.copyBackSymbols.size, "<init>", "(" + (("Ljava/lang/Object;") * procedureSymbol.copyBackSymbols.size) + ")V")
               ARETURN
@@ -1254,7 +1263,7 @@ object ByteCodeGenerator {
         case stmt: SimpleVariableAssignmentStatement =>
           stmt.target.nameOrAggregate match {
             case Left(name) =>
-              val (target, targetType) = loadTarget(mv, stmt.nameExpression)
+              val (target, targetType) = loadTarget(mv, stmt.target.nameExpression)
               target.owner match {
                 case _: SubprogramSymbol | _: PackageBodySymbol | _: PackageHeaderSymbol | _: RuntimeSymbol =>
                 case _ => mv.ALOAD(0)
@@ -1285,15 +1294,14 @@ object ByteCodeGenerator {
 
     def visitFunctionDefinition(functionDefinition: FunctionDefinition, context: Context) {
       val functionSymbol = functionDefinition.symbol
-      val mv = context.cw.createMethod(flags = functionSymbol.flags.sum, name = functionSymbol.name,
+      val flags=(if (functionSymbol.isStatic) Opcodes.ACC_STATIC else 0) + (if (functionSymbol.isSynchronized) Opcodes.ACC_SYNCHRONIZED else 0)
+      val mv = context.cw.createMethod(flags = flags, name = functionSymbol.name,
         parameters = getJVMParameterList(functionSymbol.parameters), returnType = getJVMDataType(functionSymbol.returnType))
       val startLabel = RichLabel(mv)
       val stopLabel = RichLabel(mv)
 
       startLabel()
-      val newContext = Context(context.cw, mv, Map(), context.designUnit, functionDefinition.localSymbols.collect(_ match {
-        case f: FileSymbol => f
-      }))
+      val newContext = Context(context.cw, mv, Map(), context.designUnit, functionDefinition.localSymbols.collect(_ match { case f: FileSymbol => f}))
       acceptList(functionDefinition.declarativeItems, newContext)
       acceptList(functionDefinition.sequentialStatementList, newContext)
       stopLabel()
@@ -1312,7 +1320,8 @@ object ByteCodeGenerator {
                   "()Lscala/Tuple" + procedureSymbol.copyBackSymbols.size + "<" + procedureSymbol.copyBackSymbols.map(symbol => getBoxedType(symbol.dataType)).mkString + ">;")
       }
 
-      val mv = context.cw.createMethod(flags = procedureSymbol.flags.sum, name = procedureSymbol.name, parameters = getJVMParameterList(procedureSymbol.parameters), returnType = returnType, signature = signature)
+      val flags=(if (procedureSymbol.isStatic) Opcodes.ACC_STATIC else 0) + (if (procedureSymbol.isSynchronized) Opcodes.ACC_SYNCHRONIZED else 0)
+      val mv = context.cw.createMethod(flags = flags, name = procedureSymbol.name, parameters = getJVMParameterList(procedureSymbol.parameters), returnType = returnType, signature = signature)
       val startLabel = RichLabel(mv)
       val stopLabel = RichLabel(mv)
 
@@ -1393,7 +1402,7 @@ object ByteCodeGenerator {
 
       mv.createDebugLineNumberInformation(procedureCallStmt)
       val procedureSymbol = procedureCallStmt.symbol
-      val procedureCallType = if (procedureSymbol.flags(Opcodes.ACC_STATIC)) Opcodes.INVOKESTATIC else
+      val procedureCallType = if (procedureSymbol.isStatic) Opcodes.INVOKESTATIC else
         {
           mv.ALOAD(0)
           Opcodes.INVOKEVIRTUAL
@@ -1404,8 +1413,8 @@ object ByteCodeGenerator {
           val procedureName = procedureSymbol.name match {
             case "deallocate" =>
               //converts a call to deallocate to a assignment with null => variable=null;
-              require(procedureCallStmt.parameters.size == 1)
-              val (target, targetType) = loadTarget(mv, procedureCallStmt.parameters.head)
+              require(procedureCallStmt.parameterAssociationList.get.parameters.size == 1)
+              val (target, targetType) = loadTarget(mv, procedureCallStmt.parameterAssociationList.get.parameters.head)
               mv.ACONST_NULL
               storeSymbol(mv, target, targetType)
               None
@@ -1418,11 +1427,11 @@ object ByteCodeGenerator {
             case name => Some(name)
           }
           procedureName.foreach {
-            loadParameters(procedureCallStmt.parameters, mv)
+            loadParameters(procedureCallStmt.parameterAssociationList, mv)
             mv.visitMethodInsn(procedureCallType, procedureSymbol.owner.name, _, "(" + getJVMParameterList(procedureSymbol.parameters) + ")V")
           }
         case _ =>
-          loadParameters(procedureCallStmt.parameters, mv)
+          loadParameters(procedureCallStmt.parameterAssociationList, mv)
           mv.visitMethodInsn(procedureCallType, procedureSymbol.owner.name, procedureSymbol.name, "(" + getJVMParameterList(procedureSymbol.parameters) + ")V")
       }
       if (procedureSymbol.needsCopyBack) {
@@ -1548,8 +1557,8 @@ object ByteCodeGenerator {
                   else "Char"
               }
               loadDefaultValue(arrayType.elementType, mv)
+              doBox(mv, arrayType.elementType)
               import mv._
-              INVOKESTATIC(getBoxedName(arrayType.elementType), "valueOf", "(" + getJVMDataType(arrayType.elementType) + ")" + getBoxedType(arrayType.elementType))
               GETSTATIC("scala/reflect/Manifest$", "MODULE$", "Lscala/reflect/Manifest$;")
               INVOKEVIRTUAL("scala/reflect/Manifest$", scalaType, "()Lscala/reflect/AnyValManifest;")
               INVOKESTATIC(RUNTIME, "fill", "(" + ("I" * arrayType.dimensions.size) + "Ljava/lang/Object;Lscala/reflect/ClassManifest;)" + ("[" * (arrayType.dimensions.size - 1)) + "Ljava/lang/Object;")
@@ -2027,11 +2036,11 @@ object ByteCodeGenerator {
       }
     }
 
-    def loadParameters(parameters: Seq[Expression], mv: RichMethodVisitor) {
+    def loadParameters(associationListOption: Option[AssociationList], mv: RichMethodVisitor) {
       //TODO check if values are in subType (call checkIsInRange)
       //it is an error if, after applying any conversion function or type conversion present in the actual part of the applicable association element (see 4.3.2.2), the value of the actual parameter
       //does not belong to the subtype denoted by the subtype indication of the formal.
-      parameters.foreach(acceptExpression(_, mv))
+      for (associationList <- associationListOption) associationList.parameters.foreach(acceptExpression(_, mv))
     }
 
     def createClass(flags: Int, name: String, superClass: String, annotationClass: Class[_], interfaces: Array[String] = null, createEmptyConstructor: Boolean = true): RichClassWriter = {

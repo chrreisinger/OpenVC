@@ -27,7 +27,7 @@ final class CompilerMessage(val position: Position, val message: String) {
 
 object ASTBuilder {
   import org.antlr.runtime.{ANTLRStringStream, ANTLRInputStream, CharStream, CommonTokenStream}
-  import at.jku.ssw.openvc.ast.parser.{VHDLParser, VHDLLexer}
+  import at.jku.ssw.openvc.parser.{VHDLParser, VHDLLexer}
   import java.io.{InputStream, FileInputStream}
 
   private final class CaseInsensitiveStringStream(input: String) extends ANTLRStringStream(input) {
@@ -95,6 +95,7 @@ object VHDLCompiler {
 
   private def compile(configuration: Configuration, builder: (String, Configuration) => (DesignFile, Seq[CompilerMessage]), source: String, fileName: String): CompileResult = {
     import java.io.File
+    import semanticAnalyzer.SemanticAnalyzer
     val directory = new File(configuration.designLibrary + File.separator)
     if (!directory.exists) directory.mkdir
 

@@ -18,10 +18,8 @@
 
 package at.jku.ssw.openvc.ast {
 
-import at.jku.ssw.openvc.ast.expressions.Expression
-import at.jku.ssw.openvc.ast.ams.SubNatureIndication
-import at.jku.ssw.openvc.symbolTable.{DataType, ConstrainedRangeType, NoType}
-import declarations.UseClause
+import expressions.Expression
+import at.jku.ssw.openvc.symbolTable.dataTypes.{DataType, ConstrainedRangeType, NoType}
 
 object Position {
   def apply(line: Int, charPosition: Int) = new Position(line, charPosition)
@@ -30,7 +28,7 @@ object Position {
 }
 
 final class Position(val line: Int, val charPosition: Int) extends java.io.Serializable {
-  override def toString = "Position(" + line + "," + charPosition + ")"
+  override val toString = "Position(" + line + "," + charPosition + ")"
 
   def addLineOffset(lineOffset: Int): Position = new Position(this.line + lineOffset, this.charPosition)
 
@@ -42,8 +40,6 @@ trait Locatable {
 }
 
 abstract sealed class ASTNode extends Locatable
-
-abstract sealed class DeclarativeItem extends ASTNode
 
 case object LeafNode extends ASTNode {
   val position = Position.Empty
@@ -62,10 +58,10 @@ final class Identifier(val position: Position, val text: String) extends Locatab
     case _ => false
   }
 
-  override def hashCode = text.hashCode
+  override val hashCode = text.hashCode
 }
 
-final class Target(val nameOrAggregate: Either[Name, Aggregate])
+final case class Target(nameOrAggregate: Either[Name, Aggregate], nameExpression: Expression = null)
 
 object Range {
   type Direction = Direction.Value
@@ -73,10 +69,10 @@ object Range {
     val To, Downto = Value
   }
 }
-final class Range(val fromExpression: Expression, val direction: Range.Direction, val toExpression: Expression, val attributeNameOption: Option[Name], val dataType: DataType = NoType) extends Locatable {
-  val position = attributeNameOption match {
-    case None => fromExpression.position
-    case Some(attribute) => attribute.position
+final class Range(val expressionsOrName: Either[(Expression, Range.Direction, Expression), Name], val dataType: DataType = NoType) extends Locatable {
+  val position = expressionsOrName match {
+    case Left((expr, _, _)) => expr.position
+    case Right(attributeName) => attributeName.position
   }
 }
 
@@ -123,16 +119,13 @@ final class Choices(val elements: Seq[Choices.Choice])
 
 object AssociationList {
   final class Element(val formalPart: Option[Name], val actualPart: Option[Expression]) {
-    def isActualPartOpen: Boolean = actualPart.isEmpty
+    val isActualPartOpen = actualPart.isEmpty
   }
 }
-final class AssociationList(val elements: Seq[AssociationList.Element])
+final case class AssociationList(elements: Seq[AssociationList.Element], parameters: Seq[Expression] = Seq())
 
 object Name {
   abstract sealed class Part extends Locatable
-  final case class IndexPart(indexes: Seq[Expression]) extends Part {
-    val position = indexes.head.position
-  }
   final case class SelectedPart(identifier: Identifier) extends Part {
     val position = identifier.position
   }
@@ -142,6 +135,7 @@ object Name {
   final case class AttributePart(signature: Option[Signature], identifier: Identifier, expression: Option[Expression]) extends Part {
     val position = signature.map(_.position).getOrElse(identifier.position)
   }
+  final case class AssociationListPart(position: Position, associationList: AssociationList) extends Part
 }
 
 final class SelectedName(val identifiers: Seq[Identifier]) extends Locatable {
@@ -179,7 +173,7 @@ object InterfaceList {
     val interfaceMode = Some(InterfaceMode.IN)
   }
 
-  final case class InterfaceTerminalDeclaration(identifierList: Seq[Identifier], subNature: SubNatureIndication) extends AbstractInterfaceElement {
+  final case class InterfaceTerminalDeclaration(identifierList: Seq[Identifier], subNature: ams.SubNatureIndication) extends AbstractInterfaceElement {
     var expression: Option[Expression] = None
     val interfaceMode = Some(InterfaceMode.IN)
     val subType = null
@@ -191,15 +185,14 @@ final class InterfaceList(val elements: Seq[InterfaceList.AbstractInterfaceEleme
 
 final class BlockConfigurationSpecification(val nameOrLabel: Either[SelectedName, (Identifier, Option[Either[DiscreteRange, Expression]])]) //SelectedName,(label,blockConfigureIndex)
 
-final class BlockConfiguration(val blockConfigSpec: BlockConfigurationSpecification, val useClauses: Seq[UseClause], val configurations: Seq[AnyRef])
+final class BlockConfiguration(val blockConfigSpec: BlockConfigurationSpecification, val useClauses: Seq[declarations.UseClause], val configurations: Seq[AnyRef])
 
 final class ComponentConfiguration(val componentSpecification: AnyRef, val bindingIndication: Option[AnyRef], val blockConfiguration: Option[BlockConfiguration])
 
 package sequentialStatements {
 
-import at.jku.ssw.openvc.ast.expressions._
-import at.jku.ssw.openvc.ast.ams._
-import at.jku.ssw.openvc.symbolTable._
+import at.jku.ssw.openvc.ast.expressions.Expression
+import at.jku.ssw.openvc.symbolTable.symbols.{SignalSymbol,ConstantSymbol,ProcedureSymbol}
 
 abstract sealed class SequentialStatement extends ASTNode
 
@@ -239,10 +232,9 @@ final case class SimpleSignalAssignmentStatement(position: Position, label: Opti
 
 abstract sealed class VariableAssignmentStatement extends SequentialStatement
 
-final case class SimpleVariableAssignmentStatement(position: Position, label: Option[Identifier], target: Target, expression: Expression, nameExpression: Expression = null) extends VariableAssignmentStatement
+final case class SimpleVariableAssignmentStatement(position: Position, label: Option[Identifier], target: Target, expression: Expression) extends VariableAssignmentStatement
 
-final case class ProcedureCallStatement(label: Option[Identifier], procedureName: SelectedName, parameterAssociationList: Option[AssociationList], parameters: Seq[Expression] = Seq(),
-                                        symbol: ProcedureSymbol = null) extends SequentialStatement {
+final case class ProcedureCallStatement(label: Option[Identifier], procedureName: SelectedName, parameterAssociationList: Option[AssociationList], symbol: ProcedureSymbol = null) extends SequentialStatement {
   val position = procedureName.position
 }
 
@@ -257,15 +249,13 @@ object IfStatement {
 
 final case class IfStatement(position: Position, label: Option[Identifier], ifThenList: Seq[IfStatement.IfThenPart], elseSequentialStatementList: Option[Seq[SequentialStatement]], endLabel: Option[Identifier]) extends SequentialStatement
 
-final case class AMSBreakStatement(position: Position, label: Option[Identifier], elements: Seq[BreakElement], whenExpression: Option[Expression]) extends SequentialStatement
+final case class AMSBreakStatement(position: Position, label: Option[Identifier], elements: Seq[ams.BreakElement], whenExpression: Option[Expression]) extends SequentialStatement
 }
 
 package concurrentStatements {
 
-import at.jku.ssw.openvc.ast.expressions._
-import at.jku.ssw.openvc.ast.ams._
-import at.jku.ssw.openvc.symbolTable._
-import at.jku.ssw.openvc.ast.sequentialStatements.SequentialStatement
+import at.jku.ssw.openvc.ast.expressions.Expression
+import at.jku.ssw.openvc.symbolTable.symbols.{Symbol,ProcessSymbol}
 
 abstract sealed class ConcurrentStatement extends ASTNode
 
@@ -297,10 +287,10 @@ final case class ConcurrentProcedureCallStatement(label: Option[Identifier], pos
 
 final case class ConcurrentAssertionStatement(position: Position, label: Option[Identifier], postponed: Boolean, condition: Expression, reportExpression: Option[Expression], severityExpression: Option[Expression]) extends ConcurrentStatement
 
-final case class IfGenerateStatement(position: Position, label: Option[Identifier], condition: Expression, declarativeItems: Seq[DeclarativeItem], statementList: Seq[ConcurrentStatement], endLabel: Option[Identifier],
+final case class IfGenerateStatement(position: Position, label: Option[Identifier], condition: Expression, declarativeItems: Seq[declarations.DeclarativeItem], statementList: Seq[ConcurrentStatement], endLabel: Option[Identifier],
                                      value: Boolean = true) extends ConcurrentStatement
 
-final case class ForGenerateStatement(position: Position, label: Option[Identifier], loopIdentifier: Identifier, discreteRange: DiscreteRange, declarativeItems: Seq[DeclarativeItem],
+final case class ForGenerateStatement(position: Position, label: Option[Identifier], loopIdentifier: Identifier, discreteRange: DiscreteRange, declarativeItems: Seq[declarations.DeclarativeItem],
                                       statementList: Seq[ConcurrentStatement], endLabel: Option[Identifier]) extends ConcurrentStatement
 
 object ComponentInstantiationStatement {
@@ -310,27 +300,25 @@ object ComponentInstantiationStatement {
   }
 }
 final case class ComponentInstantiationStatement(position: Position, label: Option[Identifier], componentType: ComponentInstantiationStatement.ComponentType, name: SelectedName, architectureIdentifier: Option[Identifier],
-                                                 genericAssociationList: Option[AssociationList], portAssociationList: Option[AssociationList],
-                                                 generics: Seq[Expression] = Seq(), ports: Seq[Expression] = Seq(), symbol: Symbol = null) extends ConcurrentStatement
+                                                 genericAssociationList: Option[AssociationList], portAssociationList: Option[AssociationList], symbol: Symbol = null) extends ConcurrentStatement
 
-final case class ProcessStatement(position: Position, label: Option[Identifier], postponed: Boolean, sensitivityList: Option[Seq[Name]], declarativeItems: Seq[DeclarativeItem],
-                                  sequentialStatementList: Seq[SequentialStatement], endLabel: Option[Identifier],
+final case class ProcessStatement(position: Position, label: Option[Identifier], postponed: Boolean, sensitivityList: Option[Seq[Name]], declarativeItems: Seq[declarations.DeclarativeItem],
+                                  sequentialStatementList: Seq[sequentialStatements.SequentialStatement], endLabel: Option[Identifier],
                                   localSymbols: Seq[Symbol] = Seq(), symbol: ProcessSymbol = null) extends ConcurrentStatement
 
 final case class BlockStatement(position: Position, label: Option[Identifier], guardExpression: Option[Expression], genericInterfaceList: Option[InterfaceList],
                                 genericAssociationList: Option[AssociationList], portInterfaceList: Option[InterfaceList], portAssociationList: Option[AssociationList],
-                                declarativeItems: Seq[DeclarativeItem], statementList: Seq[ConcurrentStatement], endLabel: Option[Identifier],
-                                generics: Seq[Expression] = Seq(), ports: Seq[Expression] = Seq()) extends ConcurrentStatement
+                                declarativeItems: Seq[declarations.DeclarativeItem], statementList: Seq[ConcurrentStatement], endLabel: Option[Identifier]) extends ConcurrentStatement
 
-final case class ConcurrentBreakStatement(position: Position, label: Option[Identifier], breakElements: Option[Seq[BreakElement]], onNameList: Option[Seq[SelectedName]], whenExpression: Option[Expression]) extends ConcurrentStatement
+final case class ConcurrentBreakStatement(position: Position, label: Option[Identifier], breakElements: Option[Seq[ams.BreakElement]], onNameList: Option[Seq[SelectedName]], whenExpression: Option[Expression]) extends ConcurrentStatement
 }
 
 package declarations {
 
-import at.jku.ssw.openvc.ast.expressions._
-import at.jku.ssw.openvc.symbolTable._
-import at.jku.ssw.openvc.ast.sequentialStatements.SequentialStatement
-import at.jku.ssw.openvc.ast.concurrentStatements.ConcurrentStatement
+import at.jku.ssw.openvc.symbolTable.symbols._
+import concurrentStatements.ConcurrentStatement
+
+abstract sealed class DeclarativeItem extends ASTNode
 
 object EntityClass extends Enumeration {
   val ENTITY, ARCHITECTURE, CONFIGURATION, PACKAGE, PROCEDURE, FUNCTION, TYPE, SUBTYPE, CONSTANT, SIGNAL, VARIABLE, FILE, COMPONENT, LABEL,
@@ -422,12 +410,12 @@ abstract sealed class SubProgramDefinition extends DeclarativeItem {
 }
 
 final case class FunctionDefinition(position: Position, pure: Boolean, identifier: Identifier, parameterInterfaceList: Option[InterfaceList], returnType: SelectedName,
-                                    declarativeItems: Seq[DeclarativeItem], sequentialStatementList: Seq[SequentialStatement], endIdentifier: Option[Identifier],
+                                    declarativeItems: Seq[DeclarativeItem], sequentialStatementList: Seq[sequentialStatements.SequentialStatement], endIdentifier: Option[Identifier],
                                     localSymbols: Seq[Symbol] = Seq(), symbol: FunctionSymbol = null)
         extends SubProgramDefinition
 
 final case class ProcedureDefinition(position: Position, identifier: Identifier, parameterInterfaceList: Option[InterfaceList], declarativeItems: Seq[DeclarativeItem],
-                                     sequentialStatementList: Seq[SequentialStatement], endIdentifier: Option[Identifier],
+                                     sequentialStatementList: Seq[sequentialStatements.SequentialStatement], endIdentifier: Option[Identifier],
                                      localSymbols: Seq[Symbol] = Seq(), symbol: ProcedureSymbol = null)
         extends SubProgramDefinition
 
@@ -459,7 +447,7 @@ object RecordTypeDefinition {
 final case class RecordTypeDefinition(position: Position, identifier: Identifier, elements: Seq[RecordTypeDefinition.Element], endIdentifier: Option[Identifier], dataType: DataType = NoType) extends AbstractTypeDeclaration
 
 object PhysicalTypeDefinition {
-  final class Element(val identifier: Identifier, val literal: PhysicalLiteral)
+  final class Element(val identifier: Identifier, val literal: expressions.PhysicalLiteral)
 }
 
 final case class PhysicalTypeDefinition(position: Position, identifier: Identifier, range: Range, baseIdentifier: Identifier, elements: Seq[PhysicalTypeDefinition.Element], endIdentifier: Option[Identifier], dataType: DataType = NoType) extends AbstractTypeDeclaration
@@ -483,12 +471,9 @@ final case class ProtectedTypeDeclaration(position: Position, identifier: Identi
 
 package ams {
 
-import at.jku.ssw.openvc.ast.sequentialStatements._
-import at.jku.ssw.openvc.ast.expressions._
-import at.jku.ssw.openvc.ast.declarations.AbstractTypeDeclaration
-import at.jku.ssw.openvc.ast.concurrentStatements.ConcurrentStatement
+import at.jku.ssw.openvc.ast.expressions.Expression
 
-abstract sealed class SimultaneousStatement extends ConcurrentStatement
+abstract sealed class SimultaneousStatement extends concurrentStatements.ConcurrentStatement
 
 final case class SimultaneousNullStatement(position: Position, label: Option[Identifier]) extends SimultaneousStatement
 
@@ -496,7 +481,7 @@ final case class SimpleSimultaneousStatement(label: Option[Identifier], firstExp
   val position = firstExpression.position
 }
 
-final case class SimultaneousProceduralStatement(position: Position, label: Option[Identifier], declarativeItems: Seq[DeclarativeItem], sequentialStatementList: Seq[SequentialStatement], endLabel: Option[Identifier]) extends SimultaneousStatement
+final case class SimultaneousProceduralStatement(position: Position, label: Option[Identifier], declarativeItems: Seq[declarations.DeclarativeItem], sequentialStatementList: Seq[sequentialStatements.SequentialStatement], endLabel: Option[Identifier]) extends SimultaneousStatement
 
 object SimultaneousCaseStatement {
   final class When(val choices: Choices, val statements: Seq[SimultaneousStatement])
@@ -509,15 +494,15 @@ object SimultaneousIfStatement {
 final case class SimultaneousIfStatement(position: Position, label: Option[Identifier], ifUseList: Seq[SimultaneousIfStatement.IfUsePart],
                                          elseSimultaneousStatementList: Option[Seq[SimultaneousStatement]], endLabel: Option[Identifier]) extends SimultaneousStatement
 
-final case class TerminalDeclaration(position: Position, identifierList: Seq[Identifier], subNature: SubNatureIndication) extends DeclarativeItem
+final case class TerminalDeclaration(position: Position, identifierList: Seq[Identifier], subNature: SubNatureIndication) extends declarations.DeclarativeItem
 
 final case class SubNatureIndication(natureMark: SelectedName, ranges: Option[Seq[DiscreteRange]], toleranceExpression: Option[Expression], acrossExpression: Option[Expression])
 
-final case class SubNatureDeclaration(position: Position, identifier: Identifier, subNature: SubNatureIndication) extends DeclarativeItem
+final case class SubNatureDeclaration(position: Position, identifier: Identifier, subNature: SubNatureIndication) extends declarations.DeclarativeItem
 
-final case class ScalarNatureDefinition(position: Position, identifier: Identifier, typeName: SelectedName, acrossType: SelectedName, throughIdentifier: Identifier, dataType: DataType = NoType) extends AbstractTypeDeclaration
+final case class ScalarNatureDefinition(position: Position, identifier: Identifier, typeName: SelectedName, acrossType: SelectedName, throughIdentifier: Identifier, dataType: DataType = NoType) extends declarations.AbstractTypeDeclaration
 
-abstract sealed class AbstractArrayNatureTypeDefinition extends AbstractTypeDeclaration {
+abstract sealed class AbstractArrayNatureTypeDefinition extends declarations.AbstractTypeDeclaration {
   val subNature: SubNatureIndication
 }
 
@@ -528,13 +513,13 @@ final case class ConstrainedArrayNatureTypeDefinition(position: Position, identi
 object RecordNatureDefinition {
   final class Element(val identifierList: Seq[Identifier], val subNature: SubNatureIndication)
 }
-final case class RecordNatureDefinition(position: Position, identifier: Identifier, elements: Seq[RecordNatureDefinition.Element], endIdentifier: Option[Identifier], dataType: DataType = NoType) extends AbstractTypeDeclaration
+final case class RecordNatureDefinition(position: Position, identifier: Identifier, elements: Seq[RecordNatureDefinition.Element], endIdentifier: Option[Identifier], dataType: DataType = NoType) extends declarations.AbstractTypeDeclaration
 
 final class BreakElement(val forQuantityName: Option[Name], val name: Name, val expression: Expression)
 
-final case class StepLimitSpecification(position: Position, signalListOrIdentifier: Either[Seq[SelectedName], Identifier], typeName: SelectedName, withExpression: Expression) extends DeclarativeItem
+final case class StepLimitSpecification(position: Position, signalListOrIdentifier: Either[Seq[SelectedName], Identifier], typeName: SelectedName, withExpression: Expression) extends declarations.DeclarativeItem
 
-abstract sealed class AbstractQuantityDeclaration extends DeclarativeItem
+abstract sealed class AbstractQuantityDeclaration extends declarations.DeclarativeItem
 
 final case class FreeQuantityDeclaration(position: Position, identifierList: Seq[Identifier], subType: SubTypeIndication, expression: Option[Expression]) extends AbstractQuantityDeclaration
 

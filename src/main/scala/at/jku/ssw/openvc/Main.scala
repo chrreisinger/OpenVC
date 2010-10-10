@@ -18,9 +18,10 @@
 
 package at.jku.ssw.openvc
 
-import at.jku.ssw.openvs._
-import at.jku.ssw.openvc.VHDLCompiler._
-import at.jku.ssw.openvs.VHDLRuntime._
+import at.jku.ssw.openvc.VHDLCompiler.Configuration
+import at.jku.ssw.openvs.VHDLRuntime.VHDLRuntimeException
+import at.jku.ssw.openvs.Simulator
+
 import java.io._
 
 object Main {
@@ -42,7 +43,7 @@ object Main {
 
       fileOption match {
         case None =>
-          files.map(file => VHDLCompiler.compileFile(configuration, file)).foreach(result => result.printErrors(new PrintWriter(System.out), Some(toLines(result.sourceFile))))
+          //files.map(file => VHDLCompiler.compileFile(configuration, file)).foreach(result => result.printErrors(new PrintWriter(System.out), Some(toLines(result.sourceFile))))
           Simulator.loadFiles(this.getClass.getClassLoader, configuration.designLibrary, List(files.tail.head.split("-body").head), List("std.jar", "ieee.jar"))
         case Some(file) =>
           VHDLCompiler.compileFile(configuration, file).printErrors(new PrintWriter(System.out), Some(toLines(file)))
@@ -71,23 +72,24 @@ object Main {
       // time 124467 ms
       //files:651 lines:533921
       //neu time:29518 files:606 481626
-      /*
-            scala.Console.setOut(new PrintStream("out.txt"))
-            val start = System.currentTimeMillis
-            println("scala start:")
-            for (f <- listFiles(new File("C:\\Users\\christian\\Desktop\\grlib-gpl-1.0.22-b4095\\"), filter, true)) {
-              //for (f <- Main.listFiles(new File("C:\\Users\\christian\\Desktop\\vlsi\\"), filter, true)) {
-              //for (f <- Main.listFiles(new File("C:\\Users\\christian\\Desktop\\vhdl\\"), filter, true)) {
-              //for (f <- Main.listFiles(new File("C:\\Users\\christian\\Desktop\\DHE\\abschlussprojekt"), filter,true)) {
-              //for (f <- Main.listFiles(new File("C:\\Users\\christian\\Desktop\\vhdl-ams-code\\"), filter, true)) {
-              println("Compiling file:" + f.getAbsolutePath)
-              val (designFile, syntaxErrors) = ASTBuilder.fromFile(f.getAbsolutePath, configuration)
-              for (msg <- syntaxErrors) {
-                println("--" + f.getName + ": line:" + msg.position.line + " col:" + msg.position.charPosition + " " + msg.message)
-              }
-            }
-            println("scala ende:" + (System.currentTimeMillis - start))
-      */
+
+      //scala.Console.setOut(new PrintStream("out.txt"))
+      for (i <- 0 to 10) {
+        val start = System.currentTimeMillis
+        //println("scala start:")
+        for (f <- listFiles(new File("C:\\Users\\christian\\Desktop\\grlib-gpl-1.0.22-b4095\\"), filter, true)) {
+          //for (f <- Main.listFiles(new File("C:\\Users\\christian\\Desktop\\vlsi\\"), filter, true)) {
+          //for (f <- Main.listFiles(new File("C:\\Users\\christian\\Desktop\\vhdl\\"), filter, true)) {
+          //for (f <- Main.listFiles(new File("C:\\Users\\christian\\Desktop\\DHE\\abschlussprojekt"), filter,true)) {
+          //for (f <- Main.listFiles(new File("C:\\Users\\christian\\Desktop\\vhdl-ams-code\\"), filter, true)) {
+          //println("Compiling file:" + f.getAbsolutePath)
+          val (designFile, syntaxErrors) = ASTBuilder.fromFile(f.getAbsolutePath, configuration)
+          for (msg <- syntaxErrors) {
+            println("--" + f.getName + ": line:" + msg.position.line + " col:" + msg.position.charPosition + " " + msg.message)
+          }
+        }
+        println("scala ende:" + (System.currentTimeMillis - start))
+      }
       /*
       var filesCount = 0
       var lines = 0

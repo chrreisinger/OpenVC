@@ -18,8 +18,9 @@
 
 package at.jku.ssw.openvc.ast.expressions
 
-import at.jku.ssw.openvc.symbolTable._
 import at.jku.ssw.openvc.ast._
+import at.jku.ssw.openvc.symbolTable.dataTypes.{DataType,NoType}
+import at.jku.ssw.openvc.symbolTable.symbols.{FunctionSymbol, AttributeSymbol, RuntimeSymbol, Symbol}
 
 abstract sealed class Expression extends Locatable {
   val dataType: DataType
@@ -103,7 +104,7 @@ object Factor {
 final case class Factor(position: Position, left: Expression, operator: Factor.Operator, rightOption: Option[Expression] = None, dataType: DataType = NoType) extends Expression
 
 final case class FunctionCallExpression(functionName: SelectedName, parameterAssociationList: Option[AssociationList],
-                                        parameters: Seq[Expression] = Seq(), dataType: DataType = NoType, symbol: FunctionSymbol = null) extends Expression {
+                                        dataType: DataType = NoType, symbol: FunctionSymbol = null) extends Expression {
   val position = functionName.position
 }
 object LogicalExpression {
