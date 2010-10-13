@@ -9,6 +9,7 @@ project/plugins/target/
 target/
 vhdlLibs/*
 vhdlSrc/*
+/.idea/workspace.xml
 *.swp
 *.iws
 *~

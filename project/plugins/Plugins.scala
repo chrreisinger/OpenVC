@@ -5,6 +5,6 @@ class Plugins(info: ProjectInfo) extends PluginDefinition(info) {
 
   val ideaRepo = "sbt-idea-repo" at "http://mpeltonen.github.com/maven/"
   val ideaPlugin = "com.github.mpeltonen" % "sbt-idea-plugin" % "0.1-SNAPSHOT"
-  val proguardPlugin = "org.scala-tools.sbt" % "sbt-proguard-plugin" % "0.0.4"
+  val proguardPlugin = "org.scala-tools.sbt" % "sbt-proguard-plugin" % "0.0.+"
 }
 
