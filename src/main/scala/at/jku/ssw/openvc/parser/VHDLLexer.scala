@@ -1,4 +1,4 @@
-// $ANTLR 3.2 Sep 23, 2009 12:02:23 C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g 2010-10-10 16:29:15
+// $ANTLR 3.2 Sep 23, 2009 12:02:23 C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g 2010-10-24 20:57:38
 
 /*
  *     OpenVC, an open source VHDL compiler/simulator
@@ -3168,8 +3168,8 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
         try {
             var _type:Int = BREAK
             var _channel:Int = DEFAULT_TOKEN_CHANNEL;
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2132:7: ( 'break' )
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2132:9: 'break'
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2134:7: ( 'break' )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2134:9: 'break'
             {
             	`match`("break"); if (state.failed) return ;
 
@@ -3193,8 +3193,8 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
         try {
             var _type:Int = TOLERANCE
             var _channel:Int = DEFAULT_TOKEN_CHANNEL;
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2134:11: ( 'tolerance' )
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2134:13: 'tolerance'
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2136:11: ( 'tolerance' )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2136:13: 'tolerance'
             {
             	`match`("tolerance"); if (state.failed) return ;
 
@@ -3218,10 +3218,10 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
         try {
             var _type:Int = WS
             var _channel:Int = DEFAULT_TOKEN_CHANNEL;
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2136:4: ( ( '\\t' | ' ' | NEWLINE )+ )
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2136:6: ( '\\t' | ' ' | NEWLINE )+
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2138:4: ( ( '\\t' | ' ' | NEWLINE )+ )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2138:6: ( '\\t' | ' ' | NEWLINE )+
             {
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2136:6: ( '\\t' | ' ' | NEWLINE )+
+            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2138:6: ( '\\t' | ' ' | NEWLINE )+
             	var cnt1:Int=0
             	var loop1 = true
             	do {
@@ -3279,7 +3279,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
     @throws(classOf[RecognitionException])
     def mNEWLINE():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2137:18: ( '\\r' | '\\n' )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2139:18: ( '\\r' | '\\n' )
             // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:
             {
             	if ( input.LA(1)=='\n'||input.LA(1)=='\r' ) {
@@ -3308,12 +3308,12 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
         try {
             var _type:Int = NESTED_ML_COMMENT
             var _channel:Int = DEFAULT_TOKEN_CHANNEL;
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2141:5: ( '/*' ( options {greedy=false; } : NESTED_ML_COMMENT | . )* '*/' )
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2141:9: '/*' ( options {greedy=false; } : NESTED_ML_COMMENT | . )* '*/'
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2143:5: ( '/*' ( options {greedy=false; } : NESTED_ML_COMMENT | . )* '*/' )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2143:9: '/*' ( options {greedy=false; } : NESTED_ML_COMMENT | . )* '*/'
             {
             	`match`("/*"); if (state.failed) return ;
 
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2141:15: ( options {greedy=false; } : NESTED_ML_COMMENT | . )*
+            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2143:15: ( options {greedy=false; } : NESTED_ML_COMMENT | . )*
             	var loop2=true
             	do {
             	    var alt2:Int=3
@@ -3350,12 +3350,12 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
 
             	    alt2 match {
             		case 1 =>
-            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2141:42: NESTED_ML_COMMENT
+            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2143:42: NESTED_ML_COMMENT
             		    {
             		    	mNESTED_ML_COMMENT(); if (state.failed) return ;
 
             		    }case 2 =>
-            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2141:62: .
+            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2143:62: .
             		    {
             		    	matchAny(); if (state.failed) return ;
 
@@ -3386,12 +3386,12 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
         try {
             var _type:Int = LINECOMMENT
             var _channel:Int = DEFAULT_TOKEN_CHANNEL;
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2144:13: ( '--' (~ ( '\\r' | '\\n' | '\\u000C' ) )* )
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2144:15: '--' (~ ( '\\r' | '\\n' | '\\u000C' ) )*
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2146:13: ( '--' (~ ( '\\r' | '\\n' | '\\u000C' ) )* )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2146:15: '--' (~ ( '\\r' | '\\n' | '\\u000C' ) )*
             {
             	`match`("--"); if (state.failed) return ;
 
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2144:20: (~ ( '\\r' | '\\n' | '\\u000C' ) )*
+            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2146:20: (~ ( '\\r' | '\\n' | '\\u000C' ) )*
             	var loop3=true
             	do {
             	    var alt3:Int=2
@@ -3404,7 +3404,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
 
             	    alt3 match {
             		case 1 =>
-            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2144:20: ~ ( '\\r' | '\\n' | '\\u000C' )
+            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2146:20: ~ ( '\\r' | '\\n' | '\\u000C' )
             		    {
             		    	if ( (input.LA(1)>='\u0000' && input.LA(1)<='\t')||input.LA(1)=='\u000B'||(input.LA(1)>='\u000E' && input.LA(1)<='\uFFFF') ) {
             		    	    input.consume()
@@ -3443,11 +3443,11 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
         try {
             var _type:Int = BASIC_IDENTIFIER
             var _channel:Int = DEFAULT_TOKEN_CHANNEL;
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2146:18: ( LETTER ( LETTER_OR_DIGIT | '_' )* )
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2146:20: LETTER ( LETTER_OR_DIGIT | '_' )*
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2148:18: ( LETTER ( LETTER_OR_DIGIT | '_' )* )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2148:20: LETTER ( LETTER_OR_DIGIT | '_' )*
             {
             	mLETTER(); if (state.failed) return ;
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2146:27: ( LETTER_OR_DIGIT | '_' )*
+            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2148:27: ( LETTER_OR_DIGIT | '_' )*
             	var loop4=true
             	do {
             	    var alt4:Int=2
@@ -3496,11 +3496,11 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
         try {
             var _type:Int = EXTENDED_IDENTIFIER
             var _channel:Int = DEFAULT_TOKEN_CHANNEL;
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2149:21: ( '\\\\' ( '\\\"' | '\\\\\\\\' | GRAPHIC_CHARACTER )+ '\\\\' )
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2149:23: '\\\\' ( '\\\"' | '\\\\\\\\' | GRAPHIC_CHARACTER )+ '\\\\'
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2151:21: ( '\\\\' ( '\\\"' | '\\\\\\\\' | GRAPHIC_CHARACTER )+ '\\\\' )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2151:23: '\\\\' ( '\\\"' | '\\\\\\\\' | GRAPHIC_CHARACTER )+ '\\\\'
             {
             	`match`('\\'); if (state.failed) return ;
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2149:28: ( '\\\"' | '\\\\\\\\' | GRAPHIC_CHARACTER )+
+            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2151:28: ( '\\\"' | '\\\\\\\\' | GRAPHIC_CHARACTER )+
             	var cnt5:Int=0
             	var loop5 = true
             	do {
@@ -3530,18 +3530,18 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
 
             	    alt5 match {
             		case 1 =>
-            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2149:30: '\\\"'
+            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2151:30: '\\\"'
             		    {
             		    	`match`('\"'); if (state.failed) return ;
 
             		    }case 2 =>
-            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2149:37: '\\\\\\\\'
+            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2151:37: '\\\\\\\\'
             		    {
             		    	`match`("\\\\"); if (state.failed) return ;
 
 
             		    }case 3 =>
-            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2149:46: GRAPHIC_CHARACTER
+            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2151:46: GRAPHIC_CHARACTER
             		    {
             		    	mGRAPHIC_CHARACTER(); if (state.failed) return ;
 
@@ -3575,13 +3575,13 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
         try {
             var _type:Int = BASED_LITERAL
             var _channel:Int = DEFAULT_TOKEN_CHANNEL;
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2151:15: ( INTEGER '#' BASED_INTEGER ( DOT BASED_INTEGER )? '#' ( EXPONENT )? )
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2151:17: INTEGER '#' BASED_INTEGER ( DOT BASED_INTEGER )? '#' ( EXPONENT )?
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2153:15: ( INTEGER '#' BASED_INTEGER ( DOT BASED_INTEGER )? '#' ( EXPONENT )? )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2153:17: INTEGER '#' BASED_INTEGER ( DOT BASED_INTEGER )? '#' ( EXPONENT )?
             {
             	mINTEGER(); if (state.failed) return ;
             	`match`('#'); if (state.failed) return ;
             	mBASED_INTEGER(); if (state.failed) return ;
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2151:43: ( DOT BASED_INTEGER )?
+            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2153:43: ( DOT BASED_INTEGER )?
             	var alt6 :Int=2
             	val LA6_0:Int = input.LA(1)
 
@@ -3590,7 +3590,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
             	}
             	alt6 match {
             	    case 1 =>
-            	        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2151:45: DOT BASED_INTEGER
+            	        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2153:45: DOT BASED_INTEGER
             	        {
             	        	mDOT(); if (state.failed) return ;
             	        	mBASED_INTEGER(); if (state.failed) return ;
@@ -3600,7 +3600,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
             	}
 
             	`match`('#'); if (state.failed) return ;
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2151:70: ( EXPONENT )?
+            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2153:70: ( EXPONENT )?
             	var alt7 :Int=2
             	val LA7_0:Int = input.LA(1)
 
@@ -3609,7 +3609,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
             	}
             	alt7 match {
             	    case 1 =>
-            	        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2151:70: EXPONENT
+            	        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2153:70: EXPONENT
             	        {
             	        	mEXPONENT(); if (state.failed) return ;
 
@@ -3634,11 +3634,11 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
         try {
             var _type:Int = INTEGER_LITERAL
             var _channel:Int = DEFAULT_TOKEN_CHANNEL;
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2153:17: ( INTEGER ( EXPONENT )? )
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2153:19: INTEGER ( EXPONENT )?
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2155:17: ( INTEGER ( EXPONENT )? )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2155:19: INTEGER ( EXPONENT )?
             {
             	mINTEGER(); if (state.failed) return ;
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2153:27: ( EXPONENT )?
+            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2155:27: ( EXPONENT )?
             	var alt8 :Int=2
             	val LA8_0:Int = input.LA(1)
 
@@ -3647,7 +3647,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
             	}
             	alt8 match {
             	    case 1 =>
-            	        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2153:27: EXPONENT
+            	        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2155:27: EXPONENT
             	        {
             	        	mEXPONENT(); if (state.failed) return ;
 
@@ -3672,13 +3672,13 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
         try {
             var _type:Int = REAL_LITERAL
             var _channel:Int = DEFAULT_TOKEN_CHANNEL;
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2155:14: ( INTEGER DOT INTEGER ( EXPONENT )? )
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2155:16: INTEGER DOT INTEGER ( EXPONENT )?
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2157:14: ( INTEGER DOT INTEGER ( EXPONENT )? )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2157:16: INTEGER DOT INTEGER ( EXPONENT )?
             {
             	mINTEGER(); if (state.failed) return ;
             	mDOT(); if (state.failed) return ;
             	mINTEGER(); if (state.failed) return ;
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2155:38: ( EXPONENT )?
+            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2157:38: ( EXPONENT )?
             	var alt9 :Int=2
             	val LA9_0:Int = input.LA(1)
 
@@ -3687,7 +3687,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
             	}
             	alt9 match {
             	    case 1 =>
-            	        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2155:38: EXPONENT
+            	        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2157:38: EXPONENT
             	        {
             	        	mEXPONENT(); if (state.failed) return ;
 
@@ -3712,11 +3712,11 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
         try {
             var _type:Int = APOSTROPHE
             var _channel:Int = DEFAULT_TOKEN_CHANNEL;
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2158:3: ( '\\'' ( ( ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )=> ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )? )
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2158:5: '\\'' ( ( ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )=> ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )?
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2160:3: ( '\\'' ( ( ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )=> ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )? )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2160:5: '\\'' ( ( ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )=> ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )?
             {
             	`match`('\''); if (state.failed) return ;
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2159:5: ( ( ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )=> ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )?
+            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2161:5: ( ( ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )=> ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )?
             	var alt10 :Int=2
             	val LA10_0:Int = input.LA(1)
 
@@ -3725,7 +3725,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
             	}
             	alt10 match {
             	    case 1 =>
-            	        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2159:7: ( ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )=> ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\''
+            	        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2161:7: ( ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )=> ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\''
             	        {
             	        	if ( (input.LA(1)>=' ' && input.LA(1)<='~')||(input.LA(1)>='\u00A0' && input.LA(1)<='\u00FF') ) {
             	        	    input.consume()
@@ -3764,11 +3764,11 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
         try {
             var _type:Int = STRING_LITERAL
             var _channel:Int = DEFAULT_TOKEN_CHANNEL;
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2165:16: ( '\\\"' ( '\\\"\\\"' | '\\\\' | GRAPHIC_CHARACTER )* '\\\"' )
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2165:18: '\\\"' ( '\\\"\\\"' | '\\\\' | GRAPHIC_CHARACTER )* '\\\"'
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2167:16: ( '\\\"' ( '\\\"\\\"' | '\\\\' | GRAPHIC_CHARACTER )* '\\\"' )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2167:18: '\\\"' ( '\\\"\\\"' | '\\\\' | GRAPHIC_CHARACTER )* '\\\"'
             {
             	`match`('\"'); if (state.failed) return ;
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2165:23: ( '\\\"\\\"' | '\\\\' | GRAPHIC_CHARACTER )*
+            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2167:23: ( '\\\"\\\"' | '\\\\' | GRAPHIC_CHARACTER )*
             	var loop11=true
             	do {
             	    var alt11:Int=4
@@ -3797,18 +3797,18 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
 
             	    alt11 match {
             		case 1 =>
-            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2165:25: '\\\"\\\"'
+            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2167:25: '\\\"\\\"'
             		    {
             		    	`match`("\"\""); if (state.failed) return ;
 
 
             		    }case 2 =>
-            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2165:34: '\\\\'
+            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2167:34: '\\\\'
             		    {
             		    	`match`('\\'); if (state.failed) return ;
 
             		    }case 3 =>
-            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2165:41: GRAPHIC_CHARACTER
+            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2167:41: GRAPHIC_CHARACTER
             		    {
             		    	mGRAPHIC_CHARACTER(); if (state.failed) return ;
 
@@ -3835,12 +3835,12 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
         try {
             var _type:Int = BIT_STRING_LITERAL
             var _channel:Int = DEFAULT_TOKEN_CHANNEL;
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2167:20: ( BASE_SPECIFIER '\\\"' ( BASED_INTEGER )? '\\\"' )
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2167:46: BASE_SPECIFIER '\\\"' ( BASED_INTEGER )? '\\\"'
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2169:20: ( BASE_SPECIFIER '\\\"' ( BASED_INTEGER )? '\\\"' )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2169:46: BASE_SPECIFIER '\\\"' ( BASED_INTEGER )? '\\\"'
             {
             	mBASE_SPECIFIER(); if (state.failed) return ;
             	`match`('\"'); if (state.failed) return ;
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2167:66: ( BASED_INTEGER )?
+            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2169:66: ( BASED_INTEGER )?
             	var alt12 :Int=2
             	val LA12_0:Int = input.LA(1)
 
@@ -3849,7 +3849,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
             	}
             	alt12 match {
             	    case 1 =>
-            	        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2167:66: BASED_INTEGER
+            	        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2169:66: BASED_INTEGER
             	        {
             	        	mBASED_INTEGER(); if (state.failed) return ;
 
@@ -3873,7 +3873,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
     @throws(classOf[RecognitionException])
     def mBASE_SPECIFIER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2170:16: ( 'b' | 'o' | 'x' )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2172:16: ( 'b' | 'o' | 'x' )
             // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:
             {
             	if ( input.LA(1)=='b'||input.LA(1)=='o'||input.LA(1)=='x' ) {
@@ -3900,11 +3900,11 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
     @throws(classOf[RecognitionException])
     def mBASED_INTEGER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2173:15: ( EXTENDED_DIGIT ( ( '_' )? EXTENDED_DIGIT )* )
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2173:17: EXTENDED_DIGIT ( ( '_' )? EXTENDED_DIGIT )*
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2175:15: ( EXTENDED_DIGIT ( ( '_' )? EXTENDED_DIGIT )* )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2175:17: EXTENDED_DIGIT ( ( '_' )? EXTENDED_DIGIT )*
             {
             	mEXTENDED_DIGIT(); if (state.failed) return ;
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2173:32: ( ( '_' )? EXTENDED_DIGIT )*
+            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2175:32: ( ( '_' )? EXTENDED_DIGIT )*
             	var loop14=true
             	do {
             	    var alt14:Int=2
@@ -3917,9 +3917,9 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
 
             	    alt14 match {
             		case 1 =>
-            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2173:34: ( '_' )? EXTENDED_DIGIT
+            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2175:34: ( '_' )? EXTENDED_DIGIT
             		    {
-            		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2173:34: ( '_' )?
+            		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2175:34: ( '_' )?
             		    	var alt13 :Int=2
             		    	val LA13_0:Int = input.LA(1)
 
@@ -3928,7 +3928,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
             		    	}
             		    	alt13 match {
             		    	    case 1 =>
-            		    	        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2173:34: '_'
+            		    	        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2175:34: '_'
             		    	        {
             		    	        	`match`('_'); if (state.failed) return ;
 
@@ -3956,7 +3956,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
     @throws(classOf[RecognitionException])
     def mEXTENDED_DIGIT():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2176:16: ( DIGIT | LETTER )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2178:16: ( DIGIT | LETTER )
             // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:
             {
             	if ( (input.LA(1)>='0' && input.LA(1)<='9')||(input.LA(1)>='A' && input.LA(1)<='Z')||(input.LA(1)>='a' && input.LA(1)<='z')||(input.LA(1)>='\u00C0' && input.LA(1)<='\u00D6')||(input.LA(1)>='\u00D8' && input.LA(1)<='\u00F6')||(input.LA(1)>='\u00F8' && input.LA(1)<='\u00FF') ) {
@@ -3983,11 +3983,11 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
     @throws(classOf[RecognitionException])
     def mINTEGER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2179:8: ( DIGIT ( ( '_' )? DIGIT )* )
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2179:10: DIGIT ( ( '_' )? DIGIT )*
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2181:8: ( DIGIT ( ( '_' )? DIGIT )* )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2181:10: DIGIT ( ( '_' )? DIGIT )*
             {
             	mDIGIT(); if (state.failed) return ;
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2179:16: ( ( '_' )? DIGIT )*
+            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2181:16: ( ( '_' )? DIGIT )*
             	var loop16=true
             	do {
             	    var alt16:Int=2
@@ -4000,9 +4000,9 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
 
             	    alt16 match {
             		case 1 =>
-            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2179:18: ( '_' )? DIGIT
+            		    // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2181:18: ( '_' )? DIGIT
             		    {
-            		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2179:18: ( '_' )?
+            		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2181:18: ( '_' )?
             		    	var alt15 :Int=2
             		    	val LA15_0:Int = input.LA(1)
 
@@ -4011,7 +4011,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
             		    	}
             		    	alt15 match {
             		    	    case 1 =>
-            		    	        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2179:18: '_'
+            		    	        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2181:18: '_'
             		    	        {
             		    	        	`match`('_'); if (state.failed) return ;
 
@@ -4039,11 +4039,11 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
     @throws(classOf[RecognitionException])
     def mEXPONENT():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2182:9: ( 'e' ( '+' | '-' )? INTEGER )
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2182:11: 'e' ( '+' | '-' )? INTEGER
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2184:9: ( 'e' ( '+' | '-' )? INTEGER )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2184:11: 'e' ( '+' | '-' )? INTEGER
             {
             	`match`('e'); if (state.failed) return ;
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2182:15: ( '+' | '-' )?
+            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2184:15: ( '+' | '-' )?
             	var alt17 :Int=2
             	val LA17_0:Int = input.LA(1)
 
@@ -4084,7 +4084,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
     @throws(classOf[RecognitionException])
     def mLETTER_OR_DIGIT():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2185:16: ( LETTER | DIGIT )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2187:16: ( LETTER | DIGIT )
             // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:
             {
             	if ( (input.LA(1)>='0' && input.LA(1)<='9')||(input.LA(1)>='A' && input.LA(1)<='Z')||(input.LA(1)>='a' && input.LA(1)<='z')||(input.LA(1)>='\u00C0' && input.LA(1)<='\u00D6')||(input.LA(1)>='\u00D8' && input.LA(1)<='\u00F6')||(input.LA(1)>='\u00F8' && input.LA(1)<='\u00FF') ) {
@@ -4111,7 +4111,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
     @throws(classOf[RecognitionException])
     def mLETTER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2188:7: ( UPPER_CASE_LETTER | LOWER_CASE_LETTER )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2190:7: ( UPPER_CASE_LETTER | LOWER_CASE_LETTER )
             // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:
             {
             	if ( (input.LA(1)>='A' && input.LA(1)<='Z')||(input.LA(1)>='a' && input.LA(1)<='z')||(input.LA(1)>='\u00C0' && input.LA(1)<='\u00D6')||(input.LA(1)>='\u00D8' && input.LA(1)<='\u00F6')||(input.LA(1)>='\u00F8' && input.LA(1)<='\u00FF') ) {
@@ -4138,7 +4138,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
     @throws(classOf[RecognitionException])
     def mGRAPHIC_CHARACTER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2192:3: ( UPPER_CASE_LETTER | DIGIT | SPECIAL_CHARACTER | SPACE_CHARACTER | LOWER_CASE_LETTER | OTHER_SPECIAL_CHARACTER )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2194:3: ( UPPER_CASE_LETTER | DIGIT | SPECIAL_CHARACTER | SPACE_CHARACTER | LOWER_CASE_LETTER | OTHER_SPECIAL_CHARACTER )
             // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:
             {
             	if ( (input.LA(1)>=' ' && input.LA(1)<='!')||(input.LA(1)>='#' && input.LA(1)<='[')||(input.LA(1)>=']' && input.LA(1)<='~')||(input.LA(1)>='\u00A0' && input.LA(1)<='\u00FF') ) {
@@ -4165,7 +4165,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
     @throws(classOf[RecognitionException])
     def mUPPER_CASE_LETTER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2202:19: ( 'A' .. 'Z' | '\\u00c0' .. '\\u00d6' | '\\u00d8' .. '\\u00de' )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2204:19: ( 'A' .. 'Z' | '\\u00c0' .. '\\u00d6' | '\\u00d8' .. '\\u00de' )
             // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:
             {
             	if ( (input.LA(1)>='A' && input.LA(1)<='Z')||(input.LA(1)>='\u00C0' && input.LA(1)<='\u00D6')||(input.LA(1)>='\u00D8' && input.LA(1)<='\u00DE') ) {
@@ -4192,7 +4192,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
     @throws(classOf[RecognitionException])
     def mLOWER_CASE_LETTER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2206:19: ( 'a' .. 'z' | '\\u00df' .. '\\u00f6' | '\\u00f8' .. '\\u00ff' )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2208:19: ( 'a' .. 'z' | '\\u00df' .. '\\u00f6' | '\\u00f8' .. '\\u00ff' )
             // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:
             {
             	if ( (input.LA(1)>='a' && input.LA(1)<='z')||(input.LA(1)>='\u00DF' && input.LA(1)<='\u00F6')||(input.LA(1)>='\u00F8' && input.LA(1)<='\u00FF') ) {
@@ -4219,8 +4219,8 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
     @throws(classOf[RecognitionException])
     def mDIGIT():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2209:7: ( '0' .. '9' )
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2209:9: '0' .. '9'
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2211:7: ( '0' .. '9' )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2211:9: '0' .. '9'
             {
             	matchRange('0','9'); if (state.failed) return ;
 
@@ -4236,7 +4236,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
     @throws(classOf[RecognitionException])
     def mSPECIAL_CHARACTER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2213:3: ( '#' | '&' | '\\'' | '(' | ')' | '*' | '+' | ',' | '-' | '.' | '/' | ':' | ';' | '<' | '=' | '>' | '[' | ']' | '_' | '|' )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2215:3: ( '#' | '&' | '\\'' | '(' | ')' | '*' | '+' | ',' | '-' | '.' | '/' | ':' | ';' | '<' | '=' | '>' | '[' | ']' | '_' | '|' )
             // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:
             {
             	if ( input.LA(1)=='#'||(input.LA(1)>='&' && input.LA(1)<='/')||(input.LA(1)>=':' && input.LA(1)<='>')||input.LA(1)=='['||input.LA(1)==']'||input.LA(1)=='_'||input.LA(1)=='|' ) {
@@ -4263,7 +4263,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
     @throws(classOf[RecognitionException])
     def mSPACE_CHARACTER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2217:17: ( ' ' | '\\u00a0' )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2219:17: ( ' ' | '\\u00a0' )
             // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:
             {
             	if ( input.LA(1)==' '||input.LA(1)=='\u00A0' ) {
@@ -4290,7 +4290,7 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
     @throws(classOf[RecognitionException])
     def mOTHER_SPECIAL_CHARACTER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2221:3: ( '!' | '$' | '%' | '@' | '?' | '^' | '`' | '{' | '}' | '~' | '\\u00a1' .. '\\u00bf' | '\\u00d7' | '\\u00f7' )
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2223:3: ( '!' | '$' | '%' | '@' | '?' | '^' | '`' | '{' | '}' | '~' | '\\u00a1' .. '\\u00bf' | '\\u00d7' | '\\u00f7' )
             // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:
             {
             	if ( input.LA(1)=='!'||(input.LA(1)>='$' && input.LA(1)<='%')||(input.LA(1)>='?' && input.LA(1)<='@')||input.LA(1)=='^'||input.LA(1)=='`'||input.LA(1)=='{'||(input.LA(1)>='}' && input.LA(1)<='~')||(input.LA(1)>='\u00A1' && input.LA(1)<='\u00BF')||input.LA(1)=='\u00D7'||input.LA(1)=='\u00F7' ) {
@@ -4317,8 +4317,8 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
     @throws(classOf[RecognitionException])
     def mCHARACTER_LITERAL():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2226:5: ()
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2227:5: 
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2228:5: ()
+            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2229:5: 
             {
             }
 
@@ -5083,8 +5083,8 @@ final class VHDLLexer(input:CharStream, state:RecognizerSharedState) extends Lex
     // $ANTLR start synpred1_VHDL
     @throws(classOf[RecognitionException])
     def synpred1_VHDL_fragment():Unit = {   
-        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2159:7: ( ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )
-        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2159:8: ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\''
+        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2161:7: ( ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )
+        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\VHDL.g:2161:8: ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\''
         {
         	if ( (input.LA(1)>=' ' && input.LA(1)<='~')||(input.LA(1)>='\u00A0' && input.LA(1)<='\u00FF') ) {
         	    input.consume()

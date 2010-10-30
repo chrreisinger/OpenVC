@@ -21,20 +21,28 @@ package at.jku.ssw.openvc.codeGenerator
 import at.jku.ssw.openvc.symbolTable.dataTypes._
 import at.jku.ssw.openvc.symbolTable.symbols._
 
-import java.io.{FileOutputStream}
 import org.objectweb.asm._
 
 object RichLabel {
   def apply(mv: MethodVisitor) = new RichLabel(mv)
 }
+
 final class RichLabel(mv: MethodVisitor) extends Label {
   def apply() = mv.visitLabel(this)
 }
 
 final class RichClassWriter(private val outputDirectory: String, val className: String, private val cw: ClassWriter, cv: Option[ClassVisitor] = None) extends ClassAdapter(cv.getOrElse(cw)) {
   def writeToFile() {
-    val f = new FileOutputStream(outputDirectory + className + ".class")
-    try {
+    //create sub-directories if the do not exist (e.g. for foo/bar/classname.class)
+    val file = new java.io.File(outputDirectory + (className.lastIndexOf('/') match {
+      case -1 => ""
+      case i => className.substring(0, i)
+    }))
+    if (!file.canWrite) file.mkdirs
+
+    val f = new java.io.FileOutputStream(outputDirectory + className + ".class")
+    try
+    {
       this.visitEnd
       f.write(cw.toByteArray)
     }
@@ -68,6 +76,7 @@ final class RichClassWriter(private val outputDirectory: String, val className: 
 }
 
 final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
+
   import at.jku.ssw.openvc.ast._
 
   def NOP = this.visitInsn(Opcodes.NOP)
@@ -426,22 +435,17 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
     })
 
   def loadSymbol(symbol: RuntimeSymbol) = symbol.owner match {
-    case _: ArchitectureSymbol | _: EntitySymbol => GETFIELD(symbol.owner.name, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
-    case processSymbol: ProcessSymbol => GETFIELD(processSymbol.owner.name + "$" + symbol.owner.name, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
+    case _: ArchitectureSymbol | _: EntitySymbol | _: ProcessSymbol => GETFIELD(symbol.owner.implementationName, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
     case typeSymbol: TypeSymbol =>
       if (typeSymbol.dataType.isInstanceOf[ProtectedType]) ALOAD(0)
-      GETFIELD(typeSymbol.dataType.fullName, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
-    case _: PackageHeaderSymbol => GETSTATIC(symbol.owner.name + "_header", symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
-    case _: PackageBodySymbol => GETSTATIC(symbol.owner.name, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
+      GETFIELD(typeSymbol.dataType.implementationName, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
+    case packageSymbol: PackageSymbol => GETSTATIC(packageSymbol.implementationName, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
     case _: SubprogramSymbol => loadInstruction(symbol.dataType, symbol.index)
   }
 
   def storeSymbol(symbol: RuntimeSymbol) = symbol.owner match {
-    case _: ArchitectureSymbol | _: EntitySymbol => PUTFIELD(symbol.owner.name, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
-    case processSymbol: ProcessSymbol => PUTFIELD(processSymbol.owner.name + "$" + symbol.owner.name, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
-    case typeSymbol: TypeSymbol => PUTFIELD(typeSymbol.dataType.fullName, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
-    case _: PackageHeaderSymbol => PUTSTATIC(symbol.owner.name + "_header", symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
-    case _: PackageBodySymbol => PUTSTATIC(symbol.owner.name, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
+    case _: ArchitectureSymbol | _: EntitySymbol | _: ProcessSymbol | _: TypeSymbol => PUTFIELD(symbol.owner.implementationName, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
+    case packageSymbol: PackageSymbol => PUTSTATIC(packageSymbol.implementationName, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
     case _: SubprogramSymbol => storeInstruction(symbol)
   }
 
@@ -495,7 +499,7 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
 
   def createDebugLineNumberInformation(node: Locatable): Unit = createDebugLineNumberInformation(node.position)
 
-  def createDebugLineNumberInformation(position: Position) = {
+  def createDebugLineNumberInformation(position: Position) {
     val line = position.line
     if (lastLine != line && position != Position.Empty) {
       lastLine = line
@@ -505,7 +509,7 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
     }
   }
 
-  def throwNewException(className: String, message: String) = {
+  def throwNewException(className: String, message: String) {
     NEW(className)
     DUP
     LDC(message)
@@ -514,5 +518,7 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
   }
 
   def createDebugLocalVariableInformation(symbols: Seq[Symbol], startLabel: RichLabel, stopLabel: RichLabel) =
-    symbols.collect(_ match {case r: RuntimeSymbol => r}).foreach(r => this.visitLocalVariable(r.name, ByteCodeGenerator.getJVMDataType(r), null, startLabel, stopLabel, r.index))
+    symbols.collect(_ match {
+      case r: RuntimeSymbol => r
+    }).foreach(r => this.visitLocalVariable(r.name, ByteCodeGenerator.getJVMDataType(r), null, startLabel, stopLabel, r.index))
 }

@@ -20,8 +20,8 @@ package at.jku.ssw.openvc.symbolTable
 
 import scala.annotation.tailrec
 import java.io._
-import symbols.Symbol
 import dataTypes._
+import at.jku.ssw.openvc.symbolTable.symbols.{AttributeDeclarationSymbol, Symbol}
 
 object SymbolTable {
   type Scope = Map[String, Symbol]
@@ -30,7 +30,8 @@ object SymbolTable {
   def getScopesFromInputStream(input: InputStream): Seq[Scope] = {
     @tailrec
     def getScopesFromInputStreamInner(objectInput: ObjectInputStream, list: Seq[Scope]): Seq[Scope] = {
-      val obj = try {
+      val obj = try
+      {
         objectInput.readObject.asInstanceOf[Scope]
       } catch {
         case _: EOFException => null
@@ -43,6 +44,7 @@ object SymbolTable {
     reader.close()
     listOfScopes
   }
+
   //TODO change to vals and move to Context
   var booleanType: EnumerationType = null
   var bitType: EnumerationType = null
@@ -59,13 +61,15 @@ object SymbolTable {
   var bitVector: ArrayType = null
   var fileOpenKind: EnumerationType = null
   var fileOpenStatus: EnumerationType = null
+  var foreignAttribute: AttributeDeclarationSymbol = null
 }
-final class SymbolTable(private val scopes: Seq[SymbolTable.Scope]) {
-  import SymbolTable.Scope
 
+final class SymbolTable(val scopes: Seq[SymbolTable.Scope]) {
   override def toString = scopes.mkString
 
   def currentScope = scopes.head
+
+  def depth = scopes.size
 
   def find(name: String): Option[Symbol] = {
     for (scope <- this.scopes) {
@@ -76,36 +80,23 @@ final class SymbolTable(private val scopes: Seq[SymbolTable.Scope]) {
   }
 
   def findInCurrentScope[A <: Symbol](name: String, clazz: Class[A]): Option[A] =
-    currentScope.get(name).flatMap {
+    currentScope.get(name).flatMap{
       symbol =>
         if (symbol.getClass ne clazz)
           None
         else Some(symbol.asInstanceOf[A])
     }
 
-  def insertWithoutCheck(list: Seq[Symbol]) = {
-    val newHead = list.map(x => x.name -> x).toMap ++ this.scopes.head
-    new SymbolTable(newHead +: this.scopes.tail)
-  }
-
   def insert(obj: Symbol): SymbolTable = new SymbolTable((this.scopes.head + (obj.name -> obj)) +: this.scopes.tail)
-
-  def insertScopes(scopeList: Seq[Scope]): SymbolTable = new SymbolTable(scopeList.filter(_.nonEmpty) ++ this.scopes)
 
   def openScope: SymbolTable = new SymbolTable(Map[String, Symbol]() +: this.scopes)
 
-  def dumpTo(out: PrintStream) =
-    for ((s, i) <- this.scopes.zipWithIndex) {
-      out.println("scope:" + i)
-      for (symbol <- s) out.println(symbol._2.name)
-    }
-
   @throws(classOf[IOException])
   def writeToFile(file: String) {
-    // this.dumpTo(System.out)
-    val writer = new ObjectOutputStream(new FileOutputStream(file, false))
-    try {
-      this.scopes.reverse.foreach(scope => if (scopes.nonEmpty) writer.writeObject(scope))
+    val writer = new ObjectOutputStream(new FileOutputStream(file + ".sym", false))
+    try
+    {
+      this.scopes.init.reverse.foreach(scope => if (scopes.nonEmpty) writer.writeObject(scope))
     }
     finally {
       writer.close()
@@ -116,9 +107,33 @@ final class SymbolTable(private val scopes: Seq[SymbolTable.Scope]) {
 abstract sealed class AbstractLibraryArchive {
   def close()
 
+  def loadSymbol(name: String): Option[Symbol] =
+    getInputStream(name).flatMap{
+      stream =>
+        try
+        {
+          val reader = new ObjectInputStream(stream)
+          Some(reader.readObject.asInstanceOf[Symbol])
+        } catch {
+          case _: IOException => None
+        }
+        finally {
+          stream.close()
+        }
+    }
+
+  def loadSymbol[A <: Symbol](name: String, symbolClass: Class[A]): Option[A] =
+    loadSymbol(name).flatMap{
+      symbol =>
+        if (symbol.getClass eq symbolClass) Some(symbol.asInstanceOf[A])
+        else None
+    }
+
   def getInputStream(file: String): Option[InputStream]
 }
+
 final class JarFileLibraryArchive(file: String) extends AbstractLibraryArchive {
+
   import java.util.jar.{JarFile, JarEntry}
 
   val jarFile = new JarFile(file)
@@ -141,13 +156,11 @@ final class JarFileLibraryArchive(file: String) extends AbstractLibraryArchive {
 }
 
 final class DirectoryLibraryArchive(directory: String) extends AbstractLibraryArchive {
-  import java.io.File
-
-  @throws(classOf[IOException])
   override def close() = {}
 
-  override def getInputStream(file: String): Option[InputStream] = //TODO close FileInputStream
-    try {
+  override def getInputStream(file: String): Option[InputStream] =
+    try
+    {
       Some(new FileInputStream(directory + File.separator + file))
     } catch {
       case _ => None

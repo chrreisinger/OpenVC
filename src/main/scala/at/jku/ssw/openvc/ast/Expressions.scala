@@ -19,8 +19,8 @@
 package at.jku.ssw.openvc.ast.expressions
 
 import at.jku.ssw.openvc.ast._
-import at.jku.ssw.openvc.symbolTable.dataTypes.{DataType,NoType}
-import at.jku.ssw.openvc.symbolTable.symbols.{FunctionSymbol, AttributeSymbol, RuntimeSymbol, Symbol}
+import at.jku.ssw.openvc.symbolTable.dataTypes.{DataType, NoType}
+import at.jku.ssw.openvc.symbolTable.symbols._
 
 abstract sealed class Expression extends Locatable {
   val dataType: DataType
@@ -33,15 +33,22 @@ case object EmptyExpression extends Expression {
 
 object Term {
   type Operator = Operator.Value
+
   object Operator extends Enumeration {
-    val MUL, DIV, MOD, REM = Value
+    val MUL = Value("*")
+    val DIV = Value("/")
+    val MOD = Value("mod")
+    val REM = Value("rem")
   }
 }
+
 final case class Term(position: Position, left: Expression, operator: Term.Operator, right: Expression, dataType: DataType = NoType) extends Expression
 
-final case class AggregateExpression(aggregate: Aggregate, dataType: DataType = NoType) extends Expression {
-  val position = aggregate.position
+object Aggregate {
+  final case class ElementAssociation(choices: Option[Choices], expression: Expression)
 }
+
+final case class Aggregate(position: Position, elements: Seq[Aggregate.ElementAssociation], dataType: DataType = NoType) extends Expression
 
 final case class TypeCastExpression(expression: Expression, dataType: DataType = NoType) extends Expression {
   val position = expression.position
@@ -49,84 +56,140 @@ final case class TypeCastExpression(expression: Expression, dataType: DataType =
 
 object Relation {
   type Operator = Operator.Value
+
   object Operator extends Enumeration {
-    val EQ, NEQ, LT, LEQ, GT, GEQ = Value
+    val EQ = Value("=")
+    val NEQ = Value("/=")
+    val LT = Value("<")
+    val LEQ = Value("<=")
+    val GT = Value(">")
+    val GEQ = Value(">=")
   }
+
 }
+
 final case class Relation(position: Position, left: Expression, operator: Relation.Operator, right: Expression, dataType: DataType = NoType) extends Expression
 
 final case class QualifiedExpression(typeName: SelectedName, expression: Expression, dataType: DataType = NoType) extends Expression {
   val position = typeName.position
 }
 
-final case class NameExpression(name: Name) extends Expression {
-  val position = name.position
+object Name {
+
+  abstract sealed class Part extends Locatable
+
+  final case class SelectedPart(identifier: Identifier) extends Part {
+    val position = identifier.position
+  }
+
+  final case class SlicePart(range: DiscreteRange) extends Part {
+    val position = range.position
+  }
+
+  final case class AttributePart(signature: Option[Signature], identifier: Identifier, expression: Option[Expression]) extends Part {
+    val position = signature.map(_.position).getOrElse(identifier.position)
+  }
+
+  final case class AssociationListPart(position: Position, associationList: AssociationList) extends Part
+
+}
+
+final case class Name(identifier: Identifier, parts: Seq[Name.Part]) extends Expression {
+  val position = identifier.position
   val dataType = NoType
 }
 
-
-trait WithSymbol[T >: Null <: Symbol] {
-  val symbol: T
+trait WithSymbol {
+  val symbol: Symbol
 }
 
-final case class ArrayAccessExpression(symbol: RuntimeSymbol, indexes: Seq[Expression], dataType: DataType, expression: Expression) extends Expression with WithSymbol[RuntimeSymbol] {
+final case class ArrayAccessExpression(symbol: RuntimeSymbol, indexes: Seq[Expression], dataType: DataType, expression: Expression) extends Expression with WithSymbol {
   val position = indexes.head.position
 }
 
-final case class AttributeExpression(position: Position, symbol: Symbol, attribute: AttributeSymbol, expression: Option[Expression], dataType: DataType) extends Expression with WithSymbol[Symbol]
+final case class AttributeExpression(position: Position, symbol: Symbol, attribute: AttributeSymbol, expression: Option[Expression], dataType: DataType) extends Expression with WithSymbol
 
-final case class RangeAccessExpression(symbol: RuntimeSymbol, range: DiscreteRange, dataType: DataType) extends Expression with WithSymbol[RuntimeSymbol] {
+final case class RangeAccessExpression(symbol: RuntimeSymbol, range: DiscreteRange, dataType: DataType) extends Expression with WithSymbol {
   val position = range.position
 }
 
-final case class FieldAccessExpression(symbol: RuntimeSymbol, field: Identifier, fieldDataType: DataType, dataType: DataType, expression: Expression) extends Expression with WithSymbol[RuntimeSymbol] {
+final case class FieldAccessExpression(symbol: RuntimeSymbol, field: Identifier, fieldDataType: DataType, dataType: DataType, expression: Expression) extends Expression with WithSymbol {
   val position = field.position
 }
 
-final case class ItemExpression(position: Position, symbol: RuntimeSymbol) extends Expression with WithSymbol[RuntimeSymbol] {
+final case class ItemExpression(position: Position, symbol: RuntimeSymbol) extends Expression with WithSymbol {
   val dataType = symbol.dataType
 }
 
 object ShiftExpression {
   type Operator = Operator.Value
+
   object Operator extends Enumeration {
-    val SLL, SRL, SLA, SRA, ROL, ROR = Value
+    val SLL = Value("sll")
+    val SRL = Value("srl")
+    val SLA = Value("sla")
+    val SRA = Value("sra")
+    val ROL = Value("rol")
+    val ROR = Value("ror")
   }
+
 }
+
 final case class ShiftExpression(position: Position, left: Expression, operator: ShiftExpression.Operator, right: Expression, dataType: DataType = NoType) extends Expression
 
 object Factor {
   type Operator = Operator.Value
+
   object Operator extends Enumeration {
-    val POW, ABS, NOT = Value //, And, Nand, Or, Nor, Xor, XNor;
+    val POW = Value("**")
+    val ABS = Value("abs")
+    val NOT = Value("not")
   }
+
 }
+
 final case class Factor(position: Position, left: Expression, operator: Factor.Operator, rightOption: Option[Expression] = None, dataType: DataType = NoType) extends Expression
 
-final case class FunctionCallExpression(functionName: SelectedName, parameterAssociationList: Option[AssociationList],
-                                        dataType: DataType = NoType, symbol: FunctionSymbol = null) extends Expression {
+final case class FunctionCallExpression(functionName: SelectedName, parameterAssociationList: Option[AssociationList], expression: Expression = EmptyExpression, dataType: DataType = NoType, symbol: FunctionSymbol = null) extends Expression {
   val position = functionName.position
 }
+
 object LogicalExpression {
   type Operator = Operator.Value
+
   object Operator extends Enumeration {
-    val AND, NAND, OR, NOR, XOR, XNOR = Value
+    val AND = Value("and")
+    val NAND = Value("nand")
+    val OR = Value("or")
+    val NOR = Value("nor")
+    val XOR = Value("xor")
+    val XNOR = Value("xnor")
   }
+
 }
+
 final case class LogicalExpression(position: Position, left: Expression, operator: LogicalExpression.Operator, right: Expression, dataType: DataType = NoType) extends Expression
 
 object SimpleExpression {
   type AddOperator = AddOperator.Value
+
   object AddOperator extends Enumeration {
-    val PLUS, MINUS, AMPERSAND = Value
+    val PLUS = Value("+")
+    val MINUS = Value("-")
+    val AMPERSAND = Value("&")
   }
+
   type SignOperator = SignOperator.Value
+
   object SignOperator extends Enumeration {
-    val PLUS, MINUS = Value
+    val PLUS = Value("+")
+    val MINUS = Value("-")
   }
+
 }
+
 final case class SimpleExpression(position: Position, signOperator: Option[SimpleExpression.SignOperator], left: Expression, addOperator: Option[SimpleExpression.AddOperator], rightOption: Option[Expression], dataType: DataType = NoType)
-        extends Expression {
+  extends Expression {
   require(addOperator.isDefined == rightOption.isDefined)
 }
 
@@ -134,9 +197,11 @@ final case class NewExpression(position: Position, qualifiedExpressionOrSubTypeI
 
 object Literal {
   type Type = Type.Value
+
   object Type extends Enumeration {
     val REAL_LITERAL, INTEGER_LITERAL, BASED_LITERAL, CHARACTER_LITERAL, STRING_LITERAL, BIT_STRING_LITERAL, NULL_LITERAL = Value
   }
+
 }
 
 trait LiteralConverter {
@@ -161,11 +226,12 @@ trait LiteralConverter {
   }
 }
 
-final case class Literal(position: Position, text: String, literalType: Literal.Type, dataType: DataType = NoType, value: AnyVal = -1)
-        extends Expression with LiteralConverter {
+final case class Literal(position: Position, text: String, literalType: Literal.Type, dataType: DataType = NoType, value: AnyVal = -1) extends Expression with LiteralConverter {
   def toInt: Int = toLong.toInt
 }
 
-final case class PhysicalLiteral(position: Position, text: String, unitName: Identifier, literalType: Literal.Type, dataType: DataType = NoType) extends Expression with LiteralConverter {
-  def this(literal: Literal, unitName: Identifier) = this (literal.position, literal.text, unitName, literal.literalType)
+final case class PhysicalLiteral(position: Position, text: String, unitName: SelectedName, literalType: Literal.Type, unitSymbol: UnitSymbol = null) extends Expression with LiteralConverter {
+  def this(literal: Literal, unitName: SelectedName) = this (literal.position, literal.text, unitName, literal.literalType)
+
+  val dataType: DataType = if (unitSymbol != null) unitSymbol.dataType else NoType
 }

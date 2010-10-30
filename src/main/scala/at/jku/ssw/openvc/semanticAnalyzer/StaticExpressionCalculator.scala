@@ -26,6 +26,7 @@ object StaticExpressionCalculator {
     def calcValueInner(expr: Expression): A = expr match {
       case SimpleExpression(_, signOption, left, op, rightOption, _) =>
         import SimpleExpression._
+
         val value = rightOption match {
           case Some(right) => op.get match {
             case AddOperator.MINUS => numeric.minus(calcValueInner(left), calcValueInner(right))
@@ -41,6 +42,7 @@ object StaticExpressionCalculator {
         }
       case Factor(_, left, op, right, _) =>
         import Factor.Operator._
+
         op match {
           case POW => math.pow(numeric.toDouble(calcValueInner(left)), numeric.toDouble(calcValueInner(right.get))).asInstanceOf[A]
           case ABS =>
@@ -49,6 +51,7 @@ object StaticExpressionCalculator {
         }
       case literal: Literal =>
         import Literal.Type._
+
         literal.literalType match {
           case INTEGER_LITERAL => literal.toLong.asInstanceOf[A]
           case REAL_LITERAL => literal.toDouble.asInstanceOf[A]
@@ -59,6 +62,7 @@ object StaticExpressionCalculator {
         }
       case Term(_, left, op, right, _) =>
         import Term.Operator._
+
         op match {
           case DIV => numeric.quot(calcValueInner(left), calcValueInner(right))
           case MUL => numeric.times(calcValueInner(left), calcValueInner(right))
@@ -74,7 +78,9 @@ object StaticExpressionCalculator {
               case "ascending" => scalar.ascending.asInstanceOf[A]
             }
         }
-      case e => println(e.position); println(e); throw new UnsupportedOperationException(expr.toString)
+      case e =>
+        println(e.position + " " + e.getClass.getCanonicalName + "\n")
+        error("not implemented")
     }
 
     return calcValueInner(e)

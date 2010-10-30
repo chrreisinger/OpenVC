@@ -433,13 +433,13 @@ block_specification returns [BlockConfigurationSpecification blockConfig]
 block_configuration returns [BlockConfiguration blockConfig]
 @init{
 	val useClauses=new Buffer[UseClause]()
-	val configurations=new Buffer[AnyRef]()
+	val configurations=new Buffer[Either[BlockConfiguration,ComponentConfiguration]]
 }
 	:	FOR block_specification
 		(use_clause {useClauses += $use_clause.useClause})*
 		(
-			blockConfiguration=block_configuration {configurations += $blockConfiguration.blockConfig}
-			|component_configuration {configurations += $component_configuration.componentConfig}
+			blockConfiguration=block_configuration {configurations += Left($blockConfiguration.blockConfig)}
+			|component_configuration {configurations += Right($component_configuration.componentConfig)}
 		)*
 		END FOR SEMICOLON 
 		{$blockConfig=new BlockConfiguration($block_specification.blockConfig,useClauses.toList,configurations.toList)}
@@ -542,11 +542,11 @@ designator returns [Identifier id]
 	  ;
 	  
 subprogram_specification returns [SubProgramDeclaration decl]
-	:		PROCEDURE designator 
+	:		PROCEDURE identifier
 			/*{vhdl2008}?=>(GENERIC LPAREN generic_interface_list=interface_list RPAREN
 			(GENERIC MAP LPAREN generic_association_list=association_list RPAREN)?)?*/
 			(/*{vhdl2008}?=>PARAMETER?*/ LPAREN parameter_interface_list_procedure RPAREN )? 
-			{$decl=new ProcedureDeclaration(toPosition($PROCEDURE),$designator.id,$parameter_interface_list_procedure.list)}
+			{$decl=new ProcedureDeclaration(toPosition($PROCEDURE),$identifier.id,$parameter_interface_list_procedure.list)}
 		| 	(PURE | i=IMPURE)? FUNCTION designator
 			/*{vhdl2008}?=>(GENERIC LPAREN generic_interface_list=interface_list RPAREN
 			(GENERIC MAP LPAREN generic_association_list=association_list RPAREN)?)?*/
@@ -666,22 +666,22 @@ ams_source_quantity_declaration returns [SourceQuantityDeclaration quantityDecl]
   		{$quantityDecl=new SourceQuantityDeclaration(toPosition($QUANTITY),$identifier_list.list,$subtype_indication.subType,$source_aspect.source_aspect._1,$source_aspect.source_aspect._2,$source_aspect.source_aspect._3)}
   		;
 
-ams_across_aspect returns [Tuple3[Seq[Identifier\],Expression,Expression\] across_aspect]
+ams_across_aspect returns [(Seq[Identifier\],Expression,Expression) across_aspect]
 	:	identifier_list (TOLERANCE toleranceExpression=expression)? (VAR_ASSIGN defaultExpression=expression)? ACROSS
 		{$across_aspect=($identifier_list.list,$toleranceExpression.expr,$defaultExpression.expr)}
 		;
 	
-ams_through_aspect returns [Tuple3[Seq[Identifier\],Expression,Expression\] through_aspect]
+ams_through_aspect returns [(Seq[Identifier\],Expression,Expression) through_aspect]
 	:	identifier_list (TOLERANCE toleranceExpression=expression)? (VAR_ASSIGN defaultExpression=expression)? THROUGH
 		{$through_aspect=($identifier_list.list,$toleranceExpression.expr,$defaultExpression.expr)}
 		;
 	
-ams_terminal_aspect returns [Tuple2[Name,Name\] terminal_aspect]
+ams_terminal_aspect returns [(Name,Name) terminal_aspect]
 	:	plus_terminal_name=name (TO minus_terminal_name=name)?
 		{$terminal_aspect=($plus_terminal_name.name_,$minus_terminal_name.name_)}
 		;
 	
-ams_source_aspect returns [Tuple3[Expression,Expression,Expression\] source_aspect]
+ams_source_aspect returns [(Expression,Expression,Expression) source_aspect]
 	:	SPECTRUM magnitude_simple_expression=simple_expression COMMA phase_simple_expression=simple_expression 
 		| NOISE power_simple_expression=simple_expression
 		{$source_aspect=($magnitude_simple_expression.simpleExpr,$phase_simple_expression.simpleExpr,$power_simple_expression.simpleExpr)}
@@ -790,13 +790,13 @@ entity_class returns [EntityClass.Value entityClass]
 		//| {vhdl2008}?=>PROPERTY 
 		//| {vhdl2008}?=>SEQUENCE
 		;
-//TODO		
+
 configuration_specification returns [ConfigurationSpecification configSpec]
 	:	FOR component_specification
 			binding_indication SEMICOLON
 			/*{vhdl2008}?=>(USE VUNIT verification_unit_name=identifier (COMMA verification_unit_name=identifier) SEMICOLON)* */
 		/*{vhdl2008}?=>(END FOR SEMICOLON)?*/
-		{$configSpec= new ConfigurationSpecification(toPosition($FOR))}
+		{$configSpec= new ConfigurationSpecification(toPosition($FOR),$component_specification.spec,$binding_indication.indication)}
 		;
 		
 instantiation_list returns [Either[Seq[Identifier\],Identifier\] list]
@@ -805,20 +805,22 @@ instantiation_list returns [Either[Seq[Identifier\],Identifier\] list]
 		| ALL {$list=Right(toIdentifier($ALL))}
 		;		
 
-component_specification returns [AnyRef spec] 
+component_specification returns [ComponentSpecification spec] 
 	:	instantiation_list COLON selected_name
+		{spec = new ComponentSpecification($instantiation_list.list,$selected_name.name_)}
 		;
 
-entity_aspect
-	:	ENTITY entity_name=selected_name (LPAREN architecture_identifier=identifier RPAREN)? 
-		| CONFIGURATION  configuration_name=selected_name 
-		| OPEN 
+entity_aspect returns [Option[Either[(SelectedName,Option[Identifier\]),SelectedName\]\] entityAspect]
+	:	ENTITY entity_name=selected_name (LPAREN architecture_identifier=identifier RPAREN)? {entityAspect=Option(Left(($entity_name.name_,Option(architecture_identifier))))}
+		| CONFIGURATION  configuration_name=selected_name {entityAspect=Option(Right($configuration_name.name_))}
+		| OPEN {entityAspect=None}
 		;
 		
-binding_indication returns [AnyRef indication]
+binding_indication returns [BindingIndication indication]
 	:	(USE entity_aspect)?
 		generic_map_aspect?
 		port_map_aspect?
+		{indication = new BindingIndication($entity_aspect.entityAspect,$generic_map_aspect.list,$port_map_aspect.list)}
 		;
 
 disconnection_specification returns [DisconnectionSpecification disconnectSpec]
@@ -1779,11 +1781,11 @@ association_list returns [AssociationList list]
 		;
 	
 	
-formal_part returns  [Name formal_part_]
-		//could be a type, function_name, generic_name, port_name or parameter_name
-	:	formal_name=name
-		{$formal_part_ = $formal_name.name_}
-		; // could be generic_name, port_name or parameter_name
+formal_part returns  [Either[Identifier,(SelectedName,Name)\] formal_part_]
+	:	
+		selected_name LPAREN name RPAREN {formal_part_ = Right(($selected_name.name_,$name.name_))}
+		| identifier {formal_part_ = Left($identifier.id)}
+		;
 		
 actual_part returns [Expression actual_part_ ] 
 	:	//could be a name(signal_name, variable_name, file_name, subprogram_name, package_name), function_name or type_mark ;could be signal_name or variable_name
@@ -1906,11 +1908,11 @@ factor returns [Expression factor_]
 primary returns [Expression obj]
 	:
 	 (selected_name APOSTROPHE LPAREN) =>selected_name qualified_expression[$selected_name.name_] {$obj=$qualified_expression.expr}
-	 | name {$obj=new NameExpression($name.name_)}
+	 | name {$obj=$name.name_}
 	 | literal {$obj=$literal.literal_} 
 	 //| (LPAREN expression RPAREN)=> LPAREN expression RPAREN {$obj=$expression.expr} handled by aggregate
 	 | allocator {$obj=$allocator.newExpression}
-	 | aggregate {$obj=new AggregateExpression($aggregate.aggregate_)}
+	 | aggregate {$obj=$aggregate.aggregate_}
 	;
 
 allocator returns [Expression newExpression]
@@ -1923,7 +1925,7 @@ allocator returns [Expression newExpression]
 	
 qualified_expression[SelectedName typeName] returns [QualifiedExpression expr]
 	:	APOSTROPHE aggregate
-		{$expr=new QualifiedExpression(typeName,new AggregateExpression($aggregate.aggregate_))}
+		{$expr=new QualifiedExpression(typeName,$aggregate.aggregate_)}
 		;
 
 selected_name_list returns [Seq[SelectedName\] list]
@@ -1969,8 +1971,8 @@ name_part returns [Name.Part part]
   	: 
   	 name_selected_part {$part = $name_selected_part.part}
    	 | name_attribute_part {$part = $name_attribute_part.part}
- 	 | (name_slice_part)=>name_slice_part {$part = $name_slice_part.part}
-   	 | name_association_list_part {$part = $name_association_list_part.part}
+   	 | (name_association_list_part)=>name_association_list_part {$part = $name_association_list_part.part}
+  	 | name_slice_part {$part = $name_slice_part.part}
   	 ; 
 
 			
@@ -2039,7 +2041,7 @@ literal returns [Expression literal_]
 		| NULL {literalType=Literal.Type.NULL_LITERAL}
 		)
 		{$literal_ =new Literal(toPosition(firstToken),input.LT(-1).getText(),literalType)}
-		({input.LA(-1)==INTEGER_LITERAL || input.LA(-1)==REAL_LITERAL /*|| input.LA(-1)==BASED_LITERAL*/}?=> identifier {$literal_ = new PhysicalLiteral($literal_.asInstanceOf[Literal],$identifier.id)})?
+		({input.LA(-1)==INTEGER_LITERAL || input.LA(-1)==REAL_LITERAL /*|| input.LA(-1)==BASED_LITERAL*/}?=> selected_name {$literal_ = new PhysicalLiteral($literal_.asInstanceOf[Literal],$selected_name.name_)})?
 		;
 	
 physical_literal returns [PhysicalLiteral literal_]
@@ -2052,8 +2054,8 @@ physical_literal returns [PhysicalLiteral literal_]
 		|REAL_LITERAL {text=input.LT(-1).getText(); literalType=Literal.Type.REAL_LITERAL}
 		//|BASED_LITERAL {str=input.LT(-1).getText(); literalType=Literal.Type.BASED_LITERAL} //TODO
 		)
-		unit_name=identifier
-		{$literal_ =new PhysicalLiteral(toPosition(firstToken),text,$unit_name.id,literalType)}
+		unit_name=selected_name
+		{$literal_ =new PhysicalLiteral(toPosition(firstToken),text,$unit_name.name_,literalType)}
 		;
 	
 element_association returns [Aggregate.ElementAssociation element]

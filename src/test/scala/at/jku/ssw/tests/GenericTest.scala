@@ -47,7 +47,7 @@ trait GenericTest extends FunSuite with ShouldMatchers {
   def compileAndRun(text: String, packageName: String, procedure: String)(source: String) =
     test(text) {
       compile(source)
-      Simulator.runClass(this.getClass.getClassLoader, configuration.designLibrary, packageName, procedure, List("std.jar", "ieee.jar"))
+      Simulator.runClass(this.getClass.getClassLoader, configuration.libraryOutputDirectory, packageName, procedure, List("std.jar", "ieee.jar"))
     }
 
   def compileCodeInPackageAndLoad(text: String)(source: String) =

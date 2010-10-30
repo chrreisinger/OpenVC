@@ -118,4 +118,33 @@ final class ExpressionTests extends GenericTest {
       end main;
     """
   }
+
+  compileCodeInPackageAndRun("compile expressions with overloaded operators") {
+    """
+      type MVL is ('0', '1', 'Z', 'X');
+
+      function "and" (left, right : MVL) return MVL is
+      begin
+        return '0';
+      end;
+
+      function "or" (left, right : MVL) return MVL is
+      begin
+        return '1';
+      end;
+
+      function "not" (Value : MVL) return MVL is
+      begin
+        return 'Z';
+      end;
+
+      procedure main is
+        variable Q, R, S : MVL;
+      begin  -- main
+        Q := 'X' or '1';
+        R := "or" ('0', 'Z');
+        S := (Q and R) or not S;
+      end main;
+    """
+  }
 }

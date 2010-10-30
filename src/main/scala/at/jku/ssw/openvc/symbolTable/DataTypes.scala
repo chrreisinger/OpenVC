@@ -25,23 +25,14 @@ import at.jku.ssw.openvc.symbolTable.symbols._
 @SerialVersionUID(234776547415907469L)
 abstract sealed class DataType extends Serializable {
   val name: String
-
   val resolutionFunction: Option[FunctionSymbol] = None
 
   lazy val attributes = Map[String, AttributeSymbol]()
 
-  lazy val fullName: String = this match {
-    case accessType: AccessType => accessType.pointerType.fullName
-    case enumerationType: EnumerationType if (enumerationType.baseType.isDefined) => enumerationType.baseType.get.fullName
-    case hasOwner: HasOwner =>
-      val str = hasOwner.owner match {
-        case header: PackageHeaderSymbol => header.name + "_header"
-        case process: ProcessSymbol => process.owner.name + "$" + process.name
-        case subprogramSymbol: SubprogramSymbol => subprogramSymbol.owner.name + "$" + subprogramSymbol.name
-        case typeSymbol: TypeSymbol => typeSymbol.dataType.fullName
-        case owner => owner.name
-      }
-      str + "$" + name
+  lazy val implementationName: String = this match {
+    case accessType: AccessType => accessType.pointerType.implementationName
+    case enumerationType: EnumerationType if (enumerationType.baseType.isDefined) => enumerationType.baseType.get.implementationName
+    case hasOwner: HasOwner => hasOwner.owner.implementationName + "$" + name
     case _ => name
   }
 }
@@ -69,8 +60,10 @@ case object NullType extends DataType {
 }
 
 @SerialVersionUID(7611073448233675364L)
-final case class AccessType(name: String, var pointerType: DataType) extends DataType { //var is needed for incomplete type declarations
+//var is needed for incomplete type declarations
+final case class AccessType(name: String, var pointerType: DataType) extends DataType {
   //override toString, so that we don't get a StackOverflowError Exception, because when an access type points to record type which contains a field of the same access type, we've got a cycle
+
   override def toString = "AccessType(" + name + "," + pointerType.name + ")"
 }
 
@@ -94,18 +87,18 @@ abstract sealed class ArrayType extends CompositeType {
   val elementType: DataType
   val dimensions: Seq[RangeType]
   override lazy val attributes = Map(
-    ("left" -> new AttributeSymbol("left", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
-    ("right" -> new AttributeSymbol("right", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
-    ("low" -> new AttributeSymbol("low", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
-    ("high" -> new AttributeSymbol("high", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
+    ("left" -> new PreDefinedAttributeSymbol("left", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
+    ("right" -> new PreDefinedAttributeSymbol("right", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
+    ("low" -> new PreDefinedAttributeSymbol("low", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
+    ("high" -> new PreDefinedAttributeSymbol("high", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
     //TODO add dimension parameter, must be calculated at compile time
     //("range" -> new AttributeSymbol("range", UnconstrainedRangeType("range", elementType, Range.Direction.TO), Option(SymbolTable.integerType), true)),
     //("reverse_range" -> new AttributeSymbol("reverse_range", UnconstrainedRangeType("reverse_range", elementType, Range.Direction.DOWNTO), Option(SymbolTable.integerType), true)),
-    ("range" -> new AttributeSymbol("range", UnconstrainedRangeType(elementType), None, true)),
-    ("reverse_range" -> new AttributeSymbol("reverse_range", UnconstrainedRangeType(elementType), None, true)),
-    ("length" -> new AttributeSymbol("length", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
-    ("ascending" -> new AttributeSymbol("ascending", SymbolTable.booleanType, Option(SymbolTable.integerType), true))
-    )
+    ("range" -> new PreDefinedAttributeSymbol("range", UnconstrainedRangeType(elementType), None, true)),
+    ("reverse_range" -> new PreDefinedAttributeSymbol("reverse_range", UnconstrainedRangeType(elementType), None, true)),
+    ("length" -> new PreDefinedAttributeSymbol("length", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
+    ("ascending" -> new PreDefinedAttributeSymbol("ascending", SymbolTable.booleanType, Option(SymbolTable.integerType), true))
+  )
 }
 
 @SerialVersionUID(696290634066156396L)
@@ -129,27 +122,28 @@ abstract sealed class ScalarType extends DataType {
   val upperBound: AnyVal
   val ascending: Boolean
   val isSubType: Boolean
+  override val resolutionFunction: Option[FunctionSymbol]
   override lazy val attributes = Map(
-    ("left" -> new AttributeSymbol("left", this, None)),
-    ("right" -> new AttributeSymbol("right", this, None)),
-    ("low" -> new AttributeSymbol("low", this, None)),
-    ("high" -> new AttributeSymbol("high", this, None)),
-    ("ascending" -> new AttributeSymbol("ascending", SymbolTable.booleanType, None)),
-    ("image" -> new AttributeSymbol("image", SymbolTable.stringType, Option(this))),
-    ("value" -> new AttributeSymbol("value", this, Option(SymbolTable.stringType))),
-    ("pos" -> new AttributeSymbol("pos", this, Option(this))),
-    ("val" -> new AttributeSymbol("val", this, Option(this))),
-    ("succ" -> new AttributeSymbol("succ", this, Option(this))),
-    ("leftof" -> new AttributeSymbol("leftof", this, Option(this))),
-    ("rightof" -> new AttributeSymbol("rightof", this, Option(this))) //,
+    ("left" -> new PreDefinedAttributeSymbol("left", this, None)),
+    ("right" -> new PreDefinedAttributeSymbol("right", this, None)),
+    ("low" -> new PreDefinedAttributeSymbol("low", this, None)),
+    ("high" -> new PreDefinedAttributeSymbol("high", this, None)),
+    ("ascending" -> new PreDefinedAttributeSymbol("ascending", SymbolTable.booleanType, None)),
+    ("image" -> new PreDefinedAttributeSymbol("image", SymbolTable.stringType, Option(this))),
+    ("value" -> new PreDefinedAttributeSymbol("value", this, Option(SymbolTable.stringType))),
+    ("pos" -> new PreDefinedAttributeSymbol("pos", this, Option(this))),
+    ("val" -> new PreDefinedAttributeSymbol("val", this, Option(this))),
+    ("succ" -> new PreDefinedAttributeSymbol("succ", this, Option(this))),
+    ("leftof" -> new PreDefinedAttributeSymbol("leftof", this, Option(this))),
+    ("rightof" -> new PreDefinedAttributeSymbol("rightof", this, Option(this))) //,
     //("base" -> new AttributeSymbol("base", this, None)) TODO
-    )
+  )
 }
 
 trait DiscreteType //marker trait
 
 @SerialVersionUID(-2424799647169553170L)
-final case class EnumerationType(name: String, elements: Seq[String], baseType: Option[EnumerationType], owner: Symbol) extends ScalarType with DiscreteType with HasOwner {
+final case class EnumerationType(name: String, elements: Seq[String], baseType: Option[EnumerationType], owner: Symbol, override val resolutionFunction: Option[FunctionSymbol] = None) extends ScalarType with DiscreteType with HasOwner {
   private[this] val firstElement = elements.head
   private[this] val lastElement = elements.last
 
@@ -171,10 +165,10 @@ final case class EnumerationType(name: String, elements: Seq[String], baseType: 
   def intValue(element: String): Int = internalMap(element)
 }
 
-abstract sealed class NumericType extends ScalarType //marker trait
+abstract sealed class NumericType extends ScalarType
 
 @SerialVersionUID(5078439353614332831L)
-final case class IntegerType(name: String, left: Int, right: Int, baseType: Option[IntegerType]) extends NumericType with DiscreteType {
+final case class IntegerType(name: String, left: Int, right: Int, baseType: Option[IntegerType], override val resolutionFunction: Option[FunctionSymbol] = None) extends NumericType with DiscreteType {
   val lowerBound = math.min(left, right)
   val upperBound = math.max(left, right)
   val ascending = left < right
@@ -183,7 +177,7 @@ final case class IntegerType(name: String, left: Int, right: Int, baseType: Opti
 }
 
 @SerialVersionUID(5078432353614332831L)
-final case class RealType(name: String, left: Double, right: Double, baseType: Option[RealType]) extends NumericType {
+final case class RealType(name: String, left: Double, right: Double, baseType: Option[RealType], override val resolutionFunction: Option[FunctionSymbol] = None) extends NumericType {
   val lowerBound = math.min(left, right)
   val upperBound = math.max(left, right)
   val ascending = left < right
@@ -197,6 +191,7 @@ final case class PhysicalType(name: String, left: Long, right: Long, units: Map[
   val upperBound = math.max(left, right)
   val ascending = left < right
   val isSubType = true
+  override val resolutionFunction = None
 
   def containsUnit(unit: String) = units.contains(unit)
 }

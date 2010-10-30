@@ -5,6 +5,7 @@ class Project(info: ProjectInfo) extends DefaultProject(info) with Eclipsify wit
   val antlrRuntimeJar = "org.antlr" % "antlr-runtime" % "3.2" withSources()
   val asmJar = "asm" % "asm-all" % "3.3" withSources()
   val scalaTestJar = "org.scalatest" % "scalatest" % "1.2" withSources() withJavadoc()
+  val commonsCLI = "commons-cli" % "commons-cli" % "1.2" withSources() withJavadoc()
 
   override val compileOptions = super.compileOptions ++ (Unchecked :: Deprecation :: /*Optimize ::*/ Nil)
 

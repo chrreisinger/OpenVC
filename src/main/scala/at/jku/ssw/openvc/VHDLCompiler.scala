@@ -18,14 +18,15 @@
 
 package at.jku.ssw.openvc
 
-import at.jku.ssw.openvc.ast.Position
-import at.jku.ssw.openvc.ast.declarations.DesignFile
+import ast.declarations.DesignFile
+import ast.Position
 
 final class CompilerMessage(val position: Position, val message: String) {
   override def toString = position + " " + message
 }
 
 object ASTBuilder {
+
   import org.antlr.runtime.{ANTLRStringStream, ANTLRInputStream, CharStream, CommonTokenStream}
   import at.jku.ssw.openvc.parser.{VHDLParser, VHDLLexer}
   import java.io.{InputStream, FileInputStream}
@@ -66,10 +67,13 @@ object ASTBuilder {
 }
 
 object VHDLCompiler {
+
   import at.jku.ssw.openvc.codeGenerator.ByteCodeGenerator
   import java.io.PrintWriter
 
-  final class Configuration(val amsEnabled: Boolean, val designLibrary: String, val debugCompiler: Boolean, val debugCodeGenerator: Boolean)
+  final class Configuration(val amsEnabled: Boolean, val parseOnly: Boolean, val outputDirectory: String, val designLibrary: String, val libraryDirectory: String, val debugCompiler: Boolean, val debugCodeGenerator: Boolean) {
+    val libraryOutputDirectory = outputDirectory + designLibrary + java.io.File.separator
+  }
 
   final class CompileResult(val syntaxErrors: Seq[CompilerMessage], val semanticErrors: Seq[CompilerMessage], val semanticWarnings: Seq[CompilerMessage], val designFile: DesignFile, val sourceFile: String) {
     def printErrors(writer: PrintWriter, sourceLinesOption: Option[IndexedSeq[String]]) {
@@ -79,7 +83,7 @@ object VHDLCompiler {
       def printMessages(prefix: String, messages: Seq[CompilerMessage]) {
         for (msg <- messages) {
           writer.println(prefix + sourceFile + ": line:" + msg.position.line + " col:" + msg.position.charPosition + " " + msg.message)
-          sourceLinesOption.foreach {
+          sourceLinesOption.foreach{
             sourceLines =>
               writer.println(sourceLines(msg.position.line - 1).toLowerCase)
               writer.println((" " * msg.position.charPosition) + "^")
@@ -96,8 +100,8 @@ object VHDLCompiler {
   private def compile(configuration: Configuration, builder: (String, Configuration) => (DesignFile, Seq[CompilerMessage]), source: String, fileName: String): CompileResult = {
     import java.io.File
     import semanticAnalyzer.SemanticAnalyzer
-    val directory = new File(configuration.designLibrary + File.separator)
-    if (!directory.exists) directory.mkdir
+    val directory = new File(configuration.libraryOutputDirectory)
+    if (!directory.exists) directory.mkdirs
 
     val parseStart = System.currentTimeMillis
     val (designFile, syntaxErrors) = builder(source, configuration)
@@ -121,7 +125,7 @@ object VHDLCompiler {
     new CompileResult(syntaxErrors, semanticErrors, semanticWarnings, designFile, fileName)
   }
 
-  def compileFile(configuration: Configuration, file: String): CompileResult = this.compile(configuration, ASTBuilder.fromFile, file, file)
+  def compileFile(file: String, configuration: Configuration): CompileResult = this.compile(configuration, ASTBuilder.fromFile, file, file)
 
-  def compileFileFromText(configuration: Configuration, code: String, file: String): CompileResult = this.compile(configuration, ASTBuilder.fromText, code, file)
+  def compileFileFromText(code: String, file: String, configuration: Configuration): CompileResult = this.compile(configuration, ASTBuilder.fromText, code, file)
 }
