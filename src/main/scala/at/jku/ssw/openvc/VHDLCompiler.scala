@@ -68,7 +68,7 @@ object ASTBuilder {
 
 object VHDLCompiler {
 
-  import at.jku.ssw.openvc.codeGenerator.ByteCodeGenerator
+  import at.jku.ssw.openvc.backend.jvm.ByteCodeGenerator
   import java.io.PrintWriter
 
   final class Configuration(val amsEnabled: Boolean, val parseOnly: Boolean, val outputDirectory: String, val designLibrary: String, val libraryDirectory: String, val debugCompiler: Boolean, val debugCodeGenerator: Boolean) {

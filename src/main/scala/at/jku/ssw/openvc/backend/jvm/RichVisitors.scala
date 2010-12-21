@@ -16,7 +16,7 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package at.jku.ssw.openvc.codeGenerator
+package at.jku.ssw.openvc.backend.jvm
 
 import at.jku.ssw.openvc.symbolTable.dataTypes._
 import at.jku.ssw.openvc.symbolTable.symbols._

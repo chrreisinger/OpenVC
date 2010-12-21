@@ -33,7 +33,7 @@ import at.jku.ssw.openvc.symbolTable.dataTypes._
 import at.jku.ssw.openvc.symbolTable.symbols._
 
 import at.jku.ssw.openvc.VHDLCompiler.Configuration
-import at.jku.ssw.openvc.codeGenerator.ByteCodeGenerator.getNextIndex
+import at.jku.ssw.openvc.backend.jvm.ByteCodeGenerator.getNextIndex
 import at.jku.ssw.openvc.CompilerMessage
 
 object SemanticAnalyzer {

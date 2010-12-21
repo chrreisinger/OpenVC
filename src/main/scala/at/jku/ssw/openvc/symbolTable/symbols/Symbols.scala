@@ -176,7 +176,7 @@ final case class ProcedureSymbol(@transient identifier: Identifier, var paramete
 
 @SerialVersionUID(-1724650145084937620L)
 case object Runtime extends Symbol {
-  @transient lazy val identifier = Identifier(at.jku.ssw.openvc.codeGenerator.ByteCodeGenerator.RUNTIME)
+  @transient lazy val identifier = Identifier(at.jku.ssw.openvc.backend.jvm.ByteCodeGenerator.RUNTIME)
   val owner = NoSymbol
 }
 
