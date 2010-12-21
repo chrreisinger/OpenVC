@@ -19,7 +19,9 @@
 package at.jku.ssw.openvs
 
 object Simulator {
+
   import java.net.URLClassLoader
+
   def crateClassLoader(parentClassLoader: ClassLoader, directory: String, jars: Seq[String]): URLClassLoader = {
     import java.io.File
     val builder = scala.collection.mutable.ArrayBuilder.make[java.net.URL]
@@ -38,11 +40,12 @@ object Simulator {
     nm.invoke(o)
   }
 
+  private[this] class MyClassLoader(classLoader: ClassLoader) extends ClassLoader(classLoader) {
+    def loadAndResolveClass(className: String, resolve: Boolean) = super.loadClass(className, resolve)
+  }
+
   def loadFiles(parentClassLoader: ClassLoader, directory: String, files: Seq[String], jars: Seq[String]) {
-    val loader = crateClassLoader(parentClassLoader, directory, jars)
-    val tmpClassLoader = new ClassLoader(loader) {
-      def myLoadClass(className: String, resolve: Boolean) = super.loadClass(className, resolve)
-    }
-    files.foreach(className => tmpClassLoader.myLoadClass(className, true))
+    val classLoader = new MyClassLoader(crateClassLoader(parentClassLoader, directory, jars))
+    files.foreach(className => classLoader.loadAndResolveClass(className, true))
   }
 }

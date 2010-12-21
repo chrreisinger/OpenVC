@@ -25,8 +25,42 @@ import java.io.{PrintWriter, FilenameFilter, File}
 
 object Main {
   def main(arguments: Array[String]) {
-    try
-    {
+    try {
+      /*
+      val (c, _) = parseCommandLineArguments(arguments)
+      //ASTBuilder.fromFile("""C:\Users\christian\Desktop\grlib-gpl-1.0.22-b4095\lib\fmf\fifo\idt7202.vhd""", c.get)
+      val x=ASTBuilder.fromFile("""C:\Users\christian\Desktop\OpenVC\vhdlSrc\alu_tb.vhd""", c.get)._2
+      println(x)
+      require(x.size==0)
+      val filter = new FilenameFilter() {
+        override def accept(dir: File, name: String): Boolean = (name.endsWith(".vhd") || name.endsWith(".vhdl")) && !name.endsWith("in.vhd")
+      }
+      for (i <- 0 to 10) {
+        val start = System.currentTimeMillis
+        c.foreach{
+          configuration =>
+            def toLines(sourceFile: String) = scala.io.Source.fromFile(sourceFile).getLines().toIndexedSeq
+            listFiles(new File("""C:\Users\christian\Desktop\grlib-gpl-1.0.22-b4095\"""), filter, true).map{
+              fileX =>
+                val file = fileX.getAbsolutePath
+                //println(file)
+                ASTBuilder.fromFile(file, configuration)._2 match {
+                  case Seq() =>
+                  case messages =>
+                    val sourceLines = toLines(file)
+                    messages.foreach{
+                      msg =>
+                        println("--" + file + ": line:" + msg.position.line + " col:" + msg.position.charPosition + " " + msg.message)
+                        println(sourceLines(msg.position.line - 1).toLowerCase)
+                        println((" " * msg.position.charPosition) + "^")
+                    }
+                }
+            }
+        }
+        println("time:" + (System.currentTimeMillis - start))
+      }
+      return
+      */
       val (configurationOption, files) = parseCommandLineArguments(arguments)
       configurationOption.foreach{
         configuration =>
@@ -53,11 +87,11 @@ object Main {
             }
             files.map(file => VHDLCompiler.compileFile(file, configuration)).foreach(result => result.printErrors(new PrintWriter(System.out), Some(toLines(result.sourceFile))))
             Simulator.loadFiles(this.getClass.getClassLoader, configuration.outputDirectory, listFiles(new File(configuration.libraryOutputDirectory), classFilter, true).map(file => file.getPath.substring(file.getPath.indexOf('\\') + 1).split('.').head.replace('\\', '.')), List("std.jar", "ieee.jar"))
-            Simulator.runClass(this.getClass.getClassLoader, configuration.outputDirectory, configuration.designLibrary + ".alu_tb_body", "main", List("std.jar", "ieee.jar"))
+            Simulator.runClass(this.getClass.getClassLoader, configuration.outputDirectory, configuration.designLibrary + ".alu_tb_body", "main$1106182723", List("std.jar", "ieee.jar"))
           }
       }
     } catch {
-      case ex@(_: java.lang.reflect.InvocationTargetException | _: java.lang.ExceptionInInitializerError) =>
+      case ex@(_: java.lang.reflect.InvocationTargetException | _: java.lang.ExceptionInInitializerError) if (ex.getStackTrace.exists(element => element != null && (element.getFileName.endsWith(".vhd") || element.getFileName.endsWith(".vhdl")))) =>
         ex.getCause match {
           case exception@(_: VHDLRuntimeException | _: java.lang.NullPointerException) =>
             exception.setStackTrace(exception.getStackTrace.filterNot(element => element.getFileName == null || element.getFileName.endsWith(".scala") || element.getFileName.endsWith(".java")))
@@ -97,8 +131,7 @@ object Main {
     libraryDirectoryOption.setArgName("directory")
     options.addOption(libraryDirectoryOption)
 
-    try
-    {
+    try {
       val parser = new PosixParser();
       val line = parser.parse(options, arguments)
 
@@ -110,7 +143,7 @@ object Main {
         (None, Seq())
       } else {
         val directory = line.getOptionValue("outputDirectory", "output")
-        val libraryDirectory = line.getOptionValue("libraryDirectory", "lib")
+        val libraryDirectory = line.getOptionValue("libraryDirectory", "vhdlLibs")
         (Some(new Configuration(line.hasOption("ams"), line.hasOption("parseOnly"), if (directory.last == File.separatorChar) directory else directory + File.separator, line.getOptionValue("libraryName", "work"),
           if (libraryDirectory.last == File.separatorChar) libraryDirectory else libraryDirectory + File.separator, line.hasOption("debugCompiler"), line.hasOption("debugCodeGenerator"))), line.getArgs.toSeq)
       }

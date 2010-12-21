@@ -34,16 +34,16 @@ object ASTBuilder {
   private final class CaseInsensitiveStringStream(input: String) extends ANTLRStringStream(input) {
     override def LA(i: Int): Int = {
       val laToken = super.LA(i)
-      if (laToken != 0 && laToken != CharStream.EOF) return Character.toLowerCase(laToken)
-      laToken
+      if (laToken != 0 && laToken != CharStream.EOF) Character.toLowerCase(laToken)
+      else laToken
     }
   }
 
   private final class CaseInsensitiveInputStream(stream: InputStream) extends ANTLRInputStream(stream) {
     override def LA(i: Int): Int = {
       val laToken = super.LA(i)
-      if (laToken != 0 && laToken != CharStream.EOF) return Character.toLowerCase(laToken)
-      laToken
+      if (laToken != 0 && laToken != CharStream.EOF) Character.toLowerCase(laToken)
+      else laToken
     }
   }
 
@@ -90,9 +90,9 @@ object VHDLCompiler {
           }
         }
       }
-      printMessages("--", syntaxErrors)
-      printMessages("--", semanticErrors)
-      //TODO printMessages("??", semanticWarnings)
+      printMessages("[err]", syntaxErrors)
+      printMessages("[err]", semanticErrors)
+      printMessages("[warn]", semanticWarnings)
       writer.flush
     }
   }

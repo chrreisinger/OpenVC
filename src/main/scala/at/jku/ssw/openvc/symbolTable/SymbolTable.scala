@@ -21,28 +21,34 @@ package at.jku.ssw.openvc.symbolTable
 import scala.annotation.tailrec
 import java.io._
 import dataTypes._
-import at.jku.ssw.openvc.symbolTable.symbols.{AttributeDeclarationSymbol, Symbol}
+import symbols.{AttributeDeclarationSymbol, Symbol}
 
 object SymbolTable {
   type Scope = Map[String, Symbol]
 
   @throws(classOf[IOException])
-  def getScopesFromInputStream(input: InputStream): Seq[Scope] = {
+  def getScopesFromFile(fileName: String): Option[Seq[Scope]] = {
     @tailrec
-    def getScopesFromInputStreamInner(objectInput: ObjectInputStream, list: Seq[Scope]): Seq[Scope] = {
-      val obj = try
-      {
-        objectInput.readObject.asInstanceOf[Scope]
+    def getScopesFromInputStreamInner(objectInputStream: ObjectInputStream, list: Seq[Scope]): Seq[Scope] =
+      (try {
+        Some(objectInputStream.readObject.asInstanceOf[Scope])
       } catch {
-        case _: EOFException => null
+        case _: EOFException => None
+      }) match {
+        case None => list
+        case Some(scopes) => getScopesFromInputStreamInner(objectInputStream, scopes +: list)
       }
-      if (obj == null) return list
-      getScopesFromInputStreamInner(objectInput, obj +: list)
+
+    try {
+      val reader = new ObjectInputStream(new FileInputStream(fileName + ".sym"))
+      val listOfScopes = getScopesFromInputStreamInner(reader, List())
+      require(listOfScopes.size == 1)
+      reader.close()
+      Some(listOfScopes)
+    } catch {
+      case _: FileNotFoundException => None
     }
-    val reader = new ObjectInputStream(input)
-    val listOfScopes = getScopesFromInputStreamInner(reader, List())
-    reader.close()
-    listOfScopes
+
   }
 
   //TODO change to vals and move to Context
@@ -79,12 +85,11 @@ final class SymbolTable(val scopes: Seq[SymbolTable.Scope]) {
     None
   }
 
-  def findInCurrentScope[A <: Symbol](name: String, clazz: Class[A]): Option[A] =
+  def findInCurrentScope[A <: Symbol](name: String, symbolClass: Class[A]): Option[A] =
     currentScope.get(name).flatMap{
       symbol =>
-        if (symbol.getClass ne clazz)
-          None
-        else Some(symbol.asInstanceOf[A])
+        if (symbolClass.isInstance(symbol)) Some(symbol.asInstanceOf[A])
+        else None
     }
 
   def insert(obj: Symbol): SymbolTable = new SymbolTable((this.scopes.head + (obj.name -> obj)) +: this.scopes.tail)
@@ -94,9 +99,8 @@ final class SymbolTable(val scopes: Seq[SymbolTable.Scope]) {
   @throws(classOf[IOException])
   def writeToFile(file: String) {
     val writer = new ObjectOutputStream(new FileOutputStream(file + ".sym", false))
-    try
-    {
-      this.scopes.init.reverse.foreach(scope => if (scopes.nonEmpty) writer.writeObject(scope))
+    try {
+      this.scopes.init.reverse.foreach(scope => writer.writeObject(scope))
     }
     finally {
       writer.close()
@@ -104,17 +108,16 @@ final class SymbolTable(val scopes: Seq[SymbolTable.Scope]) {
   }
 }
 
-abstract sealed class AbstractLibraryArchive {
+abstract sealed class AbstractLibraryArchive extends java.io.Serializable {
   def close()
 
   def loadSymbol(name: String): Option[Symbol] =
-    getInputStream(name).flatMap{
+    getInputStream(name + ".sym").flatMap{
       stream =>
-        try
-        {
-          val reader = new ObjectInputStream(stream)
-          Some(reader.readObject.asInstanceOf[Symbol])
+        try {
+          Option(new ObjectInputStream(stream).readObject.asInstanceOf[Symbol])
         } catch {
+          case ex: ObjectStreamException => throw ex //thrown when the SerialVersionUID is different (e.g. after proguard removed methods, so that a different number is calculated for scala classes)
           case _: IOException => None
         }
         finally {
@@ -125,44 +128,36 @@ abstract sealed class AbstractLibraryArchive {
   def loadSymbol[A <: Symbol](name: String, symbolClass: Class[A]): Option[A] =
     loadSymbol(name).flatMap{
       symbol =>
-        if (symbol.getClass eq symbolClass) Some(symbol.asInstanceOf[A])
+        if (symbolClass.isInstance(symbol)) Some(symbol.asInstanceOf[A])
         else None
     }
 
   def getInputStream(file: String): Option[InputStream]
 }
 
-final class JarFileLibraryArchive(file: String) extends AbstractLibraryArchive {
+@SerialVersionUID(-5906992646423894974L)
+final class JarFileLibraryArchive(val file: String) extends AbstractLibraryArchive {
 
-  import java.util.jar.{JarFile, JarEntry}
-
-  val jarFile = new JarFile(file)
-  type mapType = Map[String, JarEntry]
-  val files = {
-    @tailrec
-    def initInner(map: mapType, entries: java.util.Enumeration[JarEntry]): mapType = {
-      if (!entries.hasMoreElements()) return map
-      val entry = entries.nextElement()
-      initInner(map + (entry.getName() -> entry), entries)
-    }
-    initInner(Map(), jarFile.entries())
-  }
+  @transient lazy val jarFile = new java.util.jar.JarFile(file)
 
   @throws(classOf[IOException])
   override def close() = this.jarFile.close()
 
   override def getInputStream(file: String): Option[InputStream] =
-    this.files.get(file).map(entry => new BufferedInputStream(this.jarFile.getInputStream(entry)))
+    jarFile.getEntry(file) match {
+      case null => None
+      case entry => Option(new BufferedInputStream(jarFile.getInputStream(entry)))
+    }
 }
 
-final class DirectoryLibraryArchive(directory: String) extends AbstractLibraryArchive {
+@SerialVersionUID(-3176565630855442198L)
+final class DirectoryLibraryArchive(val directory: String) extends AbstractLibraryArchive {
   override def close() = {}
 
   override def getInputStream(file: String): Option[InputStream] =
-    try
-    {
+    try {
       Some(new FileInputStream(directory + File.separator + file))
     } catch {
-      case _ => None
+      case _: FileNotFoundException => None
     }
 }

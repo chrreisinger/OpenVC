@@ -26,13 +26,13 @@ import java.io.{File, PrintWriter}
 
 trait GenericTest extends FunSuite with ShouldMatchers {
   val library = "testLibrary"
-  val directory = new File(library + File.separator)
-  val configuration = new VHDLCompiler.Configuration(false, library, false, false)
+  val configuration = new VHDLCompiler.Configuration(amsEnabled = false, parseOnly = false, outputDirectory = "output/", designLibrary = library, libraryDirectory = "vhdlLibs\\", debugCompiler = false, debugCodeGenerator = false)
+  val directory = new File(configuration.libraryOutputDirectory)
 
   def compile(source: String) {
     if (directory.exists) directory.listFiles.foreach(_.delete())
 
-    val result = VHDLCompiler.compileFileFromText(configuration, source, "testFile")
+    val result = VHDLCompiler.compileFileFromText(source, "testFile", configuration)
     result.printErrors(new PrintWriter(System.out), Some(source.split('\n').toIndexedSeq))
     result.syntaxErrors.size should equal(0)
     result.semanticErrors.size should equal(0)
@@ -41,13 +41,14 @@ trait GenericTest extends FunSuite with ShouldMatchers {
   def compileAndLoad(text: String)(source: String) =
     test(text) {
       compile(source)
-      Simulator.loadFiles(this.getClass.getClassLoader, library, directory.listFiles.filter(_.getName.endsWith(".class")).map(_.getName.split('.').head), List("std.jar"))
+      Simulator.loadFiles(this.getClass.getClassLoader, configuration.outputDirectory, directory.listFiles.filter(_.getName.endsWith(".class")).map(configuration.designLibrary + "." + _.getName.split('.').head), List("std.jar"))
+      //Simulator.loadFiles(this.getClass.getClassLoader, listFiles(new File(configuration.libraryOutputDirectory), classFilter, true).map(file => file.getPath.substring(file.getPath.indexOf('\\') + 1).split('.').head.replace('\\', '.')), List("std.jar", "ieee.jar"))
     }
 
   def compileAndRun(text: String, packageName: String, procedure: String)(source: String) =
     test(text) {
       compile(source)
-      Simulator.runClass(this.getClass.getClassLoader, configuration.libraryOutputDirectory, packageName, procedure, List("std.jar", "ieee.jar"))
+      Simulator.runClass(this.getClass.getClassLoader, configuration.outputDirectory, configuration.designLibrary + "." + packageName, procedure, List("std.jar", "ieee.jar"))
     }
 
   def compileCodeInPackageAndLoad(text: String)(source: String) =
@@ -55,23 +56,23 @@ trait GenericTest extends FunSuite with ShouldMatchers {
       """
       package Dummy is
       """ +
-              source +
-              """
-              end Dummy ;
-              """
+        source +
+        """
+        end Dummy ;
+        """
     }
 
-  def compileCodeInPackageAndRun(text: String, packageName: String = "dummy", procedure: String = "main")(source: String) =
+  def compileCodeInPackageAndRun(text: String, packageName: String = "dummy", procedure: String = "main$1106182723")(source: String) =
     compileAndRun(text, packageName, procedure) {
       """
       package dummy is
       end package dummy;
       package body Dummy is
       """ +
-              source +
-              """
-              end Dummy ;
-              """
+        source +
+        """
+        end Dummy ;
+        """
     }
 
 }

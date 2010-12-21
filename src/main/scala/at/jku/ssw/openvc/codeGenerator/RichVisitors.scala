@@ -33,21 +33,17 @@ final class RichLabel(mv: MethodVisitor) extends Label {
 
 final class RichClassWriter(private val outputDirectory: String, val className: String, private val cw: ClassWriter, cv: Option[ClassVisitor] = None) extends ClassAdapter(cv.getOrElse(cw)) {
   def writeToFile() {
-    //create sub-directories if the do not exist (e.g. for foo/bar/classname.class)
-    val file = new java.io.File(outputDirectory + (className.lastIndexOf('/') match {
-      case -1 => ""
-      case i => className.substring(0, i)
-    }))
-    if (!file.canWrite) file.mkdirs
+    //create sub-directories if the do not exist (e.g. for foo/bar/classname.class create folders foo/bar/)
+    val directory = new java.io.File(outputDirectory + className.substring(0, className.lastIndexOf('/')))
+    if (!directory.canWrite) directory.mkdirs
 
-    val f = new java.io.FileOutputStream(outputDirectory + className + ".class")
-    try
-    {
+    val outputFile = new java.io.FileOutputStream(outputDirectory + className + ".class")
+    try {
       this.visitEnd
-      f.write(cw.toByteArray)
+      outputFile.write(cw.toByteArray)
     }
     finally {
-      f.close()
+      outputFile.close()
     }
   }
 
@@ -68,16 +64,18 @@ final class RichClassWriter(private val outputDirectory: String, val className: 
     mv
   }
 
-  override def visitField(access: Int, name: String, desc: String, signature: String = null, value: Any = null): FieldVisitor =
-    super.visitField(access, name, desc, signature, value)
+  def visitField(access: Int, name: String, desc: String): FieldVisitor =
+    super.visitField(access, name, desc, null, null)
 
-  override def visitMethod(access: Int, name: String, desc: String, signature: String = null, exceptions: Array[String] = null): RichMethodVisitor =
-    new RichMethodVisitor(super.visitMethod(access, name, desc, signature, exceptions))
+  def visitMethod(access: Int, name: String, desc: String, signature: String = null): RichMethodVisitor =
+    new RichMethodVisitor(super.visitMethod(access, name, desc, signature, null))
 }
 
 final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
 
-  import at.jku.ssw.openvc.ast._
+  import at.jku.ssw.openvc.ast.{Locatable, Position}
+
+  import ByteCodeGenerator.{getJVMDataType, getJVMName}
 
   def NOP = this.visitInsn(Opcodes.NOP)
 
@@ -394,9 +392,13 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
   def IFNONNULL(label: Label) = this.visitJumpInsn(Opcodes.IFNONNULL, label)
 
   def endMethod() {
-    //values will be ignored because COMPUTE_FRAMES and COMPUTE_MAXS are used, but the CheckClassAdapter needs values != 0
-    this.visitMaxs(1000, 1000)
-    this.visitEnd
+    try {
+      //values will be ignored because COMPUTE_FRAMES and COMPUTE_MAXS are used, but the CheckClassAdapter needs values != 0
+      this.visitMaxs(1000, 1000)
+      this.visitEnd
+    } catch {
+      case ex: NegativeArraySizeException => throw ex //only used, so that i can set a breakpoint here, when i generate bad code and this bad code causes an exception
+    }
   }
 
   def loadInstruction(dataType: DataType, index: Int) = this.visitVarInsn((dataType: @unchecked) match {
@@ -434,19 +436,35 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
       case _: ArrayType | _: RecordType | _: FileType | _: AccessType | _: ProtectedType => Opcodes.AALOAD
     })
 
-  def loadSymbol(symbol: RuntimeSymbol) = symbol.owner match {
-    case _: ArchitectureSymbol | _: EntitySymbol | _: ProcessSymbol => GETFIELD(symbol.owner.implementationName, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
-    case typeSymbol: TypeSymbol =>
-      if (typeSymbol.dataType.isInstanceOf[ProtectedType]) ALOAD(0)
-      GETFIELD(typeSymbol.dataType.implementationName, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
-    case packageSymbol: PackageSymbol => GETSTATIC(packageSymbol.implementationName, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
+  def loadSymbol(symbol: RuntimeSymbol) = (symbol.owner: @unchecked) match {
+    case _: ArchitectureSymbol | _: EntitySymbol | _: ProcessSymbol | _: TypeSymbol => GETFIELD(symbol.owner.implementationName, symbol.name, getJVMDataType(symbol))
+    case packageSymbol: PackageSymbol => GETSTATIC(packageSymbol.implementationName, symbol.name, getJVMDataType(symbol))
     case _: SubprogramSymbol => loadInstruction(symbol.dataType, symbol.index)
   }
 
-  def storeSymbol(symbol: RuntimeSymbol) = symbol.owner match {
-    case _: ArchitectureSymbol | _: EntitySymbol | _: ProcessSymbol | _: TypeSymbol => PUTFIELD(symbol.owner.implementationName, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
-    case packageSymbol: PackageSymbol => PUTSTATIC(packageSymbol.implementationName, symbol.name, ByteCodeGenerator.getJVMDataType(symbol))
+  def storeSymbol(symbol: RuntimeSymbol) = (symbol.owner: @unchecked) match {
+    case _: ArchitectureSymbol | _: EntitySymbol | _: ProcessSymbol | _: TypeSymbol => PUTFIELD(symbol.owner.implementationName, symbol.name, getJVMDataType(symbol))
+    case packageSymbol: PackageSymbol => PUTSTATIC(packageSymbol.implementationName, symbol.name, getJVMDataType(symbol))
     case _: SubprogramSymbol => storeInstruction(symbol)
+  }
+
+  def storeSymbol(symbol: RuntimeSymbol, targetType: DataType) = {
+    symbol.owner match {
+      case _: ArchitectureSymbol | _: TypeSymbol | _: ProcessSymbol | _: EntitySymbol => PUTFIELD(symbol.owner.implementationName, symbol.name, getJVMDataType(symbol))
+      case _: PackageSymbol => PUTSTATIC(symbol.owner.implementationName, symbol.name, getJVMDataType(symbol))
+      case _: SubprogramSymbol => storeInstruction(symbol)
+      case r: RuntimeSymbol =>
+        symbol.dataType match {
+          case recordType: RecordType =>
+            PUTFIELD(recordType.implementationName, symbol.name, getJVMDataType(targetType))
+          case accessType: AccessType =>
+            PUTFIELD(getJVMName(accessType.pointerType), symbol.name, getJVMDataType(targetType))
+          case constraintArray: ConstrainedArrayType =>
+            arrayStoreInstruction(constraintArray.elementType)
+          case unconstrainedArrayType: UnconstrainedArrayType =>
+            INVOKEVIRTUAL(getJVMName(unconstrainedArrayType), "setValue", "(" + ("I" * unconstrainedArrayType.dimensions.size) + getJVMDataType(unconstrainedArrayType.elementType) + ")V")
+        }
+    }
   }
 
   def pushAnyVal(value: AnyVal) = value match {
@@ -480,19 +498,17 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
   def pushDouble(value: Double) = value match {
     case 0.0 => DCONST_0
     case 1.0 => DCONST_1
-    case _ =>
-      if (value == Double.MinValue) GETSTATIC("java/lang/Double", "MIN_VALUE", "D")
-      else if (value == Double.MaxValue) GETSTATIC("java/lang/Double", "MAX_VALUE", "D")
-      else LDC(java.lang.Double.valueOf(value))
+    case java.lang.Double.MIN_VALUE => GETSTATIC("java/lang/Double", "MIN_VALUE", "D")
+    case java.lang.Double.MAX_VALUE => GETSTATIC("java/lang/Double", "MAX_VALUE", "D")
+    case _ => LDC(java.lang.Double.valueOf(value))
   }
 
   def pushLong(value: Long) = value match {
     case 0 => LCONST_0
     case 1 => LCONST_1
-    case _ =>
-      if (value == Long.MinValue) GETSTATIC("java/lang/Long", "MIN_VALUE", "J")
-      else if (value == Long.MaxValue) GETSTATIC("java/lang/Long", "MAX_VALUE", "J")
-      else LDC(java.lang.Long.valueOf(value))
+    case java.lang.Long.MIN_VALUE => GETSTATIC("java/lang/Long", "MIN_VALUE", "J")
+    case java.lang.Long.MAX_VALUE => GETSTATIC("java/lang/Long", "MAX_VALUE", "J")
+    case _ => LDC(java.lang.Long.valueOf(value))
   }
 
   private[this] var lastLine = -1
@@ -501,7 +517,7 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
 
   def createDebugLineNumberInformation(position: Position) {
     val line = position.line
-    if (lastLine != line && position != Position.Empty) {
+    if (lastLine != line && position != Position.NoPosition) {
       lastLine = line
       val label = RichLabel(this)
       label()
@@ -520,5 +536,5 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
   def createDebugLocalVariableInformation(symbols: Seq[Symbol], startLabel: RichLabel, stopLabel: RichLabel) =
     symbols.collect(_ match {
       case r: RuntimeSymbol => r
-    }).foreach(r => this.visitLocalVariable(r.name, ByteCodeGenerator.getJVMDataType(r), null, startLabel, stopLabel, r.index))
+    }).foreach(r => this.visitLocalVariable(r.name, getJVMDataType(r), null, startLabel, stopLabel, r.index))
 }

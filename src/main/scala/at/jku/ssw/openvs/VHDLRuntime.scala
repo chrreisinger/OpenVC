@@ -19,6 +19,7 @@
 package at.jku.ssw.openvs
 
 object VHDLRuntime {
+
   import reflect.BeanProperty
 
   trait EnumerationType {
@@ -45,8 +46,7 @@ object VHDLRuntime {
 
   final case class MutableLong(@BeanProperty var value: Long)
 
-  abstract sealed class RuntimeArray1D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double) A]
-  (val data: Array[A], private[this] val length: Int, val left: Int, val right: Int)(implicit m: scala.reflect.Manifest[A]) {
+  final class RuntimeArray1D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](val data: Array[A], val left: Int, val right: Int) {
     val low = math.min(left, right)
     val high = math.max(left, right)
     val ascending = left < right
@@ -55,21 +55,12 @@ object VHDLRuntime {
 
     def setValue(index: Int, value: A) = if (left < right) data(index - left) = value else data(left - index) = value
 
-    override def toString = data.mkString(" ")
+    override def toString = data.mkString("Array(", ",", ")")
 
   }
 
-  final class RuntimeArray1DBoolean(data: Array[Boolean], length: Int, left: Int, right: Int) extends RuntimeArray1D[Boolean](data, length, left, right)
-  final class RuntimeArray1DByte(data: Array[Byte], length: Int, left: Int, right: Int) extends RuntimeArray1D[Byte](data, length, left, right)
-  final class RuntimeArray1DChar(data: Array[Char], length: Int, left: Int, right: Int) extends RuntimeArray1D[Char](data, length, left, right)
-  final class RuntimeArray1DInt(data: Array[Int], length: Int, left: Int, right: Int) extends RuntimeArray1D[Int](data, length, left, right)
-  final class RuntimeArray1DDouble(data: Array[Double], length: Int, left: Int, right: Int) extends RuntimeArray1D[Double](data, length, left, right)
-  final class RuntimeArray1DAnyRef(data: Array[AnyRef], length: Int, left: Int, right: Int) extends RuntimeArray1D[AnyRef](data, length, left, right)
-
-  abstract sealed class RuntimeArray2D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double) A]
-  (private[this] val dim1Length: Int, private[this] val dim1Left: Int, private[this] val dim1Right: Int, private[this] val dim2Length: Int, private[this] val dim2Left: Int, private[this] val dim2Right: Int)
-  (implicit m: scala.reflect.Manifest[A]) {
-    private[this] val data = Array.ofDim[A](dim1Length, dim2Length)
+  final class RuntimeArray2D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A]
+  (val data: Array[Array[A]], private[this] val dim1Left: Int, private[this] val dim1Right: Int, private[this] val dim2Left: Int, private[this] val dim2Right: Int) {
 
     @throws(classOf[VHDLRuntimeException])
     def ascending(dim: Int) = dim match {
@@ -108,8 +99,8 @@ object VHDLRuntime {
 
     @throws(classOf[VHDLRuntimeException])
     def length(dim: Int) = dim match {
-      case 0 => dim1Length
-      case 1 => dim2Length
+      case 0 => data.length
+      case 1 => data(0).length
       case _ => throw new VHDLRuntimeException("dimension:" + dim + " is out of range 0 to 1")
     }
 
@@ -128,24 +119,6 @@ object VHDLRuntime {
     override def toString = data.map(_.mkString(" ")).mkString("\n")
 
   }
-
-  final class RuntimeArray2DBoolean(dim1Length: Int, dim1Left: Int, dim1Right: Int, dim2Length: Int, dim2Left: Int, dim2Right: Int)
-          extends RuntimeArray2D[Boolean](dim1Length, dim1Left, dim1Right, dim2Length, dim2Left, dim2Right)
-
-  final class RuntimeArray2DByte(dim1Length: Int, dim1Left: Int, dim1Right: Int, dim2Length: Int, dim2Left: Int, dim2Right: Int)
-          extends RuntimeArray2D[Byte](dim1Length, dim1Left, dim1Right, dim2Length, dim2Left, dim2Right)
-
-  final class RuntimeArray2DChar(dim1Length: Int, dim1Left: Int, dim1Right: Int, dim2Length: Int, dim2Left: Int, dim2Right: Int)
-          extends RuntimeArray2D[Char](dim1Length, dim1Left, dim1Right, dim2Length, dim2Left, dim2Right)
-
-  final class RuntimeArray2DInt(dim1Length: Int, dim1Left: Int, dim1Right: Int, dim2Length: Int, dim2Left: Int, dim2Right: Int)
-          extends RuntimeArray2D[Int](dim1Length, dim1Left, dim1Right, dim2Length, dim2Left, dim2Right)
-
-  final class RuntimeArray2DDouble(dim1Length: Int, dim1Left: Int, dim1Right: Int, dim2Length: Int, dim2Left: Int, dim2Right: Int)
-          extends RuntimeArray2D[Double](dim1Length, dim1Left, dim1Right, dim2Length, dim2Left, dim2Right)
-
-  final class RuntimeArray2DAnyRef(dim1Length: Int, dim1Left: Int, dim1Right: Int, dim2Length: Int, dim2Left: Int, dim2Right: Int)
-          extends RuntimeArray2D[AnyRef](dim1Length, dim1Left, dim1Right, dim2Length, dim2Left, dim2Right)
 
   abstract sealed class AbstractSignal[A] {
     type TimeType = Long
@@ -172,6 +145,7 @@ object VHDLRuntime {
 
   final class RuntimeFile {
     import java.io._
+
     var inputStream: DataInputStream = null
     var outputStream: DataOutputStream = null
     private[this] var readOnlyMode = false
@@ -233,36 +207,6 @@ object VHDLRuntime {
     type SEVERITY_LEVEL = Value
     val NOTE, WARNING, ERROR, FAILURE = Value
   }
-
-  def createMutableInteger(value: Int) = new MutableInteger(value)
-
-  def createMutableReal(value: Double) = new MutableReal(value)
-
-  def createRuntimeArray1DBoolean(length: Int, left: Int, right: Int) = new RuntimeArray1DBoolean(Array.ofDim[Boolean](length), length, left, right)
-
-  def createRuntimeArray1DByte(length: Int, left: Int, right: Int) = new RuntimeArray1DByte(Array.ofDim[Byte](length), length, left, right)
-
-  def createRuntimeArray1DChar(length: Int, left: Int, right: Int) = new RuntimeArray1DChar(Array.ofDim[Char](length), length, left, right)
-
-  def createRuntimeArray1DInt(length: Int, left: Int, right: Int) = new RuntimeArray1DInt(Array.ofDim[Int](length), length, left, right)
-
-  def createRuntimeArray1DDouble(length: Int, left: Int, right: Int) = new RuntimeArray1DDouble(Array.ofDim[Double](length), length, left, right)
-
-  def createRuntimeArray1DAnyRef(length: Int, left: Int, right: Int) = new RuntimeArray1DAnyRef(Array.ofDim[AnyRef](length), length, left, right)
-
-  def createRuntimeArray1DBoolean(other: RuntimeArray1DBoolean, left: Int, right: Int) = new RuntimeArray1DBoolean(other.data, left - right.abs, left, right)
-
-  def createRuntimeArray1DByte(other: RuntimeArray1DByte, left: Int, right: Int) = new RuntimeArray1DByte(other.data, left - right.abs, left, right)
-
-  def createRuntimeArray1DChar(other: RuntimeArray1DChar, left: Int, right: Int) = new RuntimeArray1DChar(other.data, left - right.abs, left, right)
-
-  def createRuntimeArray1DInt(other: RuntimeArray1DInt, left: Int, right: Int) = new RuntimeArray1DInt(other.data, left - right.abs, left, right)
-
-  def createRuntimeArray1DDouble(other: RuntimeArray1DDouble, left: Int, right: Int) = new RuntimeArray1DDouble(other.data, left - right.abs, left, right)
-
-  def createRuntimeArray1DAnyRef(other: RuntimeArray1DAnyRef, left: Int, right: Int) = new RuntimeArray1DAnyRef(other.data, left - right.abs, left, right)
-
-  def getArrayIndex1D(index: Int, left: Int, right: Int): Int = if (left < right) index - left else left - index
 
   private val DefaultAssertLevel = SEVERITY_LEVEL.ERROR.id
   private val DefaultReportLevel = SEVERITY_LEVEL.NOTE.id
@@ -330,78 +274,86 @@ object VHDLRuntime {
     return if ((mod < 0 && y > 0) || (mod > 0 && y < 0)) mod + y else mod
   }
 
-  def fill[A](n: Int, clazz: Class[A])(implicit m: ClassManifest[A]) = Array.tabulate(n)(i => clazz.newInstance)
+  def createEmptyRuntimeArray1D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A: ClassManifest](left: Int, right: Int) = new RuntimeArray1D(Array.ofDim[A]((left - right).abs), left, right)
 
-  def fill[A](n1: Int, n2: Int, clazz: Class[A])(implicit m: ClassManifest[A]) = Array.tabulate(n1, n2)((i, j) => clazz.newInstance)
+  def createRuntimeArrayFromOther1D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A: ClassManifest](other: RuntimeArray1D[A], left: Int, right: Int) = new RuntimeArray1D(other.data, left, right)
 
-  def fill[A](n1: Int, n2: Int, n3: Int, clazz: Class[A])(implicit m: ClassManifest[A]) = Array.tabulate(n1, n2, n3)((i, j, k) => clazz.newInstance)
+  def createRuntimeArrayFromOtherArray1D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A: ClassManifest](other: Array[A], left: Int, right: Int) = new RuntimeArray1D(other, left, right)
 
-  def fill[A](n1: Int, n2: Int, n3: Int, n4: Int, clazz: Class[A])(implicit m: ClassManifest[A]) = Array.tabulate(n1, n2, n3, n4)((i, j, k, l) => clazz.newInstance)
+  def getArrayIndex1D(index: Int, left: Int, right: Int): Int = if (left < right) index - left else left - index
 
-  def fill[A](n1: Int, n2: Int, n3: Int, n4: Int, n5: Int, clazz: Class[A])(implicit m: ClassManifest[A]) = Array.tabulate(n1, n2, n3, n4, n5)((i, j, k, l, m) => clazz.newInstance)
+  def fill[A: ClassManifest](n: Int, clazz: Class[A]) = Array.tabulate(n)(i => clazz.newInstance)
 
-  def fill[A](n: Int, value: A)(implicit m: ClassManifest[A]) = Array.fill[A](n)(value)
+  def fill[A: ClassManifest](n1: Int, n2: Int, clazz: Class[A]) = Array.tabulate(n1, n2)((i, j) => clazz.newInstance)
 
-  def fill[A](n1: Int, n2: Int, value: A)(implicit m: ClassManifest[A]) = Array.fill[A](n1, n2)(value)
+  def fill[A: ClassManifest](n1: Int, n2: Int, n3: Int, clazz: Class[A]) = Array.tabulate(n1, n2, n3)((i, j, k) => clazz.newInstance)
 
-  def fill[A](n1: Int, n2: Int, n3: Int, value: A)(implicit m: ClassManifest[A]) = Array.fill[A](n1, n2, n3)(value)
+  def fill[A: ClassManifest](n1: Int, n2: Int, n3: Int, n4: Int, clazz: Class[A]) = Array.tabulate(n1, n2, n3, n4)((i, j, k, l) => clazz.newInstance)
 
-  def fill[A](n1: Int, n2: Int, n3: Int, n4: Int, value: A)(implicit m: ClassManifest[A]) = Array.fill[A](n1, n2, n3, n4)(value)
+  def fill[A: ClassManifest](n1: Int, n2: Int, n3: Int, n4: Int, n5: Int, clazz: Class[A]) = Array.tabulate(n1, n2, n3, n4, n5)((i, j, k, l, m) => clazz.newInstance)
 
-  def fill[A](n1: Int, n2: Int, n3: Int, n4: Int, n5: Int, value: A)(implicit m: ClassManifest[A]) = Array.fill[A](n1, n2, n3, n4, n5)(value)
+  def fill[A: ClassManifest](n: Int, value: A) = Array.fill[A](n)(value)
+
+  def fill[A: ClassManifest](n1: Int, n2: Int, value: A) = Array.fill[A](n1, n2)(value)
+
+  def fill[A: ClassManifest](n1: Int, n2: Int, n3: Int, value: A) = Array.fill[A](n1, n2, n3)(value)
+
+  def fill[A: ClassManifest](n1: Int, n2: Int, n3: Int, n4: Int, value: A) = Array.fill[A](n1, n2, n3, n4)(value)
+
+  def fill[A: ClassManifest](n1: Int, n2: Int, n3: Int, n4: Int, n5: Int, value: A) = Array.fill[A](n1, n2, n3, n4, n5)(value)
 
   def NOT(data: Array[Boolean]): Array[Boolean] = data.map(!_)
 
-  def AND(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = (for (i <- 0 to left.length) yield left(i) && right(i)).toArray
+  def AND(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = (for (i <- left.indices) yield left(i) && right(i)).toArray
 
-  def NAND(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = (for (i <- 0 to left.length) yield !(left(i) && right(i))).toArray
+  def NAND(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = (for (i <- left.indices) yield !(left(i) && right(i))).toArray
 
-  def OR(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = (for (i <- 0 to left.length) yield left(i) || right(i)).toArray
+  def OR(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = (for (i <- left.indices) yield left(i) || right(i)).toArray
 
-  def NOR(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = (for (i <- 0 to left.length) yield !(left(i) || right(i))).toArray
+  def NOR(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = (for (i <- left.indices) yield !(left(i) || right(i))).toArray
 
-  def XOR(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = (for (i <- 0 to left.length) yield left(i) ^ right(i)).toArray
+  def XOR(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = (for (i <- left.indices) yield left(i) ^ right(i)).toArray
 
-  def XNOR(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = (for (i <- 0 to left.length) yield !(left(i) ^ right(i))).toArray
+  def XNOR(left: Array[Boolean], right: Array[Boolean]): Array[Boolean] = (for (i <- left.indices) yield !(left(i) ^ right(i))).toArray
 
 
   def LT(left: Array[Boolean], right: Array[Boolean]): Boolean = {
-    for (i <- 0 to left.length) if (left(i) >= right(i)) return false
+    for (i <- left.indices) if (left(i) >= right(i)) return false
     true
   }
 
   def LT(left: Array[Byte], right: Array[Byte]): Boolean = {
-    for (i <- 0 to left.length) if (left(i) >= right(i)) return false
+    for (i <- left.indices) if (left(i) >= right(i)) return false
     true
   }
 
   def LT(left: Array[Char], right: Array[Char]): Boolean = {
-    for (i <- 0 to left.length) if (left(i) >= right(i)) return false
+    for (i <- left.indices) if (left(i) >= right(i)) return false
     true
   }
 
   def LT(left: Array[Int], right: Array[Int]): Boolean = {
-    for (i <- 0 to left.length) if (left(i) >= right(i)) return false
+    for (i <- left.indices) if (left(i) >= right(i)) return false
     true
   }
 
   def LEQ(left: Array[Boolean], right: Array[Boolean]): Boolean = {
-    for (i <- 0 to left.length) if (left(i) > right(i)) return false
+    for (i <- left.indices) if (left(i) > right(i)) return false
     true
   }
 
   def LEQ(left: Array[Byte], right: Array[Byte]): Boolean = {
-    for (i <- 0 to left.length) if (left(i) > right(i)) return false
+    for (i <- left.indices) if (left(i) > right(i)) return false
     true
   }
 
   def LEQ(left: Array[Char], right: Array[Char]): Boolean = {
-    for (i <- 0 to left.length) if (left(i) > right(i)) return false
+    for (i <- left.indices) if (left(i) > right(i)) return false
     true
   }
 
   def LEQ(left: Array[Int], right: Array[Int]): Boolean = {
-    for (i <- 0 to left.length) if (left(i) > right(i)) return false
+    for (i <- left.indices) if (left(i) > right(i)) return false
     true
   }
 
@@ -454,7 +406,7 @@ object VHDLRuntime {
     val tmp = right % len
     val amount = if (tmp < 0) len + tmp else tmp
     // The offset is the amount from end of the original array.
-    //This is where we start the copy.
+    // This is where we start the copy.
     val offset = len - amount
     // Copy from the offset to the end of the array
     Array.copy(src, offset, destination, 0, amount)
@@ -563,8 +515,4 @@ object VHDLRuntime {
   }
 
   def endfile(file: RuntimeFile): Boolean = file.eof
-
-  def unboxToInt(i: AnyRef): Int = i.asInstanceOf[java.lang.Integer].intValue
-
-  def unboxToDouble(d: AnyRef): Double = d.asInstanceOf[java.lang.Double].doubleValue
 }

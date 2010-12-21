@@ -38,6 +38,10 @@ public class RuntimeAnnotations {
     }
 
     @Retention(RetentionPolicy.RUNTIME)
+    public static @interface ConfigurationAnnotation {
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
     public static @interface ComponentAnnotation {
     }
 
@@ -59,6 +63,10 @@ public class RuntimeAnnotations {
 
     @Retention(RetentionPolicy.RUNTIME)
     public static @interface EnumerationAnnotation {
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    public static @interface ProtectedTypeHeaderAnnotation {
     }
 
     @Retention(RetentionPolicy.RUNTIME)
