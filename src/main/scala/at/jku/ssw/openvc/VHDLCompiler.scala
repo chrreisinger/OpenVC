@@ -69,7 +69,6 @@ object ASTBuilder {
 
 object VHDLCompiler {
 
-  import at.jku.ssw.openvc.backend.jvm.ByteCodeGenerator
   import java.io.PrintWriter
 
   final class Configuration(val amsEnabled: Boolean, val parseOnly: Boolean, val outputDirectory: String, val designLibrary: String, val libraryDirectory: String, val debugCompiler: Boolean, val debugCodeGenerator: Boolean) {
@@ -100,6 +99,7 @@ object VHDLCompiler {
   private def compile(configuration: Configuration, builder: (String, Configuration) => (DesignFile, Seq[CompilerMessage]), source: String, fileName: String): CompileResult = {
     import java.io.File
     import semanticAnalyzer.SemanticAnalyzer
+    import at.jku.ssw.openvc.backend.llvm.LLVMIRGenerator
     val directory = new File(configuration.libraryOutputDirectory)
     if (!directory.exists) directory.mkdirs
 
@@ -113,7 +113,7 @@ object VHDLCompiler {
 
     val codeGenStart = System.currentTimeMillis
     if (semanticErrors.isEmpty && syntaxErrors.isEmpty) {
-      ByteCodeGenerator(configuration, fileName, checkedDesignFile)
+      LLVMIRGenerator(configuration, fileName, checkedDesignFile)
     }
     val codeGenTime = System.currentTimeMillis - codeGenStart
     if (configuration.debugCompiler) {
