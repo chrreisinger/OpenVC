@@ -1075,7 +1075,7 @@ object SemanticAnalyzer {
     (loopLabelOption match {
       case None => context.loopLabels match {
         case Seq() => addError(node, "the %s statement must be inside a loop", stmtName)
-        case Seq((_, position), _) => Some(position)
+        case Seq((_, position), _*) => Some(position)
       }
       case Some(loopLabel) => context.loopLabels.find(_._1 == loopLabel) match {
         case None => addError(loopLabel, "loop label %s not found", loopLabel)
