@@ -23,10 +23,6 @@ import at.jku.ssw.openvc.symbolTable.symbols._
 
 import org.objectweb.asm._
 
-object RichLabel {
-  def apply(mv: MethodVisitor) = new RichLabel(mv)
-}
-
 final class RichLabel(mv: MethodVisitor) extends Label {
   def apply() = mv.visitLabel(this)
 }
@@ -519,7 +515,7 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
     val line = position.line
     if (lastLine != line && position != Position.NoPosition) {
       lastLine = line
-      val label = RichLabel(this)
+      val label = createLabel
       label()
       visitLineNumber(line, label)
     }
@@ -532,6 +528,8 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
     INVOKESPECIAL(className, "<init>", "(Ljava/lang/String;)V")
     ATHROW
   }
+
+  def createLabel = new RichLabel(this)
 
   def createDebugLocalVariableInformation(symbols: Seq[Symbol], startLabel: RichLabel, stopLabel: RichLabel) =
     symbols.collect(_ match {

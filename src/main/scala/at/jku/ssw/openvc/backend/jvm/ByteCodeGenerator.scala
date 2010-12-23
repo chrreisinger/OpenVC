@@ -20,15 +20,16 @@ package at.jku.ssw.openvc.backend.jvm
 
 import org.objectweb.asm.{ClassWriter, Label, Opcodes, Type}
 
-import at.jku.ssw.openvc.ast._
-import at.jku.ssw.openvc.ast.concurrentStatements._
-import at.jku.ssw.openvc.ast.sequentialStatements._
-import at.jku.ssw.openvc.ast.declarations._
-import at.jku.ssw.openvc.ast.expressions._
-import at.jku.ssw.openvc.symbolTable._
-import at.jku.ssw.openvc.symbolTable.symbols._
-import at.jku.ssw.openvc.symbolTable.dataTypes._
-import at.jku.ssw.openvc.VHDLCompiler.Configuration
+import at.jku.ssw.openvc._
+import ast._
+import ast.concurrentStatements._
+import ast.sequentialStatements._
+import ast.declarations._
+import ast.expressions._
+import symbolTable._
+import symbols._
+import dataTypes._
+import VHDLCompiler.Configuration
 
 import at.jku.ssw.openvs.RuntimeAnnotations._
 import at.jku.ssw.openvs.VHDLRuntime
@@ -264,10 +265,10 @@ object ByteCodeGenerator {
             case e: EnumerationType if (e == SymbolTable.booleanType || e == SymbolTable.bitType) =>
               expr match {
                 case _: LogicalExpression | _: Relation =>
-                  val trueLabel = RichLabel(mv)
-                  val falseLabel = RichLabel(mv)
-                  val afterLabel = RichLabel(mv)
                   import mv._
+                  val trueLabel = createLabel
+                  val falseLabel = createLabel
+                  val afterLabel = createLabel
                   acceptExpressionInner(expr, ExpressionContext(trueLabel, falseLabel, ExpressionContext.JumpKind.TrueJump))
 
                   falseLabel()
@@ -556,10 +557,10 @@ object ByteCodeGenerator {
           // AND,NAND left expr == false => jump
           // OR, NOR left expr == true => jump
             def acceptExprCreateBoolValue(expr: Expression) {
-              val trueLabel = RichLabel(mv)
-              val falseLabel = RichLabel(mv)
-              val afterLabel = RichLabel(mv)
               import mv._
+              val trueLabel = createLabel
+              val falseLabel = createLabel
+              val afterLabel = createLabel
 
               def createValues() {
                 trueLabel()
@@ -591,9 +592,8 @@ object ByteCodeGenerator {
               if ((logicalExpr.left.isInstanceOf[LogicalExpression]) || context.kind == TrueJump) context.trueJumpLabel
               else label
 
-            val afterLabel = RichLabel(mv)
             import mv._
-
+            val afterLabel = createLabel
             logicalExpr.operator match {
               case AND =>
                 acceptExpressionInner(logicalExpr.left, context.copy(kind = FalseJump, falseJumpLabel = newFalseLabel(afterLabel)))
@@ -842,13 +842,13 @@ object ByteCodeGenerator {
     }
 
     def visitAssertionStatement(assertStmt: AssertionStatement, context: Context) {
-      import context.mv._
-      import context.implicitMV
+      import context._
+      import mv._
 
       createDebugLineNumberInformation(assertStmt)
 
-      val trueJumpLabel = new RichLabel(implicitMV)
-      val falseJumpLabel = new RichLabel(implicitMV)
+      val trueJumpLabel = createLabel
+      val falseJumpLabel = createLabel
 
       def generateAssertCode() {
         falseJumpLabel()
@@ -882,17 +882,18 @@ object ByteCodeGenerator {
 
     def visitIfStatement(ifStmt: IfStatement, context: Context) {
       import context._
+      import mv._
 
-      mv.createDebugLineNumberInformation(ifStmt)
-      val endLabel = RichLabel(mv)
+      createDebugLineNumberInformation(ifStmt)
+      val endLabel = createLabel
 
       def generateCodeForIfThenPart(part: IfStatement.IfThenPart, generateGOTO: Boolean) {
-        val falseJumpLabel = RichLabel(mv)
-        val trueJumpLabel = RichLabel(mv)
+        val falseJumpLabel = createLabel
+        val trueJumpLabel = createLabel
         acceptExpression(part.condition, Some(new ExpressionContext(trueJumpLabel = trueJumpLabel, falseJumpLabel = falseJumpLabel, kind = ExpressionContext.JumpKind.FalseJump)))
         trueJumpLabel()
         acceptNodes(part.sequentialStatements, context)
-        if (generateGOTO && !part.sequentialStatements.exists(_.isInstanceOf[ReturnStatement])) mv.GOTO(endLabel)
+        if (generateGOTO && !part.sequentialStatements.exists(_.isInstanceOf[ReturnStatement])) GOTO(endLabel)
         falseJumpLabel()
       }
 
@@ -927,13 +928,14 @@ object ByteCodeGenerator {
      */
     def createConditionalJump(stmt: SequentialStatement, condition: Option[Expression], targetLabel: RichLabel, context: Context) {
       import context._
+      import mv._
 
-      val trueJumpLabel = RichLabel(mv)
-      val falseJumpLabel = RichLabel(mv)
-      mv.createDebugLineNumberInformation(stmt)
+      val trueJumpLabel = createLabel
+      val falseJumpLabel = createLabel
+      createDebugLineNumberInformation(stmt)
       acceptExpressionOption(condition, Some(new ExpressionContext(trueJumpLabel = trueJumpLabel, falseJumpLabel = falseJumpLabel, kind = ExpressionContext.JumpKind.FalseJump)))
       trueJumpLabel()
-      mv.GOTO(targetLabel)
+      GOTO(targetLabel)
       falseJumpLabel()
     }
 
@@ -982,15 +984,15 @@ object ByteCodeGenerator {
 
     def visitForStatement(forStmt: ForStatement, context: Context) {
       import context._
+      import mv._
+      import Range.Direction._
 
       val varIndex = forStmt.symbol.index
-      val continueLabel = RichLabel(mv)
-      val breakLabel = RichLabel(mv)
-      val conditionTestLabel = RichLabel(mv)
-      val startLabel = RichLabel(mv)
+      val continueLabel = createLabel
+      val breakLabel = createLabel
+      val conditionTestLabel = createLabel
+      val startLabel = createLabel
       val direction = getDiscreteRangeDirection(forStmt.discreteRange)
-      import context.mv._
-      import Range.Direction._
 
       startLabel()
 
@@ -1042,9 +1044,9 @@ object ByteCodeGenerator {
     }
 
     def visitLoopStatement(loopStmt: LoopStatement, context: Context) {
-      val continueLabel = RichLabel(context.mv)
-      val breakLabel = RichLabel(context.mv)
       import context.mv._
+      val continueLabel = createLabel
+      val breakLabel = createLabel
 
       createDebugLineNumberInformation(loopStmt)
       continueLabel()
@@ -1187,8 +1189,8 @@ object ByteCodeGenerator {
     }
 
     def visitReturnStatement(returnStmt: ReturnStatement, context: Context) {
-      import context.implicitMV
-      import context.mv._
+      import context._
+      import mv._
 
       createDebugLineNumberInformation(returnStmt)
       //An implicit call to FILE_CLOSE exists in a subprogram body for every file object declared in the corresponding subprogram declarative part.
@@ -1319,13 +1321,14 @@ object ByteCodeGenerator {
 
     def visitWhileStatement(whileStmt: WhileStatement, context: Context) {
       import context._
+      import mv._
 
-      val conditionTestLabel = RichLabel(mv)
-      val breakLabel = RichLabel(mv)
-      val continueLabel = RichLabel(mv)
+      val conditionTestLabel = createLabel
+      val breakLabel = createLabel
+      val continueLabel = createLabel
 
-      mv.createDebugLineNumberInformation(whileStmt)
-      mv.GOTO(conditionTestLabel)
+      createDebugLineNumberInformation(whileStmt)
+      GOTO(conditionTestLabel)
       continueLabel()
       acceptNodes(whileStmt.sequentialStatements, context.insertLoopLabels(whileStmt.position, new LoopLabels(conditionTestLabel, breakLabel)))
       conditionTestLabel()
@@ -1340,18 +1343,19 @@ object ByteCodeGenerator {
       val flags = (if (functionSymbol.isStatic) Opcodes.ACC_STATIC else 0) + (if (functionSymbol.isSynchronized) Opcodes.ACC_SYNCHRONIZED else 0)
       val mv = context.cw.createMethod(flags = flags, name = functionSymbol.mangledName,
         parameters = getJVMParameterList(functionSymbol.parameters), returnType = getJVMDataType(functionSymbol.returnType))
-      val startLabel = RichLabel(mv)
-      val stopLabel = RichLabel(mv)
-
       val newContext = Context(context.cw, mv, Map(), context.designUnit, functionDefinition.localSymbols.collect(_ match {
         case f: FileSymbol => f
       }))
+      import mv._
+      val startLabel = createLabel
+      val stopLabel = createLabel
+
       startLabel()
       acceptNodes(functionDefinition.declarativeItems, newContext)
       acceptNodes(functionDefinition.sequentialStatements, newContext)
       stopLabel()
-      mv.createDebugLocalVariableInformation(functionDefinition.localSymbols, startLabel, stopLabel)
-      mv.endMethod
+      createDebugLocalVariableInformation(functionDefinition.localSymbols, startLabel, stopLabel)
+      endMethod
     }
 
     def visitProcedureDefinition(procedureDefinition: ProcedureDefinition, context: Context) {
@@ -1368,19 +1372,20 @@ object ByteCodeGenerator {
 
       val flags = (if (procedureSymbol.isStatic) Opcodes.ACC_STATIC else 0) + (if (procedureSymbol.isSynchronized) Opcodes.ACC_SYNCHRONIZED else 0)
       val mv = context.cw.createMethod(flags = flags, name = procedureSymbol.mangledName, parameters = getJVMParameterList(procedureSymbol.parameters), returnType = returnType, signature = signature)
-      val startLabel = RichLabel(mv)
-      val stopLabel = RichLabel(mv)
-
       val newContext = Context(context.cw, mv, Map(), context.designUnit, procedureDefinition.localSymbols.collect(_ match {
         case f: FileSymbol => f
       }))
+      import mv._
+
+      val startLabel = createLabel
+      val stopLabel = createLabel
       startLabel()
       acceptNodes(procedureDefinition.declarativeItems, newContext)
       acceptNodes(procedureDefinition.sequentialStatements, newContext)
       visitReturnStatement(ReturnStatement(Position.NoPosition, None, None, procedureSymbol), newContext)
       stopLabel()
-      mv.createDebugLocalVariableInformation(procedureDefinition.localSymbols, startLabel, stopLabel)
-      mv.endMethod
+      createDebugLocalVariableInformation(procedureDefinition.localSymbols, startLabel, stopLabel)
+      endMethod
     }
 
     def visitBlockStatement(blockStmt: BlockStatement, context: Context) {
@@ -1413,14 +1418,15 @@ object ByteCodeGenerator {
     }
 
     def visitCaseStatement(caseStmt: CaseStatement, context: Context) {
-      val endLabel = RichLabel(context.mv)
+      import context._
+      import mv._
+
+      val endLabel = createLabel
       val defaultLabel = new Label()
       val labelList = caseStmt.alternatives.flatMap{
         alternative =>
           alternative.choices.map(choice => if (choice.isOthers) defaultLabel else new Label())
       }
-      import context.mv._
-      import context.implicitMV
 
       createDebugLineNumberInformation(caseStmt)
       acceptExpression(caseStmt.expression)
@@ -1440,8 +1446,8 @@ object ByteCodeGenerator {
     }
 
     def visitProcedureCallStatement(procedureCallStmt: ProcedureCallStatement, context: Context) {
-      import context.mv._
-      import context.implicitMV
+      import context._
+      import mv._
 
       createDebugLineNumberInformation(procedureCallStmt)
       val procedureSymbol = procedureCallStmt.symbol
@@ -1532,9 +1538,9 @@ object ByteCodeGenerator {
       val cw = createInnerClass(context.cw, context.cw.className + "$" + processName, processName, if (processStmt.isPostponed) classOf[PostponedProcessAnnotation] else classOf[ProcessAnnotation], createEmptyConstructor = false)
       cw.visitField(Opcodes.ACC_PRIVATE + Opcodes.ACC_FINAL, "owner", "L" + context.cw.className + ";"); //could be a architecture or entity {
       val mv = cw.createMethod(name = "<init>", parameters = "L" + context.cw.className + ";")
-      val startLabel = RichLabel(mv)
-      val endLabel = RichLabel(mv)
       import mv._
+      val startLabel = createLabel
+      val endLabel = createLabel
 
       startLabel()
       ALOAD(0)
@@ -1768,9 +1774,9 @@ object ByteCodeGenerator {
                   }
             */
             val mv = cw.createMethod(name = "toString", returnType = "Ljava/lang/String;")
-            val startLabel = RichLabel(mv)
-            val endLabel = RichLabel(mv)
             import mv._
+            val startLabel = createLabel
+            val endLabel = createLabel
 
             startLabel()
             val first = recordType.fields.head._1
@@ -1808,9 +1814,10 @@ object ByteCodeGenerator {
               }
             */
             val mv = cw.createMethod(name = "copy", returnType = "Ljava/lang/Object;")
-            val startLabel = RichLabel(mv)
-            val endLabel = RichLabel(mv)
             import mv._
+            val startLabel = createLabel
+            val endLabel = createLabel
+
 
             startLabel()
             ALOAD(0)
@@ -1828,11 +1835,11 @@ object ByteCodeGenerator {
               }
             */
             val mv = cw.createMethod(name = "copy", returnType = "L" + recordType.implementationName + ";")
-            val startLabel = RichLabel(mv)
-            val endLabel = RichLabel(mv)
-            val l1 = RichLabel(mv)
-            val l2 = RichLabel(mv)
             import mv._
+            val startLabel = createLabel
+            val endLabel = createLabel
+            val l1 = createLabel
+            val l2 = createLabel
 
             startLabel()
             NEW(recordType.implementationName)
@@ -1871,9 +1878,9 @@ object ByteCodeGenerator {
                }
             */
             val mv = cw.createMethod(name = "canEqual", parameters = "Ljava/lang/Object;", returnType = "Z")
-            val startLabel = RichLabel(mv)
-            val endLabel = RichLabel(mv)
             import mv._
+            val startLabel = createLabel
+            val endLabel = createLabel
 
             startLabel()
             ALOAD(1)
@@ -1897,14 +1904,14 @@ object ByteCodeGenerator {
              }
             */
             val mv = cw.createMethod(name = "equals", parameters = "Ljava/lang/Object;", returnType = "Z")
-            val startLabel = new RichLabel(mv)
-            val thatScopeLabel = new RichLabel(mv)
-            val afterIfStmtLabel = new RichLabel(mv)
-            val falseLabel = new RichLabel(mv)
-            val endLabel = new RichLabel(mv)
-            val l1 = new RichLabel(mv)
-            val l2 = new RichLabel(mv)
             import mv._
+            val startLabel = createLabel
+            val thatScopeLabel = createLabel
+            val afterIfStmtLabel = createLabel
+            val falseLabel = createLabel
+            val endLabel = createLabel
+            val l1 = createLabel
+            val l2 = createLabel
 
             startLabel()
             //generate if (this == obj) return true
@@ -2004,9 +2011,9 @@ object ByteCodeGenerator {
           }
           {
             val mv = cw.createMethod(flags = Opcodes.ACC_STATIC + Opcodes.ACC_SYNTHETIC, name = "value", parameters = "Ljava/lang/String;", returnType = "I")
-            val labels = Array.tabulate(enumType.elements.size)(i => new Label())
-            val defaultLabel = RichLabel(mv)
             import mv._
+            val labels = Array.tabulate(enumType.elements.size)(i => new Label())
+            val defaultLabel = createLabel
 
             val dataType = getJVMDataType(enumType)
             ALOAD(0)
@@ -2036,9 +2043,9 @@ object ByteCodeGenerator {
                       }
             */
             val mv = cw.createMethod(flags = Opcodes.ACC_STATIC + Opcodes.ACC_SYNTHETIC, name = "checkIsInRange", parameters = "III", returnType = "I")
-            val throwLabel = RichLabel(mv)
-            val returnLabel = RichLabel(mv)
             import mv._
+            val throwLabel = createLabel
+            val returnLabel = createLabel
 
             ILOAD(0)
             ILOAD(1)
