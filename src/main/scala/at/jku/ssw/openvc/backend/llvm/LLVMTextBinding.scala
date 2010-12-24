@@ -26,8 +26,10 @@ final case class LLVMValue(value: String, dataType: String) {
 final case class LLVMBlock(label: String, function: LLVMFunction) {
   def apply() = {
     val string = label + ":"
-    if (function.code.last.contains(':')) function.code(function.code.size - 1) = string
+    /*if (function.code.last.contains(':')) function.code(function.code.size - 1) = string
     else function.code += string
+    */
+    function.code += string
   }
 
   override val toString = label

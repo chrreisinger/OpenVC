@@ -55,6 +55,9 @@ object LLVMIRGenerator {
   def apply(configuration: Configuration, sourceFileName: String, designFile: DesignFile) {
     acceptNode(designFile, null)
 
+    def acceptExpressionOption(expr: Option[Expression], contextOption: Option[ExpressionContext] = None, createDebugLineNumberInformation: Boolean = true)(implicit mv: LLVMFunction) =
+      expr.foreach(acceptExpression(_, contextOption, createDebugLineNumberInformation))
+
     def acceptExpression(expression: Expression, context: Option[ExpressionContext] = None, createDebugLineNumberInformation: Boolean = true)(implicit mv: LLVMFunction): LLVMValue = {
       //if (createDebugLineNumberInformation) mv.createDebugLineNumberInformation(expr)
       import mv._
@@ -327,18 +330,18 @@ object LLVMIRGenerator {
         context.mv.createDebugLineNumberInformation(throwStatement)
         context.mv.throwNewException(p(classOf[VHDLRuntimeException]), throwStatement.message)
       case assertStmt: AssertionStatement => visitAssertionStatement(assertStmt, context)
-      case waitStmt: WaitStatement => visitWaitStatement(waitStmt, context)
+      case waitStmt: WaitStatement => visitWaitStatement(waitStmt, context)*/
       case nextStmt: NextStatement => visitNextStatement(nextStmt, context)
       case exitStmt: ExitStatement => visitExitStatement(exitStmt, context)
-      case nullStmt: NullStatement =>
+      /*case nullStmt: NullStatement =>
         context.mv.createDebugLineNumberInformation(nullStmt)
         context.mv.NOP
       case reportStmt: ReportStatement => visitReportStatement(reportStmt, context)
       */
       case returnStmt: ReturnStatement => visitReturnStatement(returnStmt, context)
       case loopStmt: LoopStatement => visitLoopStatement(loopStmt, context)
-      /*case whileStmt: WhileStatement => visitWhileStatement(whileStmt, context)
-      case forStmt: ForStatement => visitForStatement(forStmt, context)
+      case whileStmt: WhileStatement => visitWhileStatement(whileStmt, context)
+      /*case forStmt: ForStatement => visitForStatement(forStmt, context)
       case signalAssignmentStmt: SignalAssignmentStatement => visitSignalAssignmentStatement(signalAssignmentStmt, context)
       case variableAssignmentStmt: VariableAssignmentStatement => visitVariableAssignmentStatement(variableAssignmentStmt, context)
       case procedureCallStmt: ProcedureCallStatement => visitProcedureCallStatement(procedureCallStmt, context)
@@ -475,6 +478,42 @@ object LLVMIRGenerator {
       continueLabel()
       acceptNodes(loopStmt.sequentialStatements, context.insertLoopLabels(loopStmt.position, new LoopLabels(continueLabel, breakLabel)))
       br(continueLabel)
+      breakLabel()
+    }
+
+    def createConditionalJump(stmt: SequentialStatement, condition: Option[Expression], targetLabel: LLVMBlock, context: Context) {
+      import context._
+      import function._
+
+      val trueJumpLabel = createBasicBlock("true")
+      val falseJumpLabel = createBasicBlock("false")
+      //createDebugLineNumberInformation(stmt)
+      acceptExpressionOption(condition, Some(new ExpressionContext(trueJumpLabel = trueJumpLabel, falseJumpLabel = falseJumpLabel, kind = ExpressionContext.JumpKind.FalseJump)))
+      trueJumpLabel()
+      br(targetLabel)
+      falseJumpLabel()
+    }
+
+    def visitNextStatement(nextStmt: NextStatement, context: Context) =
+      createConditionalJump(nextStmt, nextStmt.condition, context.loopLabels(nextStmt.loopStatement).continueLabel, context)
+
+    def visitExitStatement(exitStmt: ExitStatement, context: Context) =
+      createConditionalJump(exitStmt, exitStmt.condition, context.loopLabels(exitStmt.loopStatement).breakLabel, context)
+
+    def visitWhileStatement(whileStmt: WhileStatement, context: Context) {
+      import context._
+      import function._
+
+      val conditionTestLabel = createBasicBlock("sdf")
+      val breakLabel = createBasicBlock("df")
+      val continueLabel = createBasicBlock("dfd")
+
+      //createDebugLineNumberInformation(whileStmt)
+      br(conditionTestLabel)
+      continueLabel()
+      acceptNodes(whileStmt.sequentialStatements, context.insertLoopLabels(whileStmt.position, new LoopLabels(conditionTestLabel, breakLabel)))
+      conditionTestLabel()
+      acceptExpression(whileStmt.condition, Some(new ExpressionContext(trueJumpLabel = continueLabel, falseJumpLabel = breakLabel, kind = ExpressionContext.JumpKind.TrueJump)))
       breakLabel()
     }
   }
