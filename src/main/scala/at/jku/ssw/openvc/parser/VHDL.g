@@ -206,9 +206,21 @@ tokens{
  */
 
 package at.jku.ssw.openvc.parser
+
+import at.jku.ssw.openvc._
+import at.jku.ssw.openvc.ast.Position
 }
 @lexer::members{
 	var ams=false
+
+	type Buffer[A] = scala.collection.immutable.VectorBuilder[A] //scala.collection.mutable.ListBuffer[A]
+
+	private val lexerErrorList = new Buffer[CompilerMessage]()
+
+  	def lexerErrors: Seq[CompilerMessage] = this.lexerErrorList.result
+
+	override def displayRecognitionError(tokenNames: Array[String], e: RecognitionException) =
+	    lexerErrorList += new CompilerMessage(position = Position(e.line,e.charPositionInLine), message = super.getErrorMessage(e, tokenNames), if (e.token != null) Option(e.token.getText()) else None)
 }
 @parser::header{
 /*
@@ -257,7 +269,7 @@ import at.jku.ssw.openvc.util._
 	    else new Identifier(toPosition(token),token.getText())
 
     override def displayRecognitionError(tokenNames:Array[String],e:RecognitionException) =
-        syntaxErrorList += new CompilerMessage(position=toPosition(e.token),message=super.getErrorMessage(e, tokenNames) )
+        syntaxErrorList += new CompilerMessage(position=toPosition(e.token),message=super.getErrorMessage(e, tokenNames),Option(e.token.getText))
         	
     private implicit def anyToOption[A](value:A):Option[A] = Option(value)
 }

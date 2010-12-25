@@ -21,15 +21,16 @@ package at.jku.ssw.openvc
 import ast.declarations.DesignFile
 import ast.Position
 
-final class CompilerMessage(val position: Position, val message: String) {
+final class CompilerMessage(val position: Position, val message: String) extends Ordered[CompilerMessage] {
   override def toString = position + " " + message
+
+  override def compare(that: CompilerMessage): Int = this.position.compare(that.position)
 }
 
 object ASTBuilder {
 
-  import org.antlr.runtime.{ANTLRStringStream, ANTLRInputStream, CharStream, CommonTokenStream}
+  import org.antlr.runtime.{ANTLRStringStream, ANTLRFileStream, CharStream, CommonTokenStream}
   import at.jku.ssw.openvc.parser.{VHDLParser, VHDLLexer}
-  import java.io.{InputStream, FileInputStream}
 
   private final class CaseInsensitiveStringStream(input: String) extends ANTLRStringStream(input) {
     override def LA(i: Int): Int = {
@@ -39,7 +40,7 @@ object ASTBuilder {
     }
   }
 
-  private final class CaseInsensitiveInputStream(stream: InputStream) extends ANTLRInputStream(stream) {
+  private final class CaseInsensitiveFileStream(fileName: String) extends ANTLRFileStream(fileName) {
     override def LA(i: Int): Int = {
       val laToken = super.LA(i)
       if (laToken != 0 && laToken != CharStream.EOF) Character.toLowerCase(laToken)
@@ -49,18 +50,18 @@ object ASTBuilder {
 
   type ASTResult = (DesignFile, Seq[CompilerMessage])
 
-  private def fromCharStream(caseInsensitiveStringStream: CharStream, configuration: VHDLCompiler.Configuration): ASTResult = {
+  private def fromCharStream(caseInsensitiveStringStream: ANTLRStringStream, configuration: VHDLCompiler.Configuration): ASTResult = {
     val lexer = new VHDLLexer(caseInsensitiveStringStream)
     val tokens = new CommonTokenStream(lexer)
     val parser = new VHDLParser(tokens)
     lexer.ams = configuration.amsEnabled
     parser.ams = configuration.amsEnabled
     val designFile = parser.design_file()
-    (designFile, parser.syntaxErrors)
+    (designFile, parser.syntaxErrors ++ lexer.lexerErrors)
   }
 
   def fromFile(fileName: String, configuration: VHDLCompiler.Configuration): ASTResult =
-    fromCharStream(new CaseInsensitiveInputStream(new FileInputStream(fileName)), configuration)
+    fromCharStream(new CaseInsensitiveFileStream(fileName), configuration)
 
   def fromText(code: String, configuration: VHDLCompiler.Configuration): ASTResult =
     fromCharStream(new CaseInsensitiveStringStream(code), configuration)
@@ -90,8 +91,7 @@ object VHDLCompiler {
           }
         }
       }
-      printMessages("[err]", syntaxErrors)
-      printMessages("[err]", semanticErrors)
+      printMessages("[err]", (semanticErrors ++ syntaxErrors).sorted)
       printMessages("[warn]", semanticWarnings)
       writer.flush
     }
