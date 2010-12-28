@@ -145,7 +145,7 @@ tokens{
   	NATURE='nature';
   	TERMINAL='terminal';
   	QUANTITY='quantity';
-  	//TOLERANCE='tolerance';
+  	TOLERANCE='tolerance';
   	ACROSS='across';
   	THROUGH='through';
   	SPECTRUM='spectrum';
@@ -153,7 +153,7 @@ tokens{
   	SUBNATURE='subnature';
   	LIMIT='limit';
   	REFERENCE='reference';
-  	//BREAK='break';
+  	BREAK='break';
   	PROCEDURAL='procedural';
   		
   	DOUBLESTAR    = '**';
@@ -220,7 +220,7 @@ import at.jku.ssw.openvc.ast.Position
   	def lexerErrors: Seq[CompilerMessage] = this.lexerErrorList.result
 
 	override def displayRecognitionError(tokenNames: Array[String], e: RecognitionException) =
-	    lexerErrorList += new CompilerMessage(position = Position(e.line,e.charPositionInLine), message = super.getErrorMessage(e, tokenNames), if (e.token != null) Option(e.token.getText()) else None)
+	    lexerErrorList += new CompilerMessage(position = Position(e.line,e.charPositionInLine), message = super.getErrorMessage(e, tokenNames))
 }
 @parser::header{
 /*
@@ -269,7 +269,7 @@ import at.jku.ssw.openvc.util._
 	    else new Identifier(toPosition(token),token.getText())
 
     override def displayRecognitionError(tokenNames:Array[String],e:RecognitionException) =
-        syntaxErrorList += new CompilerMessage(position=toPosition(e.token),message=super.getErrorMessage(e, tokenNames),Option(e.token.getText))
+        syntaxErrorList += new CompilerMessage(position=toPosition(e.token),message=super.getErrorMessage(e, tokenNames))
         	
     private implicit def anyToOption[A](value:A):Option[A] = Option(value)
 }
@@ -663,7 +663,6 @@ ams_source_aspect returns [(Expression,Expression,Expression) source_aspect] :
 	SPECTRUM magnitude_simple_expression=simple_expression COMMA phase_simple_expression=simple_expression 
 	| NOISE power_simple_expression=simple_expression
 	{$source_aspect=($magnitude_simple_expression.simpleExpr,$phase_simple_expression.simpleExpr,$power_simple_expression.simpleExpr)};
-
 	
 constant_declaration returns [ConstantDeclaration constantDecl] :
 	CONSTANT identifier_list COLON subtype_indication (VAR_ASSIGN expression)? SEMICOLON 
@@ -982,10 +981,10 @@ subtype_declaration returns [SubTypeDeclaration subTypeDecl] :
 	{$subTypeDecl=new SubTypeDeclaration(toPosition($SUBTYPE),$identifier.id,$subtype_indication.subType)};
 		
 subtype_indication returns [SubTypeIndication subType] :
-	n1=selected_name n2=selected_name? constraint? //TODO {ams}?=>((TOLERANCE expression)?)
+	n1=selected_name n2=selected_name? constraint? ({ams}?=> TOLERANCE expression)?
 	{
-		$subType=if (n2!=null) new SubTypeIndication($n1.name_,$n2.name_,$constraint.constraint_)
-			else new SubTypeIndication(None,$n1.name_,$constraint.constraint_)
+		$subType=if (n2!=null) new SubTypeIndication($n1.name_,$n2.name_,$constraint.constraint_,$expression.expr)
+			else new SubTypeIndication(None,$n1.name_,$constraint.constraint_,$expression.expr)
 	};
   
 direction returns [Range.Direction.Value rangeDirection] :
@@ -1036,7 +1035,7 @@ concurrent_statement_list returns [Seq[ConcurrentStatement\] list]
 
 concurrent_statement returns [ConcurrentStatement stmt] :
 	  label=label_colon (
-			(COMPONENT | ENTITY | CONFIGURATION | BLOCK | IF | FOR | component_instantiation_statement[null])=>concurrent_statement_with_label[$label.label] {$stmt=$concurrent_statement_with_label.stmt}
+			(COMPONENT | (selected_name (GENERIC | PORT) MAP) | ENTITY | CONFIGURATION | BLOCK | (IF condition GENERATE) | FOR)=>concurrent_statement_with_label[$label.label] {$stmt=$concurrent_statement_with_label.stmt}
 			| concurrent_statement_optional_label[$label.label] {$stmt=$concurrent_statement_optional_label.stmt}
 			)
 		| concurrent_statement_optional_label[$label.label] {$stmt=$concurrent_statement_optional_label.stmt};
@@ -1047,20 +1046,16 @@ concurrent_statement_with_label[Identifier label] returns [ConcurrentStatement s
 	| generate_statement[$label] {$stmt=$generate_statement.generateStmt};
 				
 concurrent_statement_optional_label[Identifier label] returns [ConcurrentStatement stmt] :
-	(postponed=POSTPONED? 
+	ams_concurrent_break_statement[$label] {$stmt=$ams_concurrent_break_statement.breakStmt}
+	| ((simple_expression AMS_ASSIGN) | IF | PROCEDURAL | CASE | NULL)=>ams_simultaneous_statement[$label] {$stmt=$ams_simultaneous_statement.stmt}	
+	| postponed=POSTPONED? 
 		(
 		process_statement[$label,postponed!=null] {$stmt=$process_statement.processStmt}
 		| concurrent_assertion_statement[$label,postponed!=null] {$stmt=$concurrent_assertion_statement.assertStmt}
 		| (target LEQ | WITH)=>concurrent_signal_assignment_statement[$label,postponed!=null] {$stmt=$concurrent_signal_assignment_statement.concurrentSignalAssignStmt}
 		| concurrent_procedure_call_statement[$label,postponed!=null] {$stmt=$concurrent_procedure_call_statement.procedureCallStmt}
-		)
-	) 
-	| {ams}?=>(
-		ams_concurrent_break_statement[$label] {$stmt=$ams_concurrent_break_statement.breakStmt}
-		//| ams_simultaneous_statement[$label] {$stmt=$ams_simultaneous_statement.stmt} //TODO
-		)
-	//| {psl}?=>PSL_PSL_Directive 
-	;		
+		);
+	//| {psl}?=>PSL_PSL_Directive 		
 
 generic_map_aspect returns [AssociationList list] :
 	GENERIC MAP LPAREN association_list RPAREN {$list=$association_list.list};
@@ -1579,7 +1574,7 @@ interface_signal_declaration_procedure returns [InterfaceList.InterfaceSignalDec
 		
 interface_signal_declaration_function returns [InterfaceList.InterfaceSignalDeclaration signalElement] :
 	SIGNAL identifier_list COLON IN? subtype_indication BUS? (VAR_ASSIGN expression)?
-	{$signalElement=new InterfaceList.InterfaceSignalDeclaration($identifier_list.list,InterfaceList.InterfaceMode.IN,$subtype_indication.subType,$BUS!=null,$expression.expr)};
+	{$signalElement=new InterfaceList.InterfaceSignalDeclaration($identifier_list.list,InterfaceList.Mode.IN,$subtype_indication.subType,$BUS!=null,$expression.expr)};
 	
 interface_variable_declaration returns [InterfaceList.InterfaceVariableDeclaration varElement] :
 	VARIABLE? identifier_list COLON interface_mode? subtype_indication (VAR_ASSIGN expression)?
@@ -1603,8 +1598,8 @@ ams_interface_terminal_declaration returns [InterfaceList.InterfaceTerminalDecla
 ams_interface_quantity_declaration returns [InterfaceList.InterfaceQuantityDeclaration quantityDecl] :
 	QUANTITY identifier_list COLON (IN|out=OUT)? subtype_indication (VAR_ASSIGN expression)?
 	{
-		val mode= if ($out!=null) InterfaceList.InterfaceMode.OUT
-			else InterfaceList.InterfaceMode.IN
+		val mode= if ($out!=null) InterfaceList.Mode.OUT
+			else InterfaceList.Mode.IN
 		$quantityDecl=new InterfaceList.InterfaceQuantityDeclaration($identifier_list.list,mode,$subtype_indication.subType,$expression.expr)
 	};
 	
@@ -1648,7 +1643,8 @@ actual_part returns [Either[Expression,Identifier\] actual_part_ ] :
 condition returns [Expression con] :
 	expression {$con=$expression.expr};  
 	 
-expression returns [Expression expr] :
+expression returns [Expression expr]
+@after{if ($expr==null) $expr=NoExpression}:
 	r1=relation (
 	   (nand=NAND|nor=NOR) r2=relation {$expr=new LogicalExpression(toPosition(if($nand ne null) $nand else $nor),$r1.rel,if ($nand ne null) LogicalExpression.Operator.NAND else LogicalExpression.Operator.NOR,$r2.rel)}
 	   | {$expr=$r1.rel} (logical_operator r2=relation {$expr=new LogicalExpression($logical_operator.pos,$expr,$logical_operator.logOp,$r2.rel)})*
@@ -1665,7 +1661,8 @@ logical_operator returns [LogicalExpression.Operator.Value logOp,Position pos]
 	//NAND and NOR are handled in expression
 	;
 
-relation returns [Expression rel] :
+relation returns [Expression rel]
+@after{if ($rel==null) $rel=NoExpression} :
 	s1=shift_expression {$rel=$s1.shiftExpr}
 	(op=relational_operator s2=shift_expression {$rel=new Relation($op.pos,$s1.shiftExpr,$op.relOp,$s2.shiftExpr)})?;
 
@@ -1681,7 +1678,8 @@ relational_operator returns [Relation.Operator.Value relOp,Position pos]
 	| GEQ {$relOp=Relation.Operator.GEQ};
 
 	
-shift_expression returns [Expression shiftExpr] :
+shift_expression returns [Expression shiftExpr]
+@after{if ($shiftExpr==null) $shiftExpr=NoExpression} :
 	s1=simple_expression { $shiftExpr=$s1.simpleExpr}
 	(op=shift_operator s2=simple_expression {$shiftExpr=new ShiftExpression($op.pos,$s1.simpleExpr,$op.shiftOp,$s2.simpleExpr)})?;
 
@@ -1696,7 +1694,8 @@ shift_operator returns [ShiftExpression.Operator.Value shiftOp,Position pos]
 	| ROL {$shiftOp=ShiftExpression.Operator.ROL}
 	| ROR {$shiftOp=ShiftExpression.Operator.ROR};
 		
-simple_expression returns [Expression simpleExpr] :
+simple_expression returns [Expression simpleExpr]
+@after{if ($simpleExpr==null) $simpleExpr=NoExpression} :
 	s=sign? t1=term 
 	{simpleExpr=if (s!=null) new SimpleExpression($s.pos,$s.signOp,$t1.term_,None,None) else $t1.term_}
 	( op=adding_operator t2=term {$simpleExpr=new SimpleExpression($op.pos,None,$simpleExpr,$op.addOp,$t2.term_)})*;
@@ -1725,11 +1724,13 @@ multiplying_operator returns [Term.Operator.Value mulOp,Position pos]
 	| MOD {$mulOp=Term.Operator.MOD}
 	| REM {$mulOp=Term.Operator.REM};
 
-term returns [Expression term_] :
+term returns [Expression term_]
+@after{if ($term_ ==null) $term_ = NoExpression}:
 	f1=factor {$term_ = $f1.factor_} 
 	( multiplying_operator f2=factor {$term_ = new Term($multiplying_operator.pos,$term_,$multiplying_operator.mulOp,$f2.factor_)})*;
  
-factor returns [Expression factor_] :
+factor returns [Expression factor_]
+@after{if ($factor_ ==null) $factor_ = NoExpression}:
 	p1=primary{$factor_ = $p1.obj}(DOUBLESTAR p2=primary {$factor_ = new Factor(toPosition($DOUBLESTAR),$p1.obj,Factor.Operator.POW,$p2.obj)})?
 	| ABS primary {$factor_ = new Factor(toPosition($ABS),$primary.obj,Factor.Operator.ABS)}
 	| NOT primary {$factor_ = new Factor(toPosition($NOT),$primary.obj,Factor.Operator.NOT)}
@@ -1743,7 +1744,8 @@ factor returns [Expression factor_] :
 	*/
 	;
 
-primary returns [Expression obj] :
+primary returns [Expression obj]
+@after{if ($obj==null) $obj=NoExpression}:
 	selected_name qualified_expression[$selected_name.name_] {$obj=$qualified_expression.expr}
 	| name {$obj=$name.name_}
 	| literal {$obj=$literal.literal_} 
@@ -1753,7 +1755,7 @@ primary returns [Expression obj] :
 allocator returns [Expression newExpression] :
 	NEW selected_name 
 		( qualified_expression[$selected_name.name_] {$newExpression=new NewExpression(toPosition($NEW),Left($qualified_expression.expr))}
-	 	| index_constraint? {$newExpression=new NewExpression(toPosition($NEW),Right(new SubTypeIndication(None,$selected_name.name_,if ($index_constraint.ranges==null) None else Right($index_constraint.ranges))))}
+	 	| index_constraint? {$newExpression=new NewExpression(toPosition($NEW),Right(new SubTypeIndication(None,$selected_name.name_,if ($index_constraint.ranges==null) None else Right($index_constraint.ranges),None)))}
 	 	);
 	
 qualified_expression[SelectedName typeName] returns [QualifiedExpression expr] :
@@ -1799,7 +1801,8 @@ name_part returns [Name.Part part] :
 	| name_slice_part {$part = $name_slice_part.part}; 
 
 			
-name_selected_part returns [Name.SelectedPart part] :
+name_selected_part returns [Name.SelectedPart part] 
+@init{$part=new Name.SelectedPart(Identifier.NoIdentifier)}:
 	DOT (
 	identifier{$part= new Name.SelectedPart($identifier.id)}
 	| CHARACTER_LITERAL {$part= new Name.SelectedPart(toIdentifier($CHARACTER_LITERAL))}
@@ -1858,7 +1861,7 @@ literal returns [Expression literal_]
 		| NULL {literalType=Literal.Type.NULL_LITERAL}
 	)
 	{$literal_ =new Literal(position,input.LT(-1).getText(),literalType)}
-	({input.LA(-1)==INTEGER_LITERAL || input.LA(-1)==REAL_LITERAL /*|| input.LA(-1)==BASED_LITERAL*/}?=> selected_name {$literal_ = new PhysicalLiteral($literal_.asInstanceOf[Literal],$selected_name.name_)})?;
+	({input.LA(-1)==INTEGER_LITERAL || input.LA(-1)==REAL_LITERAL || input.LA(-1)==BASED_LITERAL}?=> selected_name {$literal_ = new PhysicalLiteral($literal_.asInstanceOf[Literal],$selected_name.name_)})?;
 	
 physical_literal returns [PhysicalLiteral literal_]
 @init{
@@ -1869,7 +1872,7 @@ physical_literal returns [PhysicalLiteral literal_]
 	(
 		INTEGER_LITERAL {text=input.LT(-1).getText(); literalType=Literal.Type.INTEGER_LITERAL}
 		| REAL_LITERAL {text=input.LT(-1).getText(); literalType=Literal.Type.REAL_LITERAL}
-		//| BASED_LITERAL {str=input.LT(-1).getText(); literalType=Literal.Type.BASED_LITERAL} //TODO
+		| BASED_LITERAL {text=input.LT(-1).getText(); literalType=Literal.Type.BASED_LITERAL}
 	) selected_name
 	{$literal_ =new PhysicalLiteral(position,text,$selected_name.name_,literalType)};
 	
@@ -1923,10 +1926,25 @@ identifier_list returns [Seq[Identifier\] list]
 } :
 	id1=identifier {identifiers += $id1.id} (COMMA id2=identifier {identifiers += $id2.id} )* 
 	{$list=identifiers.result};
-			
-identifier returns [Identifier id] :
-	BASIC_IDENTIFIER {$id=toIdentifier(input.LT(-1))}
-	| EXTENDED_IDENTIFIER {$id=toIdentifier(input.LT(-1),false)};
+
+identifier returns [Identifier id] 
+@init{$id = Identifier.NoIdentifier}:
+	(BASIC_IDENTIFIER
+	| EXTENDED_IDENTIFIER
+	| {!ams}?=>(NATURE
+		| TERMINAL
+	  	| QUANTITY
+	  	| TOLERANCE
+	  	| ACROSS
+	  	| THROUGH
+	  	| SPECTRUM
+	  	| NOISE
+	  	| SUBNATURE
+	  	| LIMIT
+	  	| REFERENCE
+  		| BREAK
+	  	| PROCEDURAL))
+	  {$id = if (input.LA(-1) == EXTENDED_IDENTIFIER) toIdentifier(input.LT(-1),false) else toIdentifier(input.LT(-1))};
 	
 /* VHDL 2008	
 tool_directive : '\'' identifier GRAPHIC_CHARACTER*;
@@ -1934,10 +1952,6 @@ tool_directive : '\'' identifier GRAPHIC_CHARACTER*;
 
 label_colon returns [Identifier label] :
 	identifier COLON {$label=$identifier.id};
-    
-BREAK : 'break' {if (!ams) $type=BASIC_IDENTIFIER};
-
-TOLERANCE : 'tolerance' {if (!ams) $type=BASIC_IDENTIFIER};
 
 // Lexer rules
 WS : ( '\t' | ' ' | '\r' | '\n' )+ {skip()};

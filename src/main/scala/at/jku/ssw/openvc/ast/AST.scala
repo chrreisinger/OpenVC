@@ -81,6 +81,8 @@ trait Locatable {
 abstract sealed class ASTNode extends Locatable
 
 object Identifier {
+  val NoIdentifier = Identifier("$NoIdentifier")
+
   def apply(position: Position, text: String) = new Identifier(position, text)
 
   def apply(text: String) = new Identifier(Position.NoPosition, text)
@@ -157,7 +159,7 @@ final class DiscreteRange(val rangeOrSubTypeIndication: Either[Range, SubTypeInd
  * Represents a subtype indication
  *
  * grammar: <pre>
- * selected_name [selected_name] [constraint]
+ * selected_name [selected_name] [constraint] [{ams}?=> '''TOLERANCE''' expression]
  *
  * where contraint is:
  *
@@ -173,8 +175,9 @@ final class DiscreteRange(val rangeOrSubTypeIndication: Either[Range, SubTypeInd
  * @param typeName the name of the type or subtype
  * @param constraint the optional contraint for the new subtype
  * @param dataType the new created data Type for this sub type indication
+ * @param amsToleranceExpression the AMS tolerance expression
  */
-final case class SubTypeIndication(resolutionFunction: Option[SelectedName], typeName: SelectedName, constraint: Option[Either[Range, Seq[DiscreteRange]]], dataType: DataType = NoType) extends Locatable {
+final case class SubTypeIndication(resolutionFunction: Option[SelectedName], typeName: SelectedName, constraint: Option[Either[Range, Seq[DiscreteRange]]], amsToleranceExpression: Option[Expression], dataType: DataType = NoType) extends Locatable {
   val position = resolutionFunction.getOrElse(typeName).position
 }
 

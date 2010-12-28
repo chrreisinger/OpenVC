@@ -481,7 +481,7 @@ object SemanticAnalyzer {
     def visitPhysicalLiteral(literal: PhysicalLiteral): Expression =
       context.findSymbol(literal.unitName, classOf[UnitSymbol]) match {
         case Some(unitSymbol) => literal.copy(unitSymbol = unitSymbol)
-        case _ => literal
+        case _ => literal ////| BASED_LITERAL {str=input.LT(-1).getText(); literalType=Literal.Type.BASED_LITERAL} //TODO
       }
 
     def visitLiteral(literal: Literal): Expression = {
@@ -519,13 +519,13 @@ object SemanticAnalyzer {
           val Regex = "(b|o|x)\"([a-f0-9]+)\"".r
           literal.text.replace("_", "").toLowerCase match {
             case Regex(baseSpecifier, values) =>
-              val INVALID_BASED_LITERAL_CHARACTER = " invalid character %s in based literal with base %s"
+              val INVALID_BIT_STRING_LITERAL_CHARACTER = " invalid character %s in bit string literal with base %s"
               val valueString = baseSpecifier match {
                 case "b" =>
                   if (values.zipWithIndex.forall{
                     case (character, i) =>
                       if (character != '0' && character != '1') {
-                        addErrorPosition(literal.position.addCharacterOffset(i + 1), INVALID_BASED_LITERAL_CHARACTER, character.toString, "binary")
+                        addErrorPosition(literal.position.addCharacterOffset(i + 1), INVALID_BIT_STRING_LITERAL_CHARACTER, character.toString, "binary")
                         false
                       } else true
                   }) Integer.parseInt(values, 2).toBinaryString
@@ -541,7 +541,7 @@ object SemanticAnalyzer {
                       }
                     }
                     else {
-                      addErrorPosition(literal.position.addCharacterOffset(i + 1), INVALID_BASED_LITERAL_CHARACTER, character.toString, "octal")
+                      addErrorPosition(literal.position.addCharacterOffset(i + 1), INVALID_BIT_STRING_LITERAL_CHARACTER, character.toString, "octal")
                       "000"
                     }
                 }.mkString
@@ -557,7 +557,7 @@ object SemanticAnalyzer {
                       }
                     }
                     else {
-                      addErrorPosition(literal.position.addCharacterOffset(i + 1), INVALID_BASED_LITERAL_CHARACTER, character.toString, "octal")
+                      addErrorPosition(literal.position.addCharacterOffset(i + 1), INVALID_BIT_STRING_LITERAL_CHARACTER, character.toString, "hexadecimal")
                       "0000"
                     }
                 }.mkString
