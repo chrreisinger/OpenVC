@@ -934,7 +934,7 @@ import at.jku.ssw.openvc.symbolTable.dataTypes.ProtectedType
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.process_declarative_item]]
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.ams_simultaneous_procedural_declarative_item]]
  */
-abstract sealed class DeclarativeItem extends ASTNode
+sealed trait DeclarativeItem extends ASTNode
 
 object EntityClass extends Enumeration {
   val ENTITY, ARCHITECTURE, CONFIGURATION, PACKAGE, PROCEDURE, FUNCTION, TYPE, SUBTYPE, CONSTANT, SIGNAL, VARIABLE, FILE, COMPONENT, LABEL,
@@ -1179,7 +1179,7 @@ final case class EntityDeclaration(identifier: Identifier, genericInterfaceList:
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.package_declaration]]
  */
-final case class PackageDeclaration(identifier: Identifier, declarativeItems: Seq[DeclarativeItem], endIdentifier: Option[Identifier], symbol: PackageSymbol = null) extends LibraryUnit
+final case class PackageDeclaration(identifier: Identifier, declarativeItems: Seq[DeclarativeItem], endIdentifier: Option[Identifier], symbol: PackageSymbol = null) extends LibraryUnit with DeclarativeItem
 
 /**
  * Represents a package body declaration
@@ -1195,7 +1195,7 @@ final case class PackageDeclaration(identifier: Identifier, declarativeItems: Se
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.package_body]]
  */
-final case class PackageBodyDeclaration(identifier: Identifier, declarativeItems: Seq[DeclarativeItem], endIdentifier: Option[Identifier], symbol: PackageSymbol = null) extends LibraryUnit
+final case class PackageBodyDeclaration(identifier: Identifier, declarativeItems: Seq[DeclarativeItem], endIdentifier: Option[Identifier], symbol: PackageSymbol = null) extends LibraryUnit with DeclarativeItem
 
 abstract sealed class SubProgramDefinition extends DeclarativeItem {
   val parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]]

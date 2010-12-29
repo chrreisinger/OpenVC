@@ -55,7 +55,9 @@ object ASTBuilder {
     val tokens = new CommonTokenStream(lexer)
     val parser = new VHDLParser(tokens)
     lexer.ams = configuration.amsEnabled
+    lexer.vhdl2008 = configuration.vhdl2008
     parser.ams = configuration.amsEnabled
+    parser.vhdl2008 = configuration.vhdl2008
     val designFile = parser.design_file()
     (designFile, parser.syntaxErrors ++ lexer.lexerErrors)
   }
@@ -72,7 +74,7 @@ object VHDLCompiler {
   import at.jku.ssw.openvc.backend.jvm.ByteCodeGenerator
   import java.io.PrintWriter
 
-  final class Configuration(val amsEnabled: Boolean, val parseOnly: Boolean, val outputDirectory: String, val designLibrary: String, val libraryDirectory: String, val debugCompiler: Boolean, val debugCodeGenerator: Boolean) {
+  final class Configuration(val amsEnabled: Boolean, val vhdl2008: Boolean, val parseOnly: Boolean, val outputDirectory: String, val designLibrary: String, val libraryDirectory: String, val debugCompiler: Boolean, val debugCodeGenerator: Boolean) {
     val libraryOutputDirectory = outputDirectory + designLibrary + java.io.File.separator
   }
 
