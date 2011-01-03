@@ -909,7 +909,7 @@ final case class BlockStatement(position: Position, label: Option[Identifier], g
                                 genericAssociationList: Option[AssociationList], portInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], portAssociationList: Option[AssociationList],
                                 declarativeItems: Seq[declarations.DeclarativeItem], concurrentStatements: Seq[ConcurrentStatement], endLabel: Option[Identifier]) extends ConcurrentStatement
 
-final case class ConcurrentBreakStatement(position: Position, label: Option[Identifier], breakElements: Option[Seq[ams.BreakElement]], onNameList: Option[Seq[SelectedName]], whenExpression: Option[Expression]) extends ConcurrentStatement
+final case class ConcurrentBreakStatement(position: Position, label: Option[Identifier], breakElements: Option[Seq[ams.BreakElement]], onNameList: Option[Seq[Name]], whenExpression: Option[Expression]) extends ConcurrentStatement
 
 }
 
@@ -1439,12 +1439,10 @@ abstract sealed class AbstractQuantityDeclaration extends declarations.Declarati
 
 final case class FreeQuantityDeclaration(position: Position, identifiers: Seq[Identifier], subType: SubTypeIndication, expression: Option[Expression]) extends AbstractQuantityDeclaration
 
-final case class BranchQuantityDeclaration(position: Position, acrossIdentifiers: Option[Seq[Identifier]], acrossToleranceExpression: Option[Expression], acrossExpression: Option[Expression],
-                                           throughIdentifiers: Option[Seq[Identifier]], throughToleranceExpression: Option[Expression], throughExpression: Option[Expression],
-                                           terminalPlusName: Name, terminalMinusName: Option[Name]) extends AbstractQuantityDeclaration
+final case class BranchQuantityDeclaration(position: Position, acrossAspect: Option[(Seq[Identifier], Option[Expression], Option[Expression])], throughAspect: Option[(Seq[Identifier], Option[Expression], Option[Expression])],
+                                           terminalAspect: Option[(Name, Option[Name])]) extends AbstractQuantityDeclaration
 
-final case class SourceQuantityDeclaration(position: Position, identifiers: Seq[Identifier], subType: SubTypeIndication, spectrumMagnitudeExpression: Expression,
-                                           spectrumPhaseExpression: Expression, noiseExpression: Expression) extends AbstractQuantityDeclaration
+final case class SourceQuantityDeclaration(position: Position, identifiers: Seq[Identifier], subType: SubTypeIndication, sourceAspect: Either[(Expression, Expression), Expression]) extends AbstractQuantityDeclaration
 
 }
 

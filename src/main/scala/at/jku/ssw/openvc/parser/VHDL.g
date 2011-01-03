@@ -122,13 +122,6 @@ tokens{
 	WITH='with';
 	XNOR='xnor';
 	XOR='xor';
-
-	//VHDL-2008 KEYWORDS
-	CONTEXT='context';
-	FORCE='force';
-	PARAMETER='parameter';
-	RELEASE='release';
-	DEFAULT='default';
 	
 	//PSL KEYWORDS
 	/*ASSUME='assume';
@@ -143,22 +136,7 @@ tokens{
 	VMODE='vmode';
 	VPROP='vprop';
 	VUNIT='vunit';*/
-	  	
-  	//VHDL-AMS KEYWORDS
-  	NATURE='nature';
-  	TERMINAL='terminal';
-  	QUANTITY='quantity';
-  	TOLERANCE='tolerance';
-  	ACROSS='across';
-  	THROUGH='through';
-  	SPECTRUM='spectrum';
-  	NOISE='noise';
-  	SUBNATURE='subnature';
-  	LIMIT='limit';
-  	REFERENCE='reference';
-  	BREAK='break';
-  	PROCEDURAL='procedural';
-  		
+	
   	DOUBLESTAR    = '**';
   	AMS_ASSIGN    = '==';
   	LEQ           = '<=';
@@ -221,9 +199,6 @@ import at.jku.ssw.openvc._
 import at.jku.ssw.openvc.ast.Position
 }
 @lexer::members{
-	var ams=false
-	var vhdl2008=false
-
 	type Buffer[A] = scala.collection.immutable.VectorBuilder[A] //scala.collection.mutable.ListBuffer[A]
 
 	private val lexerErrorList = new Buffer[CompilerMessage]()
@@ -264,10 +239,6 @@ import at.jku.ssw.openvc.ast.ams._
 import at.jku.ssw.openvc.util._
 }
 @parser::members{
-	var ams=false
-	var vhdl2008=false
-	val psl=false
-	
 	type Buffer[A] = scala.collection.immutable.VectorBuilder[A] //scala.collection.mutable.ListBuffer[A]
 	
 	private val syntaxErrorList = new Buffer[CompilerMessage]()
@@ -300,12 +271,13 @@ design_unit returns [DesignUnit designUnit]
 @init{
 	val libraries=new Buffer[Identifier]()
 	val useClauses=new Buffer[UseClause]()
+	val contextReferences=new Buffer[SelectedName]()
 	val position=toPosition(input.LT(1))
 } :
 	(
 		library_clause {libraries ++= $library_clause.identifierList}
 		| use_clause {useClauses += $use_clause.useClause}
-		| {vhdl2008}?=>v2008_context_reference
+		| {vhdl2008}?=>v2008_context_reference {contextReferences ++= $v2008_context_reference.contextReference}
 	)* library_unit 
 	{$designUnit=new DesignUnit(position,libraries.result,useClauses.result,$library_unit.libraryUnit)};
 	
@@ -314,8 +286,8 @@ library_unit returns [LibraryUnit libraryUnit] :
 	| architecture_body {$libraryUnit=$architecture_body.archDecl}
 	| package_declaration {$libraryUnit=$package_declaration.packageDecl}
 	| package_body {$libraryUnit=$package_body.packageBody}
-	| {vhdl2008}?=>v2008_package_instantiation_declaration
-	| {vhdl2008}?=>v2008_context_declaration
+	| {vhdl2008}?=>v2008_package_instantiation_declaration //{$libraryUnit=$v2008_package_instantiation_declaration.packageInstantiationDecl}
+	| {vhdl2008}?=>v2008_context_declaration //{$libraryUnit=$v2008_context_declaration.contextDecl}
 	| configuration_declaration {$libraryUnit=$configuration_declaration.configDecl}
 	//| {psl}?=>PSL_Verification_Unit
 	;
@@ -323,7 +295,8 @@ library_unit returns [LibraryUnit libraryUnit] :
 library_clause returns [Seq[Identifier\] identifierList] : 
 	LIBRARY identifier_list SEMICOLON {$identifierList=$identifier_list.list}; 
 
-v2008_context_reference : CONTEXT selected_name_list SEMICOLON;
+v2008_context_reference returns [Seq[SelectedName\] contextReference] :
+	CONTEXT selected_name_list SEMICOLON {$contextReference = $selected_name_list.list};
 
 //B.2 Library Unit Declarations
 generic_clause returns [Seq[InterfaceList.AbstractInterfaceElement\] list] :
@@ -343,9 +316,9 @@ port_clause returns [Seq[InterfaceList.AbstractInterfaceElement\] list] :
 
 port_interface_list returns [Seq[InterfaceList.AbstractInterfaceElement\] list]
 @init{
-	val elements=new Buffer[InterfaceList.InterfaceSignalDeclaration]()
+	val elements=new Buffer[InterfaceList.AbstractInterfaceElement]()
 } :
-	decl1=interface_signal_declaration_procedure {elements += $decl1.signalElement} ( SEMICOLON decl2=interface_signal_declaration_procedure {elements += $decl2.signalElement})*
+	decl1=inteface_element_port {elements += $decl1.element} ( SEMICOLON decl2=inteface_element_port {elements += $decl2.element})*
 	{$list = elements.result};
     		
 entity_declaration returns [EntityDeclaration entityDecl]
@@ -371,24 +344,24 @@ entity_declaration returns [EntityDeclaration entityDecl]
 		
 entity_declarative_item returns [DeclarativeItem item] :
 	subprogram_declartion_or_body {item=$subprogram_declartion_or_body.declOrBody}
-	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration
-			| package_declaration {item=$package_declaration.packageDecl}
-			| package_body{item=$package_body.packageBody}
-			| v2008_package_instantiation_declaration
+	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration {$item=$v2008_subprogram_instantiation_declaration.subprogramInstantiationDecl}
+			| package_declaration {$item=$package_declaration.packageDecl}
+			| package_body {$item=$package_body.packageBody}
+			| v2008_package_instantiation_declaration {$item=$v2008_package_instantiation_declaration.packageInstantiationDecl}
 			)
-	| type_declaration {item=$type_declaration.typeDecl}
-	| subtype_declaration {item=$subtype_declaration.subTypeDecl}
-	| constant_declaration {item=$constant_declaration.constantDecl}
-	| signal_declaration {item=$signal_declaration.signalDecl}
-	| variable_declaration {item=$variable_declaration.varDecl}
-	| file_declaration {item=$file_declaration.fileDecl}
-	| alias_declaration {item=$alias_declaration.aliasDecl}
-	| attribute_declaration {item=$attribute_declaration.attributeDecl}
-	| attribute_specification {item=$attribute_specification.attributeSpec}
-	| disconnection_specification {item=$disconnection_specification.disconnectSpec}
-	| use_clause {item=$use_clause.useClause}
-	| group_template_declaration {item=$group_template_declaration.groupTemplateDecl}
-	| group_declaration {item=$group_declaration.groupDecl}
+	| type_declaration {$item=$type_declaration.typeDecl}
+	| subtype_declaration {$item=$subtype_declaration.subTypeDecl}
+	| constant_declaration {$item=$constant_declaration.constantDecl}
+	| signal_declaration {$item=$signal_declaration.signalDecl}
+	| variable_declaration {$item=$variable_declaration.varDecl}
+	| file_declaration {$item=$file_declaration.fileDecl}
+	| alias_declaration {$item=$alias_declaration.aliasDecl}
+	| attribute_declaration {$item=$attribute_declaration.attributeDecl}
+	| attribute_specification {$item=$attribute_specification.attributeSpec}
+	| disconnection_specification {$item=$disconnection_specification.disconnectSpec}
+	| use_clause {$item=$use_clause.useClause}
+	| group_template_declaration {$item=$group_template_declaration.groupTemplateDecl}
+	| group_declaration {$item=$group_declaration.groupDecl}
 	//| {psl}?=>PSL_Property_Declaration | {psl}?=>PSL_Sequence_Declaration
 	//| {psl}?=>PSL_Clock_Declaration 
 	| {ams}?=>
@@ -460,7 +433,7 @@ component_configuration returns [ComponentConfiguration componentConfig] :
 	END FOR SEMICOLON
 	{$componentConfig=new ComponentConfiguration($component_specification.spec,$binding_indication.indication,$block_configuration.blockConfig)};
 	
-v2008_context_declaration :
+v2008_context_declaration returns [DeclarativeItem contextDecl]:
 	CONTEXT identifier IS 
 		(library_clause | use_clause | v2008_context_reference)*
 	END CONTEXT? identifier? SEMICOLON;
@@ -479,9 +452,9 @@ package_declaration returns [PackageDeclaration packageDecl]
 		
 package_declarative_item returns [DeclarativeItem item] :
 	subprogram_declaration {$item=$subprogram_declaration.subprogramDecl}
-	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration
-			| package_declaration {item=$package_declaration.packageDecl}
-			| v2008_package_instantiation_declaration
+	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration {$item=$v2008_subprogram_instantiation_declaration.subprogramInstantiationDecl}
+			| package_declaration {$item=$package_declaration.packageDecl}
+			| v2008_package_instantiation_declaration {$item=$v2008_package_instantiation_declaration.packageInstantiationDecl}
 			)
 	| type_declaration {$item=$type_declaration.typeDecl}
 	| subtype_declaration {$item=$subtype_declaration.subTypeDecl}
@@ -515,10 +488,10 @@ package_body returns [PackageBodyDeclaration packageBody]
     
 package_body_declarative_item returns [DeclarativeItem item] :
 	subprogram_declartion_or_body {$item=$subprogram_declartion_or_body.declOrBody}
-	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration
-			| package_declaration {item=$package_declaration.packageDecl}
+	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration {$item=$v2008_subprogram_instantiation_declaration.subprogramInstantiationDecl}
+			| package_declaration {$item=$package_declaration.packageDecl}
 			| package_body {$item=$package_body.packageBody}
-			| v2008_package_instantiation_declaration
+			| v2008_package_instantiation_declaration {$item=$v2008_package_instantiation_declaration.packageInstantiationDecl}
 			)
 	| type_declaration {$item=$type_declaration.typeDecl}
 	| subtype_declaration {$item=$subtype_declaration.subTypeDecl}
@@ -533,8 +506,8 @@ package_body_declarative_item returns [DeclarativeItem item] :
 	| group_template_declaration {$item=$group_template_declaration.groupTemplateDecl}
 	| group_declaration {$item=$group_declaration.groupDecl};
 
-v2008_package_instantiation_declaration :
-	PACKAGE identifier IS NEW uninstantiated_package_name=name
+v2008_package_instantiation_declaration returns [DeclarativeItem packageInstantiationDecl] :
+	PACKAGE identifier IS NEW uninstantiated_package_name=selected_name
 		generic_map_aspect? SEMICOLON;
 
 designator returns [Identifier id] :
@@ -579,10 +552,10 @@ subprogram_body[SubProgramDeclaration subprogramDecl] returns [SubProgramDefinit
     	
 subprogram_declarative_item returns [DeclarativeItem item] :
 	subprogram_declartion_or_body {$item=$subprogram_declartion_or_body.declOrBody}
-	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration
-			| package_declaration {item=$package_declaration.packageDecl}
+	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration {$item=$v2008_subprogram_instantiation_declaration.subprogramInstantiationDecl}
+			| package_declaration {$item=$package_declaration.packageDecl}
 			| package_body {$item=$package_body.packageBody}
-			| v2008_package_instantiation_declaration
+			| v2008_package_instantiation_declaration {$item=$v2008_package_instantiation_declaration.packageInstantiationDecl}
 			)
 	| type_declaration {$item=$type_declaration.typeDecl}
 	| subtype_declaration {$item=$subtype_declaration.subTypeDecl}
@@ -596,9 +569,9 @@ subprogram_declarative_item returns [DeclarativeItem item] :
 	| group_template_declaration {$item=$group_template_declaration.groupTemplateDecl}
 	| group_declaration {$item=$group_declaration.groupDecl};
 
-v2008_subprogram_instantiation_declaration :
+v2008_subprogram_instantiation_declaration returns [DeclarativeItem subprogramInstantiationDecl] :
 	(PROCEDURE | FUNCTION) IS
-		NEW uninstantiated_subprogram_name=name signature?
+		NEW uninstantiated_subprogram_name=selected_name signature?
 			generic_map_aspect? SEMICOLON;
 
 type_declaration returns [AbstractTypeDeclaration typeDecl] :
@@ -633,42 +606,37 @@ ams_nature_definition[Identifier id,Position pos] returns [AbstractTypeDeclarati
 	| ams_record_nature_definition[$id,pos] {$natureDef=$ams_record_nature_definition.natureDef};
 
 ams_quantity_declaration returns [AbstractQuantityDeclaration quantityDecl] :
-	(ams_free_quantity_declaration)=> ams_free_quantity_declaration {$quantityDecl=$ams_free_quantity_declaration.quantityDecl}
-	| (ams_branch_quantity_declaration)=> ams_branch_quantity_declaration {$quantityDecl=$ams_branch_quantity_declaration.quantityDecl}
-	| ams_source_quantity_declaration {$quantityDecl=$ams_source_quantity_declaration.quantityDecl};
+	(QUANTITY identifier_list COLON)=> ams_source_or_free_quantity_declaration {$quantityDecl=$ams_source_or_free_quantity_declaration.quantityDecl}
+	| ams_branch_quantity_declaration {$quantityDecl=$ams_branch_quantity_declaration.quantityDecl};
  
- ams_free_quantity_declaration returns [FreeQuantityDeclaration quantityDecl] :
- 	QUANTITY identifier_list COLON subtype_indication (VAR_ASSIGN expression)? SEMICOLON
-	{$quantityDecl=new FreeQuantityDeclaration(toPosition($QUANTITY),$identifier_list.list,$subtype_indication.subType,$expression.expr)};
+ams_source_or_free_quantity_declaration returns [AbstractQuantityDeclaration quantityDecl] :
+ 	QUANTITY identifier_list COLON subtype_indication 
+ 		(
+ 		(VAR_ASSIGN expression)?
+ 			{$quantityDecl=new FreeQuantityDeclaration(toPosition($QUANTITY),$identifier_list.list,$subtype_indication.subType,$expression.expr)}
+		|source_aspect=ams_source_aspect 
+			{$quantityDecl=new SourceQuantityDeclaration(toPosition($QUANTITY),$identifier_list.list,$subtype_indication.subType,$ams_source_aspect.source_aspect)}
+		) SEMICOLON;	
   
 ams_branch_quantity_declaration returns [BranchQuantityDeclaration quantityDecl] :
-	QUANTITY ( (ams_across_aspect)=> across_aspect=ams_across_aspect)? through_aspect=ams_through_aspect? terminal_aspect=ams_terminal_aspect SEMICOLON
-	{
- 		$quantityDecl=new BranchQuantityDeclaration(toPosition($QUANTITY),$across_aspect.across_aspect._1,$across_aspect.across_aspect._2,$across_aspect.across_aspect._3,
-			$through_aspect.through_aspect._1,$through_aspect.through_aspect._2,$through_aspect.through_aspect._3,
- 			$terminal_aspect.terminal_aspect._1,$terminal_aspect.terminal_aspect._2)
-	 };
-  
-ams_source_quantity_declaration returns [SourceQuantityDeclaration quantityDecl] :
-	QUANTITY identifier_list COLON subtype_indication source_aspect=ams_source_aspect SEMICOLON
-  	{$quantityDecl=new SourceQuantityDeclaration(toPosition($QUANTITY),$identifier_list.list,$subtype_indication.subType,$source_aspect.source_aspect._1,$source_aspect.source_aspect._2,$source_aspect.source_aspect._3)};
+	QUANTITY ( (ams_across_aspect)=> ams_across_aspect)? ams_through_aspect? ams_terminal_aspect SEMICOLON
+	{$quantityDecl=new BranchQuantityDeclaration(toPosition($QUANTITY),$ams_across_aspect.across_aspect,$ams_through_aspect.through_aspect,$ams_terminal_aspect.terminal_aspect)};
 
-ams_across_aspect returns [(Seq[Identifier\],Expression,Expression) across_aspect] :
+ams_across_aspect returns [(Seq[Identifier\],Option[Expression\],Option[Expression\]) across_aspect] :
 	identifier_list (TOLERANCE toleranceExpression=expression)? (VAR_ASSIGN defaultExpression=expression)? ACROSS
 	{$across_aspect=($identifier_list.list,$toleranceExpression.expr,$defaultExpression.expr)};
 	
-ams_through_aspect returns [(Seq[Identifier\],Expression,Expression) through_aspect] :
+ams_through_aspect returns [(Seq[Identifier\],Option[Expression\],Option[Expression\]) through_aspect] :
 	identifier_list (TOLERANCE toleranceExpression=expression)? (VAR_ASSIGN defaultExpression=expression)? THROUGH
 	{$through_aspect=($identifier_list.list,$toleranceExpression.expr,$defaultExpression.expr)};
 	
-ams_terminal_aspect returns [(Name,Name) terminal_aspect] :
+ams_terminal_aspect returns [(Name,Option[Name\]) terminal_aspect] :
 	plus_terminal_name=name (TO minus_terminal_name=name)?
 	{$terminal_aspect=($plus_terminal_name.name_,$minus_terminal_name.name_)};
 	
-ams_source_aspect returns [(Expression,Expression,Expression) source_aspect] :
-	SPECTRUM magnitude_simple_expression=simple_expression COMMA phase_simple_expression=simple_expression 
-	| NOISE power_simple_expression=simple_expression
-	{$source_aspect=($magnitude_simple_expression.simpleExpr,$phase_simple_expression.simpleExpr,$power_simple_expression.simpleExpr)};
+ams_source_aspect returns [Either[(Expression,Expression),Expression\] source_aspect] :
+	SPECTRUM magnitude_simple_expression=simple_expression COMMA phase_simple_expression=simple_expression {$source_aspect=Left(($magnitude_simple_expression.simpleExpr,$phase_simple_expression.simpleExpr))}
+	| NOISE power_simple_expression=simple_expression {$source_aspect=Right($power_simple_expression.simpleExpr)};
 	
 constant_declaration returns [ConstantDeclaration constantDecl] :
 	CONSTANT identifier_list COLON subtype_indication (VAR_ASSIGN expression)? SEMICOLON 
@@ -952,7 +920,7 @@ protected_type_declaration[Identifier id,Position pos] returns [ProtectedTypeDec
 		
 protected_type_declarative_item returns [DeclarativeItem item] :
 	subprogram_declaration {$item=$subprogram_declaration.subprogramDecl}
-	| {vhdl2008}?=>v2008_subprogram_instantiation_declaration
+	| {vhdl2008}?=>v2008_subprogram_instantiation_declaration {$item=$v2008_subprogram_instantiation_declaration.subprogramInstantiationDecl}
 	| attribute_specification {$item=$attribute_specification.attributeSpec}
 	| use_clause {$item=$use_clause.useClause};
 
@@ -967,10 +935,10 @@ protected_type_body[Identifier id,Position pos] returns [ProtectedTypeBodyDeclar
 		
 protected_type_body_declarative_item returns [DeclarativeItem item] :
 	subprogram_declartion_or_body {$item=$subprogram_declartion_or_body.declOrBody}
-	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration
-			| package_declaration {item=$package_declaration.packageDecl}
+	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration {$item=$v2008_subprogram_instantiation_declaration.subprogramInstantiationDecl}
+			| package_declaration {$item=$package_declaration.packageDecl}
 			| package_body {$item=$package_body.packageBody}
-			| v2008_package_instantiation_declaration
+			| v2008_package_instantiation_declaration {$item=$v2008_package_instantiation_declaration.packageInstantiationDecl}
 			)
 	| type_declaration {$item=$type_declaration.typeDecl}
 	| subtype_declaration {$item=$subtype_declaration.subTypeDecl}
@@ -989,30 +957,17 @@ subtype_declaration returns [SubTypeDeclaration subTypeDecl] :
 	{$subTypeDecl=new SubTypeDeclaration(toPosition($SUBTYPE),$identifier.id,$subtype_indication.subType)};
 	
 subtype_indication returns [SubTypeIndication subType] :
-	//TODO {vhdl2008}?=>v2008_resolution_indication? selected_name constraint?
-	n1=selected_name n2=selected_name? constraint? ({ams}?=> TOLERANCE expression)?
-	{
+	{vhdl2008}?=>((v2008_resolution_indication selected_name)=>v2008_resolution_indication)? selected_name v2008_constraint? ({ams}?=> TOLERANCE expression)?
+		{$subType=new SubTypeIndication(None,$selected_name.name_,$v2008_constraint.constraint,$expression.expr)}
+	| n1=selected_name n2=selected_name? constraint? ({ams}?=> TOLERANCE expression)?
+		{
 		$subType=if (n2!=null) new SubTypeIndication($n1.name_,$n2.name_,$constraint.constraint_,$expression.expr)
 			else new SubTypeIndication(None,$n1.name_,$constraint.constraint_,$expression.expr)
-	};
+		};
 
-/*
-v2008_resolution_indication :	
-	selected_name
-	| ( v2008_resolution_indication | identifier v2008_resolution_indication (COMMA identifier v2008_resolution_indication)* );
-
-v2008_resolution_indication :	
-	resolution_function_name=selected_name | v2008_element_resolution;
-	
-v2008_element_resolution :
-	v2008_resolution_indication | v2008_record_resolution;
-
-v2008_record_resolution :
-	v2008_record_element_resolution (COMMA v2008_record_element_resolution)*;
-	
-v2008_record_element_resolution :
-	record_element_simple_name=identifier v2008_resolution_indication;
-*/
+v2008_resolution_indication : 
+	selected_name 
+	| LPAREN (v2008_resolution_indication | identifier v2008_resolution_indication (COMMA identifier v2008_resolution_indication)*) RPAREN;
 
 direction returns [Range.Direction.Value rangeDirection] :
 	TO {$rangeDirection=Range.Direction.To}
@@ -1032,14 +987,14 @@ range returns [Range range_] :
 	(simple_expression direction)=> from=simple_expression direction to=simple_expression {$range_ =new Range(Left($from.simpleExpr,$direction.rangeDirection,$to.simpleExpr))}
 	| name {$range_ =new Range(Right($name.name_))};
 
+v2008_constraint returns [Either[Range,Seq[DiscreteRange\]\] constraint] :	
+	array_constraint
+	| v2008_record_constraint
+	| range_constraint;
+		
 constraint returns [Either[Range,Seq[DiscreteRange\]\] constraint_] :
-	range_constraint {$constraint_ =Left($range_constraint.rangeContraint)}
-	| {vhdl2008}?=>
-		(
-		array_constraint
-		| v2008_record_constraint
-		)
-	| index_constraint {$constraint_ =Right($index_constraint.ranges)};
+	index_constraint {$constraint_ =Right($index_constraint.ranges)}
+	| range_constraint {$constraint_ =Left($range_constraint.rangeContraint)};
 
 array_constraint :	
 	index_constraint ( array_constraint | v2008_record_constraint )?
@@ -1048,9 +1003,9 @@ array_constraint :
 v2008_record_constraint :
 	(identifier (array_constraint | v2008_record_constraint ) ) (COMMA (identifier (array_constraint | v2008_record_constraint ) ));
 
-discrete_range returns [DiscreteRange discreteRange] :
-	(range)=>range {$discreteRange=new DiscreteRange(Left($range.range_))}
-	| subtype_indication {$discreteRange=new DiscreteRange(Right($subtype_indication.subType))};		
+discrete_range returns [DiscreteRange discreteRange] :	
+	(subtype_indication (RPAREN | COMMA | GENERATE | LOOP | BAR | ARROW | SEMICOLON))=>subtype_indication {$discreteRange=new DiscreteRange(Right($subtype_indication.subType))}
+	| range {$discreteRange=new DiscreteRange(Left($range.range_))};		
 
 type_mark returns [SelectedName typeName] :
 	selected_name {$typeName=$selected_name.name_}; // could be type_name or subtype_name
@@ -1077,8 +1032,8 @@ concurrent_statement_with_label[Identifier label] returns [ConcurrentStatement s
 	| generate_statement[$label] {$stmt=$generate_statement.generateStmt};
 				
 concurrent_statement_optional_label[Identifier label] returns [ConcurrentStatement stmt] :
-	ams_concurrent_break_statement[$label] {$stmt=$ams_concurrent_break_statement.breakStmt}
-	| ((simple_expression AMS_ASSIGN) | IF | PROCEDURAL | CASE | NULL)=>ams_simultaneous_statement[$label] {$stmt=$ams_simultaneous_statement.stmt}	
+	{ams}?=>ams_concurrent_break_statement[$label] {$stmt=$ams_concurrent_break_statement.breakStmt}
+	| ({ams}?=>((simple_expression AMS_ASSIGN) | IF | PROCEDURAL | CASE | NULL))=>ams_simultaneous_statement[$label] {$stmt=$ams_simultaneous_statement.stmt}	
 	| postponed=POSTPONED? 
 		(
 		process_statement[$label,postponed!=null] {$stmt=$process_statement.processStmt}
@@ -1112,10 +1067,10 @@ block_statement[Identifier label] returns [BlockStatement blockStmt]
 				
 block_declarative_item returns [DeclarativeItem item] :
 	subprogram_declartion_or_body {$item=$subprogram_declartion_or_body.declOrBody}
-	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration
-			| package_declaration {item=$package_declaration.packageDecl}
+	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration {$item=$v2008_subprogram_instantiation_declaration.subprogramInstantiationDecl}
+			| package_declaration {$item=$package_declaration.packageDecl}
 			| package_body {$item=$package_body.packageBody}
-			| v2008_package_instantiation_declaration
+			| v2008_package_instantiation_declaration {$item=$v2008_package_instantiation_declaration.packageInstantiationDecl}
 			)
 	| type_declaration {$item=$type_declaration.typeDecl}
 	| subtype_declaration {$item=$subtype_declaration.subTypeDecl}
@@ -1155,10 +1110,10 @@ process_statement[Identifier label,Boolean postponed] returns [ProcessStatement 
     	
 process_declarative_item returns [DeclarativeItem item] :
 	subprogram_declartion_or_body {$item=$subprogram_declartion_or_body.declOrBody}
-	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration
-			| package_declaration {item=$package_declaration.packageDecl}
+	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration {$item=$v2008_subprogram_instantiation_declaration.subprogramInstantiationDecl}
+			| package_declaration {$item=$package_declaration.packageDecl}
 			| package_body {$item=$package_body.packageBody}
-			| v2008_package_instantiation_declaration
+			| v2008_package_instantiation_declaration {$item=$v2008_package_instantiation_declaration.packageInstantiationDecl}
 			)
 	| type_declaration {$item=$type_declaration.typeDecl}
 	| subtype_declaration {$item=$subtype_declaration.subTypeDecl}
@@ -1231,7 +1186,7 @@ component_instantiation_statement[Identifier label] returns [ComponentInstantiat
 generate_statement[Identifier label] returns [ConcurrentStatement generateStmt] :
 	for_generate_statement[$label] {$generateStmt=$for_generate_statement.forGenerateStmt}
 	| if_generate_statement[$label] {$generateStmt=$if_generate_statement.ifGenerateStmt}
-	| {vhdl2008}?=>v2008_case_generate_statement[$label];
+	| {vhdl2008}?=>v2008_case_generate_statement[$label] {$generateStmt=$v2008_case_generate_statement.caseGenerateStmt};
 	
 for_generate_statement[Identifier label] returns [ForGenerateStatement forGenerateStmt] :
 	FOR loopIdentifier=identifier IN discrete_range GENERATE
@@ -1249,7 +1204,7 @@ if_generate_statement[Identifier label] returns [IfGenerateStatement ifGenerateS
 	END GENERATE end_generate_label=identifier? SEMICOLON
 	{$ifGenerateStmt=new IfGenerateStatement(toPosition($IF),$label,$if_condition.con,$body.blockItems,$body.statementList,$end_generate_label.id)};
 	
-v2008_case_generate_statement[Identifier label] :
+v2008_case_generate_statement[Identifier label] returns [ConcurrentStatement caseGenerateStmt] :
 	CASE expression GENERATE
 		(WHEN alternative_label=label_colon? choices ARROW generate_statement_body)+
 	END GENERATE end_generate_label=identifier? SEMICOLON;
@@ -1270,8 +1225,8 @@ generate_statement_body returns [Seq[DeclarativeItem\] blockItems,Seq[Concurrent
 	({vhdl2008}?=>END alternative_label=identifier? SEMICOLON)?;
 
 ams_concurrent_break_statement[Identifier label] returns [ConcurrentBreakStatement breakStmt] :
-	BREAK ams_break_element_list? (ON selected_name_list)? (WHEN expression)? SEMICOLON
-	{$breakStmt=new ConcurrentBreakStatement(toPosition($BREAK),$label,$ams_break_element_list.list,$selected_name_list.list,$expression.expr)};
+	BREAK ams_break_element_list? (ON name_list)? (WHEN expression)? SEMICOLON
+	{$breakStmt=new ConcurrentBreakStatement(toPosition($BREAK),$label,$ams_break_element_list.list,$name_list.list,$expression.expr)};
 
 // E.6 Simultaneous Statements
 ams_simultaneous_statement[Identifier label] returns [SimultaneousStatement stmt] :
@@ -1383,8 +1338,8 @@ report_statement[Identifier label] returns [ReportStatement reportStmt] :
 	{$reportStmt=new ReportStatement(toPosition($REPORT),$label,$report_expression.expr,$severity_expression.expr)};	
 
 signal_assignment_statement[Identifier label] returns [SignalAssignmentStatement signalAssignStmt] :
-	v2008_conditional_signal_assignment[$label]{$signalAssignStmt=$v2008_conditional_signal_assignment.stmt}
-	| {vhdl2008}?=>v2008_selected_signal_assignment[$label];
+	v2008_conditional_signal_assignment[$label] {$signalAssignStmt=$v2008_conditional_signal_assignment.stmt}
+	| {vhdl2008}?=>v2008_selected_signal_assignment[$label] {$signalAssignStmt=$v2008_selected_signal_assignment.stmt};
 		
 v2008_conditional_signal_assignment[Identifier label] returns [SimpleSignalAssignmentStatement stmt]
 @init{
@@ -1400,7 +1355,7 @@ v2008_conditional_signal_assignment[Identifier label] returns [SimpleSignalAssig
 		| delay=delay_mechanism? waveform {$stmt=new SimpleSignalAssignmentStatement(toPosition($LEQ),$label,$target.target_,$delay.mechanism,$waveform.waveForm)}
 		)SEMICOLON;
 		
-v2008_selected_signal_assignment[Identifier label] :
+v2008_selected_signal_assignment[Identifier label] returns [SignalAssignmentStatement stmt] :
 	WITH expression SELECT QMARK?
 		target LEQ
 		(
@@ -1432,15 +1387,17 @@ waveform returns [Waveform waveForm]
 	{$waveForm=new Waveform(position,elements.result)};
 		
 variable_assignment_statement[Identifier label] returns [VariableAssignmentStatement varAssignStmt] :	
-	{vhdl2008}?=>v2008_conditional_variable_assignment[$label]
-	| {vhdl2008}?=>v2008_selected_variable_assignment[$label]
+	{vhdl2008}?=>(
+		     v2008_conditional_variable_assignment[$label] {$varAssignStmt=$v2008_conditional_variable_assignment.stmt}
+		     | v2008_selected_variable_assignment[$label] {$varAssignStmt=$v2008_selected_variable_assignment.stmt}
+		     )
 	| simple_variable_assignment[$label] {$varAssignStmt=$simple_variable_assignment.stmt};
 		
 simple_variable_assignment[Identifier label] returns [SimpleVariableAssignmentStatement stmt] :
 	target VAR_ASSIGN expression SEMICOLON
 	{$stmt=new SimpleVariableAssignmentStatement(toPosition($VAR_ASSIGN),$label,$target.target_,$expression.expr)};
 	
-v2008_conditional_variable_assignment[Identifier label] :
+v2008_conditional_variable_assignment[Identifier label] returns [SimpleVariableAssignmentStatement stmt] :
 	target VAR_ASSIGN 
 		v2008_conditional_expressions SEMICOLON;
 
@@ -1450,7 +1407,7 @@ v2008_conditional_expressions :
 v2008_selected_expressions : 
 	expression WHEN choices (COMMA expression WHEN choices);
 
-v2008_selected_variable_assignment[Identifier label] :
+v2008_selected_variable_assignment[Identifier label] returns [SimpleVariableAssignmentStatement stmt] :
 	WITH expression SELECT QMARK?
 		target VAR_ASSIGN
 		v2008_selected_expressions SEMICOLON;
@@ -1536,9 +1493,16 @@ ams_break_element returns [BreakElement breakElement] :
 	{breakElement=new BreakElement($quantity_name1.name_,$quantity_name2.name_,$expr.expr)};
 
 // B.7 Interfaces and Associations
+inteface_element_port returns [InterfaceList.AbstractInterfaceElement element] :
+	interface_signal_declaration_port {$element=$interface_signal_declaration_port.signalElement}
+	| {ams}?=>(
+		ams_interface_terminal_declaration {$element=$ams_interface_terminal_declaration.terminalDecl}
+		| ams_interface_quantity_declaration {$element=$ams_interface_quantity_declaration.quantityDecl}
+		);
+	
 interface_element_procedure returns [InterfaceList.AbstractInterfaceElement element] :
-	(CONSTANT | identifier_list COLON IN?)=> interface_constant_declaration  {$element=$interface_constant_declaration.constElement}
-	| (VARIABLE | identifier_list COLON (OUT|INOUT)?)=>interface_variable_declaration  {$element=$interface_variable_declaration.varElement}
+	(VARIABLE | identifier_list COLON (OUT|INOUT))=>interface_variable_declaration  {$element=$interface_variable_declaration.varElement}
+	| interface_constant_declaration  {$element=$interface_constant_declaration.constElement}	
 	| interface_signal_declaration_procedure {$element=$interface_signal_declaration_procedure.signalElement}
 	| interface_file_declaration  {$element=$interface_file_declaration.fileElement}
 	| {ams}?=>(
@@ -1546,9 +1510,10 @@ interface_element_procedure returns [InterfaceList.AbstractInterfaceElement elem
 		| ams_interface_quantity_declaration {$element=$ams_interface_quantity_declaration.quantityDecl}
 		)
 	| {vhdl2008}?=>(
-		| v2008_interface_type_declaration
-		| v2008_interface_subprogram_declaration
-		| v2008_interface_package_declaration);
+		| v2008_interface_type_declaration {$element=$v2008_interface_type_declaration.typeDecl}
+		| v2008_interface_subprogram_declaration {$element=$v2008_interface_subprogram_declaration.subprogramDecl}
+		| v2008_interface_package_declaration {$element=$v2008_interface_package_declaration.packageDecl}
+		);
 		
 interface_element_function returns [InterfaceList.AbstractInterfaceElement element] :
 	interface_constant_declaration  {$element=$interface_constant_declaration.constElement}
@@ -1559,9 +1524,10 @@ interface_element_function returns [InterfaceList.AbstractInterfaceElement eleme
 		| ams_interface_quantity_declaration {$element=$ams_interface_quantity_declaration.quantityDecl}
 		)
 	| {vhdl2008}?=>(
-		| v2008_interface_type_declaration
-		| v2008_interface_subprogram_declaration
-		| v2008_interface_package_declaration);
+		| v2008_interface_type_declaration {$element=$v2008_interface_type_declaration.typeDecl}
+		| v2008_interface_subprogram_declaration {$element=$v2008_interface_subprogram_declaration.subprogramDecl}
+		| v2008_interface_package_declaration {$element=$v2008_interface_package_declaration.packageDecl}
+		);
 		
 parameter_interface_list_procedure returns [Seq[InterfaceList.AbstractInterfaceElement\] list]
 @init{
@@ -1581,8 +1547,12 @@ interface_constant_declaration returns[InterfaceList.InterfaceConstantDeclaratio
 	CONSTANT? identifier_list COLON IN? subtype_indication (VAR_ASSIGN expression)? 
 	{$constElement=new InterfaceList.InterfaceConstantDeclaration($identifier_list.list,$subtype_indication.subType,$expression.expr)};
 
-interface_signal_declaration_procedure returns [InterfaceList.InterfaceSignalDeclaration signalElement] :
+interface_signal_declaration_port returns [InterfaceList.InterfaceSignalDeclaration signalElement] :
 	SIGNAL? identifier_list COLON interface_mode? subtype_indication BUS? (VAR_ASSIGN expression)?
+	{$signalElement=new InterfaceList.InterfaceSignalDeclaration($identifier_list.list,$interface_mode.mode,$subtype_indication.subType,$BUS!=null,$expression.expr)};
+	
+interface_signal_declaration_procedure returns [InterfaceList.InterfaceSignalDeclaration signalElement] :
+	SIGNAL identifier_list COLON interface_mode? subtype_indication BUS? (VAR_ASSIGN expression)?
 	{$signalElement=new InterfaceList.InterfaceSignalDeclaration($identifier_list.list,$interface_mode.mode,$subtype_indication.subType,$BUS!=null,$expression.expr)};
 		
 interface_signal_declaration_function returns [InterfaceList.InterfaceSignalDeclaration signalElement] :
@@ -1616,17 +1586,17 @@ ams_interface_quantity_declaration returns [InterfaceList.InterfaceQuantityDecla
 		$quantityDecl=new InterfaceList.InterfaceQuantityDeclaration($identifier_list.list,mode,$subtype_indication.subType,$expression.expr)
 	};
 	
-v2008_interface_type_declaration : TYPE identifier;
+v2008_interface_type_declaration returns [InterfaceList.AbstractInterfaceElement typeDecl] : TYPE identifier;
 	
-v2008_interface_subprogram_declaration : 
+v2008_interface_subprogram_declaration returns [InterfaceList.AbstractInterfaceElement subprogramDecl]: 
 		(PROCEDURE identifier
 			(PARAMETER? LPAREN parameter_interface_list=parameter_interface_list_procedure RPAREN)?
 		|(PURE|IMPURE)? FUNCTION designator
 			(PARAMETER? LPAREN parameter_interface_list=parameter_interface_list_function RPAREN)? RETURN type_mark
-		)(IS (subprogram_name=name | BOX))?;
+		)(IS (subprogram_name=selected_name | BOX))?;
 		
-v2008_interface_package_declaration :
-	PACKAGE identifier IS NEW uninstantiated_package_name=name
+v2008_interface_package_declaration returns [InterfaceList.AbstractInterfaceElement packageDecl] :
+	PACKAGE identifier IS NEW uninstantiated_package_name=selected_name
 		GENERIC MAP LPAREN (generic_association_list=association_list | BOX | DEFAULT) RPAREN;
 
 association_element returns [AssociationList.Element element] :
@@ -1831,8 +1801,8 @@ name_slice_part returns [Name.SlicePart part] :
 	LPAREN discrete_range RPAREN  {$part=new Name.SlicePart($discrete_range.discreteRange)};
 
 name_attribute_part returns [Name.AttributePart part] :
-	signature? APOSTROPHE (id=identifier|RANGE {id=toIdentifier($RANGE)})
-	( (LPAREN)=> LPAREN expression RPAREN)? {$part=new Name.AttributePart($signature.signature_,$id.id,$expression.expr)};
+	signature? APOSTROPHE (id=identifier|RANGE {id=toIdentifier($RANGE)} |TOLERANCE {id=toIdentifier($TOLERANCE)} |ACROSS {id=toIdentifier($ACROSS)}|THROUGH {id=toIdentifier($THROUGH)} |REFERENCE {id=toIdentifier($REFERENCE)})
+	( (LPAREN)=> LPAREN expr=expression ({ams}?=>COMMA expression)* RPAREN)? {$part=new Name.AttributePart($signature.signature_,$id.id,$expr.expr)};
 		
 signature returns [Signature signature_] :
 	LBRACKET selected_name_list? (RETURN type_mark)? RBRACKET
@@ -1939,49 +1909,52 @@ identifier_list returns [Seq[Identifier\] list]
 identifier returns [Identifier id] 
 @init{$id = Identifier.NoIdentifier} :
 	(BASIC_IDENTIFIER
-	| EXTENDED_IDENTIFIER
-	| {!ams}?=>(NATURE
-		| TERMINAL
-	  	| QUANTITY
-	  	| TOLERANCE
-	  	| ACROSS
-	  	| THROUGH
-	  	| SPECTRUM
-	  	| NOISE
-	  	| SUBNATURE
-	  	| LIMIT
-	  	| REFERENCE
-  		| BREAK
-	  	| PROCEDURAL)
-	  /*| {!psl}?=>(
-		ASSUME
-		| ASSUME_GUARANTEE
-		| COVER		
-		| FAIRNESS
-		| PROPERTY
-		| RESTRICT
-		| RESTRICT_GUARANTEE
-		| SEQUENCE
-		| STRONG
-		| VMODE
-		| VPROP
-		| VUNIT
-		)*/
-	  | {!vhdl2008}?=>(
-		CONTEXT
-		| FORCE
-		| PARAMETER
-		| RELEASE
-		| DEFAULT
-		)
-	  )
-	  {$id = if (input.LA(-1) == EXTENDED_IDENTIFIER) toIdentifier(input.LT(-1),false) else toIdentifier(input.LT(-1))};
+	| EXTENDED_IDENTIFIER)
+	{$id = if (input.LA(-1) == EXTENDED_IDENTIFIER) toIdentifier(input.LT(-1),false) else toIdentifier(input.LT(-1))};
 	
 v2008_tool_directive : '\'' identifier GRAPHIC_CHARACTER*;
 
 label_colon returns [Identifier label] :
 	identifier COLON {$label=$identifier.id};
 
+//VHDL-2008 KEYWORDS
+CONTEXT : {vhdl2008}?=>'context';
+
+FORCE : {vhdl2008}?=>'force';
+
+PARAMETER : {vhdl2008}?=>'parameter';
+
+RELEASE : {vhdl2008}?=>'release';
+
+DEFAULT : {vhdl2008}?=>'default';
+
+//VHDL-AMS KEYWORDS
+NATURE : {ams}?=>'nature';
+
+TERMINAL : {ams}?=>'terminal';
+
+QUANTITY : {ams}?=>'quantity';
+
+TOLERANCE : {ams}?=>'tolerance';
+
+ACROSS : {ams}?=>'across';
+
+THROUGH : {ams}?=>'through';
+
+SPECTRUM : {ams}?=>'spectrum';
+
+NOISE : {ams}?=>'noise';
+
+SUBNATURE : {ams}?=>'subnature';
+
+LIMIT : {ams}?=>'limit';
+
+REFERENCE : {ams}?=>'reference';
+
+BREAK : {ams}?=>'break';
+
+PROCEDURAL : {ams}?=>'procedural';
+  	
 // Lexer rules
 WS : ( '\t' | ' ' | '\r' | '\n' )+ {skip()};
 
@@ -2003,11 +1976,11 @@ INTEGER_LITERAL : INTEGER EXPONENT?;
     
 REAL_LITERAL : INTEGER  DOT INTEGER  EXPONENT?;
 
+//the semantic predicate is used for this corner case: signed'('1', '0', '1')
+//this should create a BASIC_IDENTIFIER APOSTROPHE LPAREN and then a CHARACTER_LITERAL
+//otherwise it would create a BASIC_IDENTIFIER CHARACTER_LITERAL ('(') and then an error
 APOSTROPHE : 
-	'\''
-	( 
-		(( '\"' | '\\' | GRAPHIC_CHARACTER ) '\'')=> ( '\"' | '\\' | GRAPHIC_CHARACTER ) '\'' { $type = CHARACTER_LITERAL; }
-	)?; 
+	'\'' ({input.LA(2)=='\'' && (input.LA(4)!='\'' || input.LA(3)==',' || input.LA(3)=='|')}?=> ( '\"' | '\\' | GRAPHIC_CHARACTER ) '\'' { $type = CHARACTER_LITERAL; })?; 	
 
 //string literals can't contain a single quotation mark
 STRING_LITERAL : '\"' ( '\"\"' | '\\' | GRAPHIC_CHARACTER )* '\"';
