@@ -318,7 +318,7 @@ port_interface_list returns [Seq[InterfaceList.AbstractInterfaceElement\] list]
 @init{
 	val elements=new Buffer[InterfaceList.AbstractInterfaceElement]()
 } :
-	decl1=inteface_element_port {elements += $decl1.element} ( SEMICOLON decl2=inteface_element_port {elements += $decl2.element})*
+	decl1=interface_element_port {elements += $decl1.element} ( SEMICOLON decl2=interface_element_port {elements += $decl2.element})*
 	{$list = elements.result};
     		
 entity_declaration returns [EntityDeclaration entityDecl]
@@ -1493,7 +1493,7 @@ ams_break_element returns [BreakElement breakElement] :
 	{breakElement=new BreakElement($quantity_name1.name_,$quantity_name2.name_,$expr.expr)};
 
 // B.7 Interfaces and Associations
-inteface_element_port returns [InterfaceList.AbstractInterfaceElement element] :
+interface_element_port returns [InterfaceList.AbstractInterfaceElement element] :
 	interface_signal_declaration_port {$element=$interface_signal_declaration_port.signalElement}
 	| {ams}?=>(
 		ams_interface_terminal_declaration {$element=$ams_interface_terminal_declaration.terminalDecl}
