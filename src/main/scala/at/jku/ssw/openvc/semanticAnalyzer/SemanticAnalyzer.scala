@@ -606,8 +606,8 @@ object SemanticAnalyzer {
     }
 
     def visitName(name: Name): Expression = {
-      def visitFunctionCallExpression(functionCallExpr: FunctionCallExpression, listOfSubprograms: ListOfSubprograms): Expression = {
-        val (functionSymbol, parameterAssociation) = checkSubprogramAssociationList(context, functionCallExpr.parameterAssociation, listOfSubprograms, Option(expectedType), functionCallExpr)
+      def visitFunctionCallExpression(functionCallExpr: FunctionCallExpression, listOfSubprograms: ListOfSubprograms, returnType: Option[DataType]): FunctionCallExpression = {
+        val (functionSymbol, parameterAssociation) = checkSubprogramAssociationList(context, functionCallExpr.parameterAssociation, listOfSubprograms, returnType, functionCallExpr)
         (functionCallExpr.copy(parameterAssociation = parameterAssociation, symbol = functionSymbol.orNull.asInstanceOf[FunctionSymbol]))
       }
       def matchParts(parts: Seq[Name.Part], symbol: Symbol): Option[Expression] = {
@@ -619,14 +619,9 @@ object SemanticAnalyzer {
               case Name.AssociationListPart(_, associationList) =>
                 symbol match {
                   case list: ListOfSubprograms =>
-                    require(xs.isEmpty)
-                    val expression = visitFunctionCallExpression(FunctionCallExpression(name.identifier, Some(associationList)), list) //TODO name.identifier is wrong
-                    /*
-                    TODO match the result value of a expression, e.g. x:=fooFunction(1,2,3,4).x;
-                    val newSymbol = ConstantSymbol(Identifier("blub"), expression.dataType, -1, null)
-                    val expr = matchParts(xs, newSymbol).getOrElse(NoExpression)
-                    */
-                    Option(expression)
+                    val functionCall = visitFunctionCallExpression(FunctionCallExpression(name.identifier, Some(associationList)), list, Option(NoType)) //TODO name.identifier is wrong
+                    //match the result value of a expression, e.g. x:=fooFunction(1,2,3,4).x;
+                    Option(functionCall.copy(expression = matchParts(xs, ConstantSymbol(Identifier("return value"), functionCall.dataType, -1, NoSymbol))))
                   case _ =>
                     if (associationList.elements.forall(element => element.formalPart.isEmpty && element.actualPart.isLeft)) {
                       val indexes = associationList.elements.map(_.actualPart.asInstanceOf[Left[Expression, Identifier]].a)
@@ -738,7 +733,7 @@ object SemanticAnalyzer {
           case Seq() =>
             def matchSymbol(symbol: Symbol): Expression = symbol match {
               case AliasSymbol(_, destination) => matchSymbol(destination)
-              case list: ListOfSubprograms => visitFunctionCallExpression(FunctionCallExpression(name.identifier, None), list)
+              case list: ListOfSubprograms => visitFunctionCallExpression(FunctionCallExpression(name.identifier, None), list, Option(expectedType))
               case unitSymbol: UnitSymbol => PhysicalLiteral(name.position, "1", new SelectedName(Seq(name.identifier)), Literal.Type.INTEGER_LITERAL, unitSymbol)
               case ListOfEnumerations(_, enumerations) => enumerations.find(_.dataType == expectedType) match {
                 case Some(enumSymbol) => Literal(name.position, name.identifier.text, Literal.Type.INTEGER_LITERAL, enumSymbol.dataType, enumSymbol.dataType.intValue(enumSymbol.name))
@@ -902,7 +897,7 @@ object SemanticAnalyzer {
   }
 
   def checkSubprogramAssociationList(context: Context, associationList: Option[AssociationList], listOfSubprograms: ListOfSubprograms, returnType: Option[DataType], owner: Locatable): (Option[SubprogramSymbol], Option[AssociationList]) =
-    listOfSubprograms.subprograms.filter(_.returnTypeOption == returnType) match {
+    (if (returnType != Option(NoType)) listOfSubprograms.subprograms.filter(_.returnTypeOption == returnType) else listOfSubprograms.subprograms) match {
       case Seq(subprogram) => (Option(subprogram), checkGenericAssociationList(context, associationList, Right(subprogram.parameters), owner)._2)
       case Seq() => returnType match {
         case None => (addError(owner, "no procedure %s found", listOfSubprograms.name), None)

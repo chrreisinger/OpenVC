@@ -353,7 +353,7 @@ object ByteCodeGenerator {
           case attributeAccess: AttributeExpression => visitAttributeAccessExpression(attributeAccess)
           case FieldAccessExpression(symbol, field, fieldDataType, expressionOption) =>
             import mv._
-            if (!symbol.owner.isInstanceOf[RuntimeSymbol]) loadSymbol(symbol)
+            if (symbol.owner != NoSymbol && !symbol.owner.isInstanceOf[RuntimeSymbol]) loadSymbol(symbol)
             GETFIELD(symbol.dataType.implementationName, field.text, getJVMDataType(fieldDataType))
             expressionOption.foreach(acceptExpressionInner(_, innerContext))
           case e =>
@@ -1070,7 +1070,7 @@ object ByteCodeGenerator {
 
     def initItems(designUnit: String, flags: Int, functionName: String, declarativeItems: Seq[ASTNode], cw: RichClassWriter, mvOption: Option[RichMethodVisitor] = None) {
       val (objectDeclarations, rest) = declarativeItems.partition(_.isInstanceOf[ObjectDeclaration])
-      objectDeclarations.foreach(x => x.asInstanceOf[ObjectDeclaration].symbols.foreach{
+      objectDeclarations.foreach(x => x.asInstanceOf[ObjectDeclaration].symbols.foreach {
         symbol =>
           symbol match {
             case constantSymbol: ConstantSymbol => if (!(constantSymbol.isDeferred && constantSymbol.isDefined)) cw.visitField(Opcodes.ACC_PUBLIC + flags, symbol.name, getJVMDataType(symbol))
@@ -1423,7 +1423,7 @@ object ByteCodeGenerator {
 
       val endLabel = createLabel
       val defaultLabel = new Label()
-      val labelList = caseStmt.alternatives.flatMap{
+      val labelList = caseStmt.alternatives.flatMap {
         alternative =>
           alternative.choices.map(choice => if (choice.isOthers) defaultLabel else new Label())
       }
@@ -1487,7 +1487,7 @@ object ByteCodeGenerator {
                   else Some("file_open")
                 case name => Some(name)
               }
-              procedureName.foreach{
+              procedureName.foreach {
                 loadParameters(procedureCallStmt.parameterAssociation)
                 visitMethodInsn(procedureCallType, procedureSymbol.owner.implementationName, _, "(" + getJVMParameterList(procedureSymbol.parameters) + ")" + returnType)
               }
@@ -1596,7 +1596,7 @@ object ByteCodeGenerator {
     }
 
     def loadDefaultSubTypeValue(subtype: SubTypeIndication)(implicit mv: RichMethodVisitor) {
-      subtype.constraint.foreach{
+      subtype.constraint.foreach {
         _ match {
           case Left(_) =>
           case Right(discreteRanges) =>

@@ -39,7 +39,7 @@ abstract sealed class Expression extends Locatable {
    *
    * for a operator b position is the position of the operator, firstPosition is the position of a
    */
-  val firstPosition = position
+  def firstPosition = position
 }
 
 /**
