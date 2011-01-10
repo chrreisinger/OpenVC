@@ -1034,8 +1034,8 @@ concurrent_statement_optional_label[Identifier label] returns [ConcurrentStateme
 		(
 		process_statement[$label,postponed!=null] {$stmt=$process_statement.processStmt}
 		| concurrent_assertion_statement[$label,postponed!=null] {$stmt=$concurrent_assertion_statement.assertStmt}
-		| (target LEQ | WITH)=>concurrent_signal_assignment_statement[$label,postponed!=null] {$stmt=$concurrent_signal_assignment_statement.concurrentSignalAssignStmt}
-		| concurrent_procedure_call_statement[$label,postponed!=null] {$stmt=$concurrent_procedure_call_statement.procedureCallStmt}
+		| (concurrent_procedure_call_statement[null,true])=>concurrent_procedure_call_statement[$label,postponed!=null] {$stmt=$concurrent_procedure_call_statement.procedureCallStmt}
+		| concurrent_signal_assignment_statement[$label,postponed!=null] {$stmt=$concurrent_signal_assignment_statement.concurrentSignalAssignStmt}
 		);
 	//| {psl}?=>PSL_PSL_Directive 		
 
@@ -1318,8 +1318,8 @@ sequential_statement returns [SequentialStatement stmt] :
 	(wait_statement[$label.label] {$stmt=$wait_statement.waitStmt}
 	| assertion_statement[$label.label] {$stmt=$assertion_statement.assertStmt}
 	| report_statement[$label.label] {$stmt=$report_statement.reportStmt}
-	| (target LEQ | WITH)=>signal_assignment_statement[$label.label] {$stmt=$signal_assignment_statement.signalAssignStmt}
-	| (target VAR_ASSIGN | WITH)=>variable_assignment_statement[$label.label] {$stmt=$variable_assignment_statement.varAssignStmt}
+	| (procedure_call_statement[null])=>procedure_call_statement[$label.label] {$stmt=$procedure_call_statement.procedureCallStmt}
+	| assignment_statement[$label.label] {$stmt=$assignment_statement.assignmentStmt} //signal or variable assignment statement
 	| if_statement[$label.label] {$stmt=$if_statement.ifStmt}
 	| case_statement[$label.label] {$stmt=$case_statement.caseStmt}
 	| loop_statement[$label.label] {$stmt=$loop_statement.loopStmt}
@@ -1327,7 +1327,6 @@ sequential_statement returns [SequentialStatement stmt] :
 	| exit_statement[$label.label] {$stmt=$exit_statement.exitStmt}
 	| return_statement[$label.label] {$stmt=$return_statement.returnStmt}
 	| null_statement[$label.label] {$stmt=$null_statement.nullStmt}
-	| procedure_call_statement[$label.label] {$stmt=$procedure_call_statement.procedureCallStmt}
 	| {ams}?=>ams_break_statement[$label.label] {$stmt=$ams_break_statement.breakStmt}
 	);
 	
@@ -1343,36 +1342,59 @@ report_statement[Identifier label] returns [ReportStatement reportStmt] :
 	REPORT report_expression=expression (SEVERITY severity_expression=expression)? SEMICOLON
 	{$reportStmt=new ReportStatement($REPORT,$label,$report_expression.expr,$severity_expression.expr)};	
 
-signal_assignment_statement[Identifier label] returns [SignalAssignmentStatement signalAssignStmt] :
-	v2008_conditional_signal_assignment[$label] {$signalAssignStmt=$v2008_conditional_signal_assignment.stmt}
-	| {vhdl2008}?=>v2008_selected_signal_assignment[$label] {$signalAssignStmt=$v2008_selected_signal_assignment.stmt};
-
 force_mode returns [InterfaceList.Mode.Value mode] :
 	IN {$mode=InterfaceList.Mode.IN}
 	| OUT {$mode=InterfaceList.Mode.OUT};
+
+v2008_conditional_expressions[Buffer[ConditionalVariableAssignment.When\] elements] :
+	expression ( WHEN condition ( ELSE v2008_conditional_expressions[$elements])? )? {$elements += new ConditionalVariableAssignment.When($expression.expr,$condition.con)};	
+
+v2008_selected_expression returns [SelectedVariableAssignment.When whenClause]: 
+	expression WHEN choices {whenClause = new SelectedVariableAssignment.When($expression.expr,$choices.choices_)};
 	
-v2008_conditional_signal_assignment[Identifier label] returns [SignalAssignmentStatement stmt]
+v2008_selected_expressions returns [Seq[SelectedVariableAssignment.When\] expressions] 
+@init{
+	val elements=new Buffer[SelectedVariableAssignment.When]()
+} :
+	s1=v2008_selected_expression {elements += $s1.whenClause} (COMMA s2=v2008_selected_expression {elements += $s2.whenClause})*
+	{$expressions=elements.result};
+
+assignment_statement[Identifier label] returns [SequentialStatement assignmentStmt] :	
+	{vhdl2008}?=>(
+		     v2008_conditional_assignment[$label] {$assignmentStmt=$v2008_conditional_assignment.stmt}
+		     | v2008_selected_assignment[$label] {$assignmentStmt=$v2008_selected_assignment.stmt}
+		     )
+	| simple_assignment[$label] {$assignmentStmt=$simple_assignment.stmt};
+		
+simple_assignment[Identifier label] returns [SequentialStatement stmt] :
+	target (
+		VAR_ASSIGN expression {$stmt=new SimpleVariableAssignmentStatement($VAR_ASSIGN,$label,$target.target_,$expression.expr)}
+	 	| LEQ delay_mechanism? waveform {$stmt=new SimpleWaveformAssignmentStatement($LEQ,$label,$target.target_,$delay_mechanism.mechanism,$waveform.waveForm)}
+	 	)SEMICOLON;
+	
+v2008_conditional_assignment[Identifier label] returns [SequentialStatement stmt]
 @init{
  	val waveforms=new Buffer[ConcurrentConditionalSignalAssignment.When]()
  	val expressions=new Buffer[ConditionalVariableAssignment.When]()
 } :
-	target LEQ 
-		(				
-		{vhdl2008}?=>(
+	target (
+		LEQ (
 			RELEASE forceMode=force_mode? {$stmt=new SimpleReleaseAssignment($LEQ,$label,$target.target_,$forceMode.mode)}
-			| delay=delay_mechanism? conditional_waveforms[waveforms] {$stmt=new ConditionalWaveformAssignment($LEQ,$label,$target.target_,$delay.mechanism,waveforms.result)}
+			| delay_mechanism? conditional_waveforms[waveforms] {$stmt=new ConditionalWaveformAssignment($LEQ,$label,$target.target_,$delay_mechanism.mechanism,waveforms.result)}
 			| FORCE forceMode=force_mode? v2008_conditional_expressions[expressions] {$stmt=new ConditionalForceAssignment($LEQ,$label,$target.target_,$forceMode.mode,expressions.result)}
-			)
-		| delay=delay_mechanism? waveform {$stmt=new SimpleWaveformAssignmentStatement($LEQ,$label,$target.target_,$delay.mechanism,$waveform.waveForm)}
-		)SEMICOLON;
+		    )
+	        | VAR_ASSIGN v2008_conditional_expressions[expressions] {$stmt=new ConditionalVariableAssignment($VAR_ASSIGN,$label,$target.target_,expressions.result.reverse)}
+	      )SEMICOLON;
 		
-v2008_selected_signal_assignment[Identifier label] returns [SignalAssignmentStatement stmt] :
-	WITH expression SELECT QMARK?
-		target LEQ
-		(
-		delay_mechanism? selected_waveforms {$stmt=new SelectedWaveformAssignment($WITH,$label,$expression.expr,$QMARK!=null,$target.target_,$delay_mechanism.mechanism,$selected_waveforms.waveforms)}
-		| FORCE force_mode? v2008_selected_expressions {$stmt=new SelectedForceAssignment($WITH,$label,$expression.expr,$QMARK!=null,$target.target_,$force_mode.mode,$v2008_selected_expressions.expressions)}
-		)SEMICOLON;	
+v2008_selected_assignment[Identifier label] returns [SequentialStatement stmt] :
+	WITH expression SELECT QMARK? target 
+	(
+		LEQ (
+			delay_mechanism? selected_waveforms {$stmt=new SelectedWaveformAssignment($WITH,$label,$expression.expr,$QMARK!=null,$target.target_,$delay_mechanism.mechanism,$selected_waveforms.waveforms)}
+			| FORCE force_mode? selectedExpression=v2008_selected_expressions {$stmt=new SelectedForceAssignment($WITH,$label,$expression.expr,$QMARK!=null,$target.target_,$force_mode.mode,$selectedExpression.expressions)}
+		    )
+		| VAR_ASSIGN selectedExpression=v2008_selected_expressions {$stmt=new SelectedVariableAssignment($WITH,$label,$expression.expr,$QMARK!=null,$target.target_,$selectedExpression.expressions)}
+	) SEMICOLON;			
 					
 delay_mechanism returns [DelayMechanism mechanism]
 @after{	
@@ -1396,44 +1418,6 @@ waveform returns [Waveform waveForm]
 		| UNAFFECTED 
 	)
 	{$waveForm=new Waveform(position,elements.result)};
-		
-variable_assignment_statement[Identifier label] returns [VariableAssignmentStatement varAssignStmt] :	
-	{vhdl2008}?=>(
-		     v2008_conditional_variable_assignment[$label] {$varAssignStmt=$v2008_conditional_variable_assignment.stmt}
-		     | v2008_selected_variable_assignment[$label] {$varAssignStmt=$v2008_selected_variable_assignment.stmt}
-		     )
-	| simple_variable_assignment[$label] {$varAssignStmt=$simple_variable_assignment.stmt};
-		
-simple_variable_assignment[Identifier label] returns [SimpleVariableAssignmentStatement stmt] :
-	target VAR_ASSIGN expression SEMICOLON
-	{$stmt=new SimpleVariableAssignmentStatement($VAR_ASSIGN,$label,$target.target_,$expression.expr)};
-	
-v2008_conditional_variable_assignment[Identifier label] returns [ConditionalVariableAssignment stmt]
-@init{
- 	val elements=new Buffer[ConditionalVariableAssignment.When]()
-} :
-	target VAR_ASSIGN 
-		v2008_conditional_expressions[elements] SEMICOLON
-	{$stmt=new ConditionalVariableAssignment($VAR_ASSIGN,$label,$target.target_,elements.result.reverse)};
-
-v2008_conditional_expressions[Buffer[ConditionalVariableAssignment.When\] elements] :
-	expression ( WHEN condition ( ELSE v2008_conditional_expressions[$elements])? )? {$elements += new ConditionalVariableAssignment.When($expression.expr,$condition.con)};	
-
-v2008_selected_expression returns [SelectedVariableAssignment.When whenClause]: 
-	expression WHEN choices {whenClause = new SelectedVariableAssignment.When($expression.expr,$choices.choices_)};
-	
-v2008_selected_expressions returns [Seq[SelectedVariableAssignment.When\] expressions] 
-@init{
-	val elements=new Buffer[SelectedVariableAssignment.When]()
-} :
-	s1=v2008_selected_expression {elements += $s1.whenClause} (COMMA s2=v2008_selected_expression {elements += $s2.whenClause})*
-	{$expressions=elements.result};
-
-v2008_selected_variable_assignment[Identifier label] returns [SelectedVariableAssignment stmt] :
-	WITH expression SELECT QMARK?
-		target VAR_ASSIGN
-		v2008_selected_expressions SEMICOLON
-	{$stmt=new SelectedVariableAssignment($WITH,$label,$expression.expr,$QMARK!=null,$target.target_,$v2008_selected_expressions.expressions)};
 				
 procedure_call_statement[Identifier label] returns [ProcedureCallStatement procedureCallStmt] :
 	selected_name (LPAREN association_list RPAREN)? SEMICOLON
