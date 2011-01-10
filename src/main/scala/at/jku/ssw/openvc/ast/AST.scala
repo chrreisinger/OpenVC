@@ -312,7 +312,6 @@ object InterfaceList {
 
   final case class InterfacePackageDeclaration(identifier: Identifier, packageName: SelectedName, genericMapAspect: Either[AssociationList, Boolean]) extends AbstractInterfaceElement
 
-  //InterfaceProcedureDeclaration($identifier.id,$parameter_interface_list_procedure.list,$v2008_interface_subprogram_default.default)
   final case class InterfaceProcedureDeclaration(identifier: Identifier, parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], default: Option[Option[SelectedName]]) extends AbstractInterfaceElement
 
   final case class InterfaceFunctionDeclaration(isPure: Boolean, identifier: Identifier, parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], returnType: SelectedName, default: Option[Option[SelectedName]]) extends AbstractInterfaceElement

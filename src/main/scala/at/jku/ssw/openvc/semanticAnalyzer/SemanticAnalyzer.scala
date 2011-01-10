@@ -88,7 +88,7 @@ object SemanticAnalyzer {
         case (et1: EnumerationType, et2: EnumerationType) => et1.baseType.getOrElse(et1) == et1.baseType.getOrElse(et2)
         case (NullType, _: AccessType) => true
         case (_: AccessType, NullType) => true
-        case (at1: ArrayType, at2: ArrayType) => at1.elementType == at2.elementType //isCompatible(at1.elementType, at2.elementType) //TODO check element type and range
+        case (at1: ArrayType, at2: ArrayType) => at1.elementType == at2.elementType && at1.dimensions.size==at2.dimensions.size //TODO check element type and range
         case _ => false
       }
     }
@@ -483,7 +483,7 @@ object SemanticAnalyzer {
           (factor.rightOption match {
             case Some(right) => findOverloadedOperator(factor.operator.toString, factor, factor.left, right)
             case None => findOverloadedOperator(factor.operator.toString, factor, factor.left)
-          }).getOrElse(factor.copy(dataType = NoType))
+          }).getOrElse(factor)
         case dataType => factor.copy(dataType = dataType)
       }
 
@@ -536,7 +536,7 @@ object SemanticAnalyzer {
           case NoType => literal.copy(dataType = SymbolTable.stringType) //TODO
           case dataType =>
             addError(literal, "expected a expression of type %s, found %s", expectedType.name, dataType.name)
-            literal.copy(dataType = NoType)
+            literal
         }
         case CHARACTER_LITERAL =>
           context.findSymbol(Identifier(literal.position, literal.text), classOf[ListOfEnumerations]).flatMap {
@@ -610,7 +610,7 @@ object SemanticAnalyzer {
       if (isBooleanOrBit(logicalExpr.left.dataType) && logicalExpr.left.dataType == logicalExpr.right.dataType) logicalExpr.copy(dataType = logicalExpr.left.dataType)
       else (logicalExpr.left.dataType, logicalExpr.right.dataType) match {
         case (left: ArrayType, right: ArrayType) if (left.dimensions.size == 1 && right.dimensions.size == 1 && isCompatible(left, right) && isBooleanOrBit(left.elementType)) => logicalExpr.copy(dataType = logicalExpr.left.dataType)
-        case _ => findOverloadedOperator(logicalExpr.operator.toString, logicalExpr, logicalExpr.left, logicalExpr.right).getOrElse(logicalExpr.copy(dataType = NoType))
+        case _ => findOverloadedOperator(logicalExpr.operator.toString, logicalExpr, logicalExpr.left, logicalExpr.right).getOrElse(logicalExpr)
       }
     }
 
@@ -793,37 +793,38 @@ object SemanticAnalyzer {
           if (checkIfFileOrProtected(relation.left.dataType) || checkIfFileOrProtected(relation.right.dataType)) false
           else if (!isCompatible(relation.left.dataType, relation.right.dataType)) false
           else true
-        case _ => (relation.left.dataType, relation.right.dataType) match {
+        case LT | LEQ | GT | GEQ => (relation.left.dataType, relation.right.dataType) match {
           case (left: ScalarType, right: ScalarType) if (isCompatible(left, right)) => true
           case (left: ArrayType, right: ArrayType) if (isCompatible(left, right) && left.elementType.isInstanceOf[DiscreteType] && right.elementType.isInstanceOf[DiscreteType]) => true
           case _ => false
         }
+        case _ => false //VHDL 2008 matching relational operator
       }
-      if (!valid) findOverloadedOperator(relation.operator.toString, relation, relation.left, relation.right).getOrElse(relation.copy(dataType = NoType))
+      if (!valid) findOverloadedOperator(relation.operator.toString, relation, relation.left, relation.right).getOrElse(relation)
       else relation.copy(dataType = SymbolTable.booleanType)
     }
 
-    def visitShiftExpression(shiftExpr: ShiftExpression): Expression = {
-      val dataType = shiftExpr.left.dataType match {
+    def visitShiftExpression(shiftExpr: ShiftExpression): Expression =
+      (shiftExpr.left.dataType match {
         case arrayType: ArrayType if (arrayType.dimensions.size == 1 && (arrayType.elementType == SymbolTable.bitType) || arrayType.elementType == SymbolTable.booleanType) =>
           if (shiftExpr.right.dataType != SymbolTable.integerType && shiftExpr.right.dataType != SymbolTable.universalIntegerType) NoType
           else shiftExpr.left.dataType
-        case otherType => NoType
+        case _ => NoType
+      }) match {
+        case NoType => findOverloadedOperator(shiftExpr.operator.toString, shiftExpr, shiftExpr.left, shiftExpr.right).getOrElse(shiftExpr)
+        case dataType => shiftExpr.copy(dataType = dataType)
       }
-      if (dataType == NoType) findOverloadedOperator(shiftExpr.operator.toString, shiftExpr, shiftExpr.left, shiftExpr.right).getOrElse(shiftExpr.copy(dataType = NoType))
-      else shiftExpr.copy(dataType = dataType)
-    }
 
     def visitSimpleExpression(simpleExpr: SimpleExpression): Expression = simpleExpr.signOperator match {
       case Some(sign) => simpleExpr.left.dataType match {
         case numericType: NumericType => simpleExpr.copy(dataType = numericType)
-        case dataType => findOverloadedOperator(sign.toString, simpleExpr, simpleExpr.left).getOrElse(simpleExpr.copy(dataType = NoType))
+        case dataType => findOverloadedOperator(sign.toString, simpleExpr, simpleExpr.left).getOrElse(simpleExpr)
       }
       case None =>
         val right = simpleExpr.rightOption.get
         (simpleExpr.left.dataType, right.dataType) match {
           case (left: NumericType, right) if (isCompatible(left, right)) => simpleExpr.copy(dataType = left)
-          case _ => findOverloadedOperator(simpleExpr.addOperator.get.toString, simpleExpr, simpleExpr.left, right).getOrElse(simpleExpr.copy(dataType = NoType))
+          case _ => findOverloadedOperator(simpleExpr.addOperator.get.toString, simpleExpr, simpleExpr.left, right).getOrElse(simpleExpr)
         }
     }
 
@@ -851,7 +852,7 @@ object SemanticAnalyzer {
           case _ => NoType
         }
       }
-      if (dataType == NoType) findOverloadedOperator(term.operator.toString, term, term.left, term.right).getOrElse(term.copy(dataType = NoType))
+      if (dataType == NoType) findOverloadedOperator(term.operator.toString, term, term.left, term.right).getOrElse(term)
       else term.copy(dataType = dataType)
     }
     throw new RuntimeException()
@@ -1356,7 +1357,7 @@ object SemanticAnalyzer {
               subTypeIndication.copy(constraint = Option(Right(discreteRanges)), dataType = new ConstrainedArrayType(unconstrainedArrayType.name, unconstrainedArrayType.elementType, discreteRanges.map(_.dataType)))
             case _ =>
               addError(subTypeIndication.typeName, "you can not use a array constraint for non array subtypes")
-              subTypeIndication.copy(dataType = NoType)
+              subTypeIndication
           }
         }
       }
