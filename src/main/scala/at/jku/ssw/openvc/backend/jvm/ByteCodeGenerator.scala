@@ -872,13 +872,7 @@ object ByteCodeGenerator {
       }
     }
 
-    def visitIfGenerateStatement(ifGenerateStmt: IfGenerateStatement, context: Context) {
-      if (!ifGenerateStmt.value) {
-        //skip it
-        acceptNodes(ifGenerateStmt.declarativeItems, context)
-        acceptNodes(ifGenerateStmt.concurrentStatements, context)
-      }
-    }
+    def visitIfGenerateStatement(ifGenerateStmt: IfGenerateStatement, context: Context) = error("not implemented")
 
     def visitIfStatement(ifStmt: IfStatement, context: Context) {
       import context._
@@ -1058,12 +1052,15 @@ object ByteCodeGenerator {
     def createDefaultValuesMethods(interfaceListOption: Option[Seq[InterfaceList.AbstractInterfaceElement]], parentName: String, cw: RichClassWriter) =
       for (interfaceList <- interfaceListOption) {
         for (element <- interfaceList) {
-          for (expression <- element.expression) {
-            for (identifier <- element.identifiers) {
-              val mv = cw.createMethod(Opcodes.ACC_STATIC, "$default$" + parentName + "_" + identifier.text, returnType = getJVMDataType(expression.dataType))
-              visitReturnStatement(ReturnStatement(Position.NoPosition, None, element.expression), Context(cw, mv))
-              mv.endMethod
-            }
+          element match {
+            case objectDecl: InterfaceList.InterfaceObjectDeclaration =>
+              for (expression <- objectDecl.expression) {
+                for (identifier <- objectDecl.identifiers) {
+                  val mv = cw.createMethod(Opcodes.ACC_STATIC, "$default$" + parentName + "_" + identifier.text, returnType = getJVMDataType(expression.dataType))
+                  visitReturnStatement(ReturnStatement(Position.NoPosition, None, objectDecl.expression), Context(cw, mv))
+                  mv.endMethod
+                }
+              }
           }
         }
       }

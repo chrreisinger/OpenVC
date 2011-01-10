@@ -58,6 +58,8 @@ case object NoExpression extends Expression {
   val position = Position.NoPosition
 }
 
+final case class ConditionExpression(position: Position, left: Expression, dataType: DataType = NoType) extends Expression
+
 object Term {
   type Operator = Operator.Value
 
@@ -169,6 +171,31 @@ object Relation {
      * greater than or equal operator
      */
     val GEQ = Value(">=")
+
+    /**
+     * matching equal operator
+     */
+    val MEQ = Value("?=")
+    /**
+     * matching not equal operator
+     */
+    val MNEQ = Value("?/=")
+    /**
+     * matching less than operator
+     */
+    val MLT = Value("?<")
+    /**
+     * matching less than or equal operator
+     */
+    val MLEQ = Value("?<=")
+    /**
+     * matching greater than operator
+     */
+    val MGT = Value("?>")
+    /**
+     * matching greater than or equal operator
+     */
+    val MGEQ = Value("?>=")
   }
 
 }
@@ -383,6 +410,30 @@ object Factor {
      * negation operator
      */
     val NOT = Value("not")
+    /**
+     * logical reduction AND operator
+     */
+    val AND = Value("and")
+    /**
+     * logical reduction NAND operator
+     */
+    val NAND = Value("nand")
+    /**
+     * logical reduction OR operator
+     */
+    val OR = Value("or")
+    /**
+     * logical reduction NOR operator
+     */
+    val NOR = Value("nor")
+    /**
+     * logical reduction XOR operator
+     */
+    val XOR = Value("xor")
+    /**
+     * logical reduction XNOR operator
+     */
+    val XNOR = Value("xnor")
   }
 
 }

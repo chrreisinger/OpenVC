@@ -41,8 +41,10 @@ object SemanticAnalyzer {
   type Buffer[A] = immutable.VectorBuilder[A]
 
   private[this] val operatorMangleMap = Map(
+    "??" -> "$qmark$qmark", //VHDL 2008 condition_operator
     "and" -> "and", "or" -> "or", "nand" -> "nand", "nor" -> "nor", "xor" -> "xor", "xnor" -> "xnor", //logical_operator
-    "=" -> "$eq", "/=" -> "$eq$div", "<" -> "$less", "<=" -> "$less$eq", ">" -> "$greater", ">=" -> "$greater$eq", //relational_operator
+    "=" -> "$eq", "/=" -> "$div$eq", "<" -> "$less", "<=" -> "$less$eq", ">" -> "$greater", ">=" -> "$greater$eq", //relational_operator
+    "?=" -> "$qmark$eq", "?/=" -> "$qmark$div$eq", "?<" -> "$qmark$less", "?<" -> "$qmark$less$eq", "?>" -> "$qmark$greater", "?>" -> "$qmark$greater$eq", //VHDL 2008 matching relational operators
     "sll" -> "sll", "srl" -> "srl", "sla" -> "sla", "sra" -> "sra", "rol" -> "rol", "ror" -> "ror", //shift_operator
     "+" -> "$plus", "-" -> "$minus", "&" -> "$amp", //adding_operator + sign
     "*" -> "$times", "/" -> "$div", "mod" -> "mod", "rem" -> "rem", //multiplying_operator
@@ -312,6 +314,16 @@ object SemanticAnalyzer {
         (Option(resultList), resultContext)
     }
 
+  def findOverloadedOperatorWithoutError(context: Context, operator: String, loc: Locatable, expressions: Expression*): Option[FunctionCallExpression] = {
+    val identifier = Identifier(loc.position, operatorMangleMap(operator))
+    context.findSymbol(identifier, classOf[ListOfSubprograms]).flatMap {
+      listOfSubprograms =>
+        context.findFunctionInList(listOfSubprograms, expressions.map(_.dataType), NoType).map {
+          functionSymbol => FunctionCallExpression(identifier, Option(AssociationList(Seq(), expressions, functionSymbol.parameters)), None, functionSymbol)
+        }
+    }
+  }
+
   def acceptExpression(expr: Expression, expectedType: DataType, context: Context): Expression = {
 
     return acceptExpressionInner(expr)
@@ -320,6 +332,7 @@ object SemanticAnalyzer {
 
     def acceptExpressionInner(expression: Expression): Expression = (expression: @unchecked) match {
       case NoExpression | null => NoExpression
+      case conditionExpression: ConditionExpression => findOverloadedOperator("??", conditionExpression, acceptExpressionInner(conditionExpression.left)).getOrElse(conditionExpression)
       case item: ItemExpression => item
       case term: Term =>
         visitTerm(term.copy(left = acceptExpressionInner(term.left), right = acceptExpressionInner(term.right)))
@@ -341,20 +354,14 @@ object SemanticAnalyzer {
       case physicalLiteral: PhysicalLiteral => visitPhysicalLiteral(physicalLiteral)
     }
 
-    def findOverloadedOperator(operator: String, loc: Locatable, expressions: Expression*): Option[FunctionCallExpression] = {
-      val identifier = Identifier(loc.position, operatorMangleMap(operator))
-      context.findSymbol(identifier, classOf[ListOfSubprograms]).flatMap {
-        listOfSubprograms =>
-          context.findFunctionInList(listOfSubprograms, expressions.map(_.dataType), NoType).map {
-            functionSymbol => FunctionCallExpression(identifier, Option(AssociationList(Seq(), expressions)), None, functionSymbol)
-          }
-      }.orElse {
+    def findOverloadedOperator(operator: String, loc: Locatable, expressions: Expression*): Option[FunctionCallExpression] =
+      findOverloadedOperatorWithoutError(context, operator, loc, expressions: _*).orElse {
         expressions.toSeq match {
           case Seq(left, right) => addError(loc, """the operator "%s" is not defined for types %s and %s""", operator, left.dataType.name, right.dataType.name)
           case Seq(expression) => addError(loc, """the unary operator "%s" is not defined for type %s""", operator, expression.dataType.name)
         }
       }
-    }
+
 
     def visitAggregate(aggregate: Aggregate): Expression =
       aggregate.elements match {
@@ -444,8 +451,8 @@ object SemanticAnalyzer {
           }).getOrElse(aggregate)
       }
 
-    def visitFactor(factor: Factor): Expression = {
-      val dataType = factor.operator match {
+    def visitFactor(factor: Factor): Expression =
+      (factor.operator match {
         case Factor.Operator.ABS =>
           factor.left.dataType match {
             case numericType: NumericType => numericType
@@ -470,13 +477,15 @@ object SemanticAnalyzer {
               if (otherType == SymbolTable.bitType || otherType == SymbolTable.booleanType) factor.left.dataType
               else NoType
           }
+        case _ => NoType //VHDL 2008 unary logical operators AND, OR, NAND, NOR, XOR, and XNOR e.g. logical reduction operators
+      }) match {
+        case NoType =>
+          (factor.rightOption match {
+            case Some(right) => findOverloadedOperator(factor.operator.toString, factor, factor.left, right)
+            case None => findOverloadedOperator(factor.operator.toString, factor, factor.left)
+          }).getOrElse(factor.copy(dataType = NoType))
+        case dataType => factor.copy(dataType = dataType)
       }
-      if (dataType == NoType) (factor.rightOption match {
-        case Some(right) => findOverloadedOperator(factor.operator.toString, factor, factor.left, right)
-        case None => findOverloadedOperator(factor.operator.toString, factor, factor.left)
-      }).getOrElse(factor.copy(dataType = NoType))
-      else factor.copy(dataType = dataType)
-    }
 
     def convertBasedLiteral(text: String): (AnyVal, Literal.Type.Value, DataType) = {
       //INTEGER '#' BASED_INTEGER ( DOT BASED_INTEGER )? '#' EXPONENT? ;
@@ -867,6 +876,21 @@ object SemanticAnalyzer {
   def checkExpressionOption(context: Context, exprOption: Option[Expression], dataType: DataType): Option[Expression] =
     exprOption map (checkExpression(context, _, dataType))
 
+  def checkConditionOption(context: Context, exprOption: Option[Expression]): Option[Expression] =
+    exprOption map (checkCondition(context, _))
+
+  def checkCondition(context: Context, expr: Expression): Expression =
+    if (configuration.vhdl2008) {
+      val newExpr = acceptExpression(expr, SymbolTable.booleanType, context)
+      if (newExpr.dataType == SymbolTable.booleanType) newExpr
+      else (if (newExpr.dataType != NoType) findOverloadedOperatorWithoutError(context, "??", newExpr, newExpr)
+      else Option(newExpr)).getOrElse {
+        addErrorPosition(expr.firstPosition, "expected a boolean expression found %s", newExpr.dataType.name)
+        newExpr
+      }
+    }
+    else checkExpression(context, expr, SymbolTable.booleanType)
+
   def checkExpression(context: Context, expr: Expression, dataType: DataType): Expression = {
     val newExpr = acceptExpression(expr, dataType, context)
     if (!isCompatible(newExpr.dataType, dataType)) {
@@ -1198,49 +1222,50 @@ object SemanticAnalyzer {
           element =>
             import InterfaceList._
             import InterfaceList.Mode.{IN, LINKAGE}
-            val subType = createType(context, element.subType)
-            val dataType = subType.dataType
-            val nextIndex = getNextIndex(dataType)
-            val isOptional = element.expression.isDefined
-            val expression = checkExpressionOption(context, element.expression, dataType)
-            val mode = element.mode.getOrElse(IN)
-
-            if (dataType.isInstanceOf[ProtectedType] && element.expression.isDefined) addError(element.expression.get, "a protected type can not have a default value")
-            expression.foreach(checkIsStaticExpression)
-            if (mode == LINKAGE) addError(element.subType, "linkage mode is currently not supported") //LINKAGE is used for local variables and signals
-
-            val symbols = element.identifiers.map {
-              identifier =>
-                val (symbol, indexChange) = element match {
-                  case variableDeclaration: InterfaceVariableDeclaration =>
-                    if (mode != IN && element.expression.isDefined) addError(element.expression.get, "a variable parameter with a mode other than in can not have a default value")
-                    (new VariableSymbol(identifier, dataType, mode, varIndex, owner, isOptional, isParameter = true), nextIndex)
-                  case signalDeclaration: InterfaceSignalDeclaration =>
-                    checkIfNotFileProtectedAccessType(element.subType, dataType)
-                    if (element.expression.isDefined) {
-                      if (owner.isInstanceOf[SubprogramSymbol]) addError(element.expression.get, "a signal parameter can not have a default value")
-                      else if (mode != IN) addError(element.expression.get, "a port with a mode other than in can not have a default value")
+            element match {
+              case objectDecl: InterfaceObjectDeclaration =>
+                val subType = createType(context, objectDecl.subType)
+                val dataType = subType.dataType
+                val nextIndex = getNextIndex(dataType)
+                val isOptional = objectDecl.expression.isDefined
+                val expression = checkExpressionOption(context, objectDecl.expression, dataType)
+                val mode = objectDecl.mode.getOrElse(IN)
+                val symbols = objectDecl.identifiers.map {
+                  identifier =>
+                    if (dataType.isInstanceOf[ProtectedType] && objectDecl.expression.isDefined) addError(objectDecl.expression.get, "a protected type can not have a default value")
+                    expression.foreach(checkIsStaticExpression)
+                    if (mode == LINKAGE) addError(objectDecl.subType, "linkage mode is currently not supported") //LINKAGE is used for local variables and signals
+                    val (symbol, indexChange) = element match {
+                      case variableDeclaration: InterfaceVariableDeclaration =>
+                        if (mode != IN && objectDecl.expression.isDefined) addError(objectDecl.expression.get, "a variable parameter with a mode other than in can not have a default value")
+                        (new VariableSymbol(identifier, dataType, mode, varIndex, owner, isOptional, isParameter = true), nextIndex)
+                      case signalDeclaration: InterfaceSignalDeclaration =>
+                        checkIfNotFileProtectedAccessType(objectDecl.subType, dataType)
+                        if (objectDecl.expression.isDefined) {
+                          if (owner.isInstanceOf[SubprogramSymbol]) addError(objectDecl.expression.get, "a signal parameter can not have a default value")
+                          else if (mode != IN) addError(objectDecl.expression.get, "a port with a mode other than in can not have a default value")
+                        }
+                        (new SignalSymbol(identifier, dataType, mode, if (signalDeclaration.isBus) Option(SignalDeclaration.Type.BUS) else None, varIndex, owner, isOptional, isParameter = true), 1)
+                      case fileDeclaration: InterfaceFileDeclaration =>
+                        if (!dataType.isInstanceOf[FileType]) addError(objectDecl.subType, "file type expected")
+                        (new FileSymbol(identifier, dataType, varIndex, owner, isOptional, isParameter = true), 1)
+                      case constantDeclaration: InterfaceConstantDeclaration =>
+                        checkIfNotFileProtectedAccessType(objectDecl.subType, dataType)
+                        (new ConstantSymbol(identifier, dataType, varIndex, owner, isOptional, isParameter = true), nextIndex)
+                      case _ => error("not implemented")
                     }
-                    (new SignalSymbol(identifier, dataType, mode, if (signalDeclaration.isBus) Option(SignalDeclaration.Type.BUS) else None, varIndex, owner, isOptional, isParameter = true), 1)
-                  case fileDeclaration: InterfaceFileDeclaration =>
-                    if (!dataType.isInstanceOf[FileType]) addError(element.subType, "file type expected")
-                    (new FileSymbol(identifier, dataType, varIndex, owner, isOptional, isParameter = true), 1)
-                  case constantDeclaration: InterfaceConstantDeclaration =>
-                    checkIfNotFileProtectedAccessType(element.subType, dataType)
-                    (new ConstantSymbol(identifier, dataType, varIndex, owner, isOptional, isParameter = true), nextIndex)
+                    varIndex += indexChange
+                    symbol
+                }
+                val newElement = objectDecl match {
+                  case variableDeclaration: InterfaceVariableDeclaration => variableDeclaration.copy(subType = subType, expression = expression)
+                  case signalDeclaration: InterfaceSignalDeclaration => signalDeclaration.copy(subType = subType, expression = expression)
+                  case fileDeclaration: InterfaceFileDeclaration => fileDeclaration.copy(subType = subType)
+                  case constantDeclaration: InterfaceConstantDeclaration => constantDeclaration.copy(subType = subType, expression = expression)
                   case _ => error("not implemented")
                 }
-                varIndex += indexChange
-                symbol
+                (symbols, newElement)
             }
-            val newElement = element match {
-              case variableDeclaration: InterfaceVariableDeclaration => variableDeclaration.copy(subType = subType, expression = expression)
-              case signalDeclaration: InterfaceSignalDeclaration => signalDeclaration.copy(subType = subType, expression = expression)
-              case fileDeclaration: InterfaceFileDeclaration => fileDeclaration.copy(subType = subType)
-              case constantDeclaration: InterfaceConstantDeclaration => constantDeclaration.copy(subType = subType, expression = expression)
-              case _ => error("not implemented")
-            }
-            (symbols, newElement)
         }.unzip
         (symbols.flatten, Option(elements))
     }
@@ -1407,7 +1432,7 @@ object SemanticAnalyzer {
   }
 
   def visitAssertionStatement(assertStmt: AssertionStatement, context: Context): ReturnType = {
-    val condition = checkExpression(context, assertStmt.condition, SymbolTable.booleanType)
+    val condition = checkCondition(context, assertStmt.condition)
     val reportExpression = checkExpressionOption(context, assertStmt.reportExpression, SymbolTable.stringType)
     val severityExpression = checkExpressionOption(context, assertStmt.severityExpression, SymbolTable.severityLevel)
     (assertStmt.copy(condition = condition, reportExpression = reportExpression, severityExpression = severityExpression), context)
@@ -1538,6 +1563,7 @@ object SemanticAnalyzer {
   }
 
   def visitCaseStatement(caseStmt: CaseStatement, owner: Symbol, context: Context): ReturnType = {
+    require(!caseStmt.isMatchingCase)
     checkIdentifiersOption(caseStmt.label, caseStmt.endLabel)
     val caseStmtExpression = checkExpression(context, caseStmt.expression, NoType)
     val containsOthers = caseStmt.alternatives.exists(when => when.choices.exists(choice => choice.isOthers))
@@ -1658,33 +1684,40 @@ object SemanticAnalyzer {
     toProcessStatement(procedureCallStmt, sensitivityList, concurrentProcedureCallStmt.label, concurrentProcedureCallStmt.isPostponed, owner, context)
   }
 
-  def visitConcurrentSignalAssignmentStatement(signalAssignStmt: ConcurrentSignalAssignmentStatement, owner: Symbol, context: Context): ReturnType = {
-    require(!signalAssignStmt.isGuarded)
-
+  def convertWaveformAssignment(waveformAssignment: WaveformAssignment): SequentialStatement = {
     def waveTransform(waveform: Waveform): SequentialStatement =
       if (waveform.isUnaffected) {
         NullStatement(waveform.position, label = None)
       } else {
-        SimpleSignalAssignmentStatement(waveform.position, None, signalAssignStmt.target, signalAssignStmt.delay, waveform)
+        SimpleWaveformAssignmentStatement(waveform.position, None, waveformAssignment.target, waveformAssignment.delay, waveform)
       }
 
-    val newStatement = signalAssignStmt match {
-      case conditionalSignalAssignment: ConcurrentConditionalSignalAssignment => conditionalSignalAssignment.alternatives match {
-        case Seq(x) if (x.condition == None) => waveTransform(x.waveform)
+    waveformAssignment match {
+      case conditionalWaveformAssignment: ConditionalWaveformAssignment => conditionalWaveformAssignment.alternatives match {
+        case Seq(alternative) if (alternative.condition == None) => waveTransform(alternative.waveform)
         case _ =>
-          val last = conditionalSignalAssignment.alternatives.last
+          val last = conditionalWaveformAssignment.alternatives.last
           val mapper = (alternative: ConcurrentConditionalSignalAssignment.When) => new IfStatement.IfThenPart(alternative.condition.get, Seq(waveTransform(alternative.waveform)))
           val (ifThenList, elseSequentialStatements) = if (last.condition == None) {
-            (conditionalSignalAssignment.alternatives.init.map(mapper), Some(Seq(waveTransform(last.waveform))))
+            (conditionalWaveformAssignment.alternatives.init.map(mapper), Some(Seq(waveTransform(last.waveform))))
           }
           else {
-            (conditionalSignalAssignment.alternatives.map(mapper), None)
+            (conditionalWaveformAssignment.alternatives.map(mapper), None)
           }
-          IfStatement(conditionalSignalAssignment.position, label = None, ifThenList = ifThenList, elseSequentialStatements = elseSequentialStatements, endLabel = None)
+          IfStatement(conditionalWaveformAssignment.position, label = None, ifThenList = ifThenList, elseSequentialStatements = elseSequentialStatements, endLabel = None)
       }
-      case selectedSignalAssignment: ConcurrentSelectedSignalAssignment =>
-        val caseStmtAlternatives = selectedSignalAssignment.alternatives.map(alternative => new CaseStatement.When(alternative.choices, Seq(waveTransform(alternative.waveform))))
-        CaseStatement(selectedSignalAssignment.position, label = None, expression = selectedSignalAssignment.expression, alternatives = caseStmtAlternatives, endLabel = None)
+      case selectedWaveformAssignment: SelectedWaveformAssignment =>
+        val caseStmtAlternatives = selectedWaveformAssignment.alternatives.map(alternative => new CaseStatement.When(alternative.choices, Seq(waveTransform(alternative.waveform))))
+        CaseStatement(selectedWaveformAssignment.position, isMatchingCase = selectedWaveformAssignment.isMatchingCase, label = None, expression = selectedWaveformAssignment.expression, alternatives = caseStmtAlternatives, endLabel = None)
+    }
+  }
+
+  def visitConcurrentSignalAssignmentStatement(signalAssignStmt: ConcurrentSignalAssignmentStatement, owner: Symbol, context: Context): ReturnType = {
+    require(!signalAssignStmt.isGuarded)
+
+    val newStatement = signalAssignStmt match {
+      case ConcurrentConditionalSignalAssignment(position, label, _, target, _, delay, alternatives) => convertWaveformAssignment(ConditionalWaveformAssignment(position, label, target, delay, alternatives))
+      case ConcurrentSelectedSignalAssignment(position, label, _, expression, isMatchingCase, target, _, delay, alternatives) => convertWaveformAssignment(SelectedWaveformAssignment(position, label, expression, isMatchingCase, target, delay, alternatives))
     }
     toProcessStatement(newStatement, Seq(), signalAssignStmt.label, signalAssignStmt.isPostponed, owner, context)
   }
@@ -1712,28 +1745,45 @@ object SemanticAnalyzer {
     (newNode, newContext)
   }
 
+  @tailrec
+  def acceptContextItems(contextItems: Seq[ContextItem], context: Context): Context =
+    contextItems match {
+      case Seq() => context
+      case Seq(contextItem, xs@_*) =>
+        val newContext = contextItem match {
+          case useClause: UseClause => visitUseClause(useClause, context)._2
+          case LibraryClause(_, libraries) =>
+            val librarySymbols = libraries.distinct.flatMap {
+              id =>
+                try {
+                  val archive = new JarFileLibraryArchive(configuration.libraryDirectory + id.text + ".jar")
+                  require(archive.jarFile != null) //do not remove, this creates the lazy variable jarFile, and throws a FileNotFoundException if the jar file does not exist
+                  Some(new LibrarySymbol(id, archive))
+                } catch {
+                  case _: java.io.FileNotFoundException => addError(id, "library %s not found", id)
+                }
+            }
+            context.insertSymbols(librarySymbols)
+          case ContextReference(_, contexts) => error("not implement")
+        }
+        acceptContextItems(xs, newContext)
+    }
+
   def visitDesignUnit(designUnit: DesignUnit, owner: Symbol, context: Context): ReturnType = {
     val libraryUnitOption = designUnit.libraryUnit.map {
       unit =>
         checkIdentifiers(unit.identifier, unit.endIdentifier)
         val workSymbol = new LibrarySymbol(Identifier("work"), new DirectoryLibraryArchive(configuration.libraryOutputDirectory))
-        val librarySymbols = ((if ("std" == configuration.designLibrary) designUnit.libraries else Identifier(designUnit.position, "std") +: designUnit.libraries).distinct.flatMap {
-          id =>
-            try {
-              val archive = new JarFileLibraryArchive(configuration.libraryDirectory + id.text + ".jar")
-              require(archive.jarFile != null) //do not remove, this creates the lazy variable jarFile, and throws a FileNotFoundException if the jar file does not exist
-              Some(new LibrarySymbol(id, archive))
-            } catch {
-              case _: java.io.FileNotFoundException => addError(id, "library %s not found", id)
-            }
-        })
+        val owner = if (configuration.designLibrary == "work") workSymbol else new LibrarySymbol(Identifier(configuration.designLibrary), new DirectoryLibraryArchive(configuration.libraryOutputDirectory))
+        val contextItems = if ("std" == configuration.designLibrary) designUnit.contextItems
+        else {
+          LibraryClause(Position.NoPosition, Seq(Identifier("std"))) +: UseClause(Position.NoPosition, Seq(new SelectedName(Seq(Identifier("std"), Identifier("standard"), Identifier("all"))))) +: designUnit.contextItems
+        }
 
-        val newContext = if ("standard" == unit.identifier.text) {
-          context.openScope
-        } else {
+        val newContext = acceptContextItems(contextItems, context.openScope)
+        if ("standard" != unit.identifier.text) {
           // set up universe
-          val c = visitUseClause(UseClause(Position.NoPosition, Seq(new SelectedName(Seq(Identifier("std"), Identifier("standard"), Identifier("all"))))), context.openScope.insertSymbol(librarySymbols(0)))._2.openScope.insertSymbols(workSymbol +: librarySymbols)
-          def findType[A](dataType: String): A = c.symbolTable.scopes.last(dataType) match {
+          def findType[A](dataType: String): A = newContext.symbolTable.scopes.last(dataType) match {
             case typeSymbol: TypeSymbol => typeSymbol.dataType.asInstanceOf[A]
             case subTypeSymbol: SubTypeSymbol => subTypeSymbol.dataType.asInstanceOf[A]
             case _ => error("evil internal compiler error")
@@ -1751,12 +1801,10 @@ object SemanticAnalyzer {
           SymbolTable.bitVector = findType("bit_vector")
           SymbolTable.fileOpenKind = findType("file_open_kind")
           SymbolTable.fileOpenStatus = findType("file_open_status")
-          SymbolTable.foreignAttribute = c.symbolTable.scopes.last("foreign").asInstanceOf[AttributeDeclarationSymbol]
-          c
+          SymbolTable.foreignAttribute = newContext.symbolTable.scopes.last("foreign").asInstanceOf[AttributeDeclarationSymbol]
         }
 
-        val (useClauses, c1) = acceptNodes(designUnit.useClauses, owner, newContext)
-        val (node, c2) = acceptNode(unit, if (configuration.designLibrary == "work") workSymbol else new LibrarySymbol(Identifier(configuration.designLibrary), new DirectoryLibraryArchive(configuration.libraryOutputDirectory)), c1)
+        val (node, _) = acceptNode(unit, owner, newContext.openScope)
         val libraryUnit = node.asInstanceOf[LibraryUnit]
         import java.io.{File, ObjectOutputStream, FileOutputStream}
 
@@ -1775,7 +1823,9 @@ object SemanticAnalyzer {
             writer.writeObject(libraryUnit.symbol)
           }
         }
-        librarySymbols.foreach(_.libraryArchive.close)
+        newContext.closeScope.collect(_ match {
+          case x: LibrarySymbol => x
+        }).foreach(_.libraryArchive.close)
         libraryUnit
     }
     (designUnit.copy(libraryUnit = libraryUnitOption), context)
@@ -1813,7 +1863,7 @@ object SemanticAnalyzer {
   }
 
   def visitExitStatement(exitStmt: ExitStatement, context: Context): ReturnType = {
-    val condition = checkExpressionOption(context, exitStmt.condition, SymbolTable.booleanType)
+    val condition = checkConditionOption(context, exitStmt.condition)
     val loopStatement = checkLoopLabel(context, exitStmt.loopLabel, exitStmt, "exit")
     (exitStmt.copy(condition = condition, loopStatement = loopStatement), context)
   }
@@ -1857,6 +1907,7 @@ object SemanticAnalyzer {
   }
 
   def visitFunctionDefinition(functionDefinition: FunctionDefinition, owner: Symbol, context: Context): ReturnType = {
+    require(functionDefinition.genericInterfaceList.isEmpty && functionDefinition.genericAssociationList.isEmpty)
     checkIdentifiers(functionDefinition.identifier, functionDefinition.endIdentifier)
     val returnType = context.findType(functionDefinition.returnType)
     val function = new FunctionSymbol(getMangledName(functionDefinition.identifier), Seq(), returnType, owner, functionDefinition.isPure, true)
@@ -1867,7 +1918,7 @@ object SemanticAnalyzer {
     if (name == "+" || name == "-") {
       if (function.parameters.size != 2 && function.parameters.size != 1) addError(functionDefinition.identifier, "overloaded operator " + name + " must be a unary or binary operator")
     }
-    else if (name == "abs" || name == "not") {
+    else if (name == "abs" || name == "not" || (configuration.vhdl2008 && (name == "and" || name == "or" || name == "nand" || name == "nor" || name == "xor" || name == "xnor" || name == "??"))) {
       if (function.parameters.size != 1) addError(functionDefinition.identifier, "overloaded unary operator " + name + " must have a single parameter")
     }
     else if (functionDefinition.identifier.originalText(0) == '"' && function.parameters.size != 2) addError(functionDefinition.identifier, "overloaded binary operator " + name + " must have two parameters")
@@ -1912,16 +1963,22 @@ object SemanticAnalyzer {
 
   def visitIfGenerateStatement(ifGenerateStmt: IfGenerateStatement, owner: Symbol, context: Context): ReturnType = {
     checkIdentifiersOption(ifGenerateStmt.label, ifGenerateStmt.endLabel)
-    val condition = checkExpression(context, ifGenerateStmt.condition, SymbolTable.booleanType)
-    //TODO ifGenerateStmt.value=StaticExpressionCalculator.calcBooleanValue(condition)
-    val (declarativeItems, c1) = acceptDeclarativeItems(ifGenerateStmt.declarativeItems, owner, insertConcurrentStatementsLabels(context, ifGenerateStmt.concurrentStatements, owner))
-    val (concurrentStatements, _) = acceptNodes(ifGenerateStmt.concurrentStatements, owner, c1)
-    (ifGenerateStmt.copy(declarativeItems = declarativeItems, concurrentStatements = concurrentStatements), context)
+    def checkIfThenPart(ifThen: IfGenerateStatement.IfThenPart): IfGenerateStatement.IfThenPart = {
+      checkIdentifiersOption(ifThen.label, ifThen.endLabel)
+      val (declarativeItems, c1) = acceptNodes(ifThen.declarativeItems, owner, insertConcurrentStatementsLabels(context, ifThen.concurrentStatements, owner))
+      val (concurrentStatements, _) = acceptNodes(ifThen.concurrentStatements, owner, c1)
+      val condition = checkCondition(context, ifThen.condition)
+      //TODO val value=StaticExpressionCalculator.calcBooleanValue(condition)
+      new IfGenerateStatement.IfThenPart(ifThen.label, condition, declarativeItems, concurrentStatements, ifThen.endLabel)
+    }
+    val ifThenList = ifGenerateStmt.ifThenList.map(checkIfThenPart)
+    val elsePart = ifGenerateStmt.elsePart.map(checkIfThenPart)
+    (ifGenerateStmt.copy(ifThenList = ifThenList, elsePart = elsePart), context)
   }
 
   def visitIfStatement(ifStmt: IfStatement, owner: Symbol, context: Context): ReturnType = {
     checkIdentifiersOption(ifStmt.label, ifStmt.endLabel)
-    val ifThenList = ifStmt.ifThenList.map(ifThen => new IfStatement.IfThenPart(checkExpression(context, ifThen.condition, SymbolTable.booleanType), acceptNodes(ifThen.sequentialStatements, owner, context)._1))
+    val ifThenList = ifStmt.ifThenList.map(ifThen => new IfStatement.IfThenPart(checkCondition(context, ifThen.condition), acceptNodes(ifThen.sequentialStatements, owner, context)._1))
     val (elseSequentialStatements, _) = acceptNodesOption(ifStmt.elseSequentialStatements, owner, context)
     (ifStmt.copy(ifThenList = ifThenList, elseSequentialStatements = elseSequentialStatements), context)
   }
@@ -1933,7 +1990,7 @@ object SemanticAnalyzer {
   }
 
   def visitNextStatement(nextStmt: NextStatement, context: Context): ReturnType = {
-    val condition = checkExpressionOption(context, nextStmt.condition, SymbolTable.booleanType)
+    val condition = checkConditionOption(context, nextStmt.condition)
     val loopStatement = checkLoopLabel(context, nextStmt.loopLabel, nextStmt, "next")
     (nextStmt.copy(condition = condition, loopStatement = loopStatement), context)
   }
@@ -1957,6 +2014,7 @@ object SemanticAnalyzer {
     }
 
   def visitPackageDeclaration(packageDeclaration: PackageDeclaration, owner: Symbol, context: Context): ReturnType = {
+    require(packageDeclaration.genericAssociationList.isEmpty && packageDeclaration.genericInterfaceList.isEmpty)
     val packageSymbol = new PackageSymbol(packageDeclaration.identifier, Map(), false, owner)
     val (declarativeItems, newContext) = acceptDeclarativeItems(packageDeclaration.declarativeItems, packageSymbol, context.insertSymbol(packageSymbol))
     require(newContext.symbolTable.depth <= 2)
@@ -1981,6 +2039,7 @@ object SemanticAnalyzer {
   }
 
   def visitProcedureDefinition(procedureDefinition: ProcedureDefinition, owner: Symbol, context: Context): ReturnType = {
+    require(procedureDefinition.genericInterfaceList.isEmpty && procedureDefinition.genericAssociationList.isEmpty)
     checkIdentifiers(procedureDefinition.identifier, procedureDefinition.endIdentifier)
     val procedure = new ProcedureSymbol(procedureDefinition.identifier, Seq(), owner, true, true)
     val (parameters, parameterInterfaceList) = createSymbolsFromInterfaceList(context, procedureDefinition.parameterInterfaceList, procedure)
@@ -2094,7 +2153,7 @@ object SemanticAnalyzer {
       }
 
     signalAssignStmt match {
-      case stmt: SimpleSignalAssignmentStatement =>
+      case stmt: SimpleWaveformAssignmentStatement =>
         stmt.target.nameOrAggregate match {
           case Left(name) =>
             val nameExpression = acceptExpression(name, NoType, context)
@@ -2122,6 +2181,28 @@ object SemanticAnalyzer {
             }
           case Right(aggregate) => error("not implemented") // TODO stmt.target.aggregate
         }
+      //VHDL 2008
+      case waveformAssignment: WaveformAssignment => acceptNode(convertWaveformAssignment(waveformAssignment), owner, context)
+      case conditionalForceAssignment: ConditionalForceAssignment =>
+        def toForceAssignment(alternative: ConditionalVariableAssignment.When) = SimpleForceAssignment(alternative.expression.position, None, conditionalForceAssignment.target, conditionalForceAssignment.forceMode, alternative.expression)
+        conditionalForceAssignment.alternatives match {
+          case Seq(alternative) if (alternative.condition == None) => visitSignalAssignmentStatement(toForceAssignment(alternative), owner, context)
+          case _ =>
+            val last = conditionalForceAssignment.alternatives.last
+            val mapper = (alternative: ConditionalVariableAssignment.When) => new IfStatement.IfThenPart(alternative.condition.get, Seq(toForceAssignment(alternative)))
+            val (ifThenList, elseSequentialStatements) = if (last.condition == None) {
+              (conditionalForceAssignment.alternatives.init.map(mapper), Some(Seq(toForceAssignment(last))))
+            }
+            else {
+              (conditionalForceAssignment.alternatives.map(mapper), None)
+            }
+            visitIfStatement(IfStatement(conditionalForceAssignment.position, label = conditionalForceAssignment.label, ifThenList = ifThenList,
+              elseSequentialStatements = elseSequentialStatements, endLabel = conditionalForceAssignment.label), owner, context)
+        }
+      case selectedForceAssignment: SelectedForceAssignment =>
+        val caseStmtAlternatives = selectedForceAssignment.alternatives.map(alternative => new CaseStatement.When(alternative.choices, Seq(SimpleForceAssignment(alternative.expression.position, None, selectedForceAssignment.target, selectedForceAssignment.forceMode, alternative.expression))))
+        visitCaseStatement(CaseStatement(selectedForceAssignment.position, isMatchingCase = selectedForceAssignment.isMatchingCase, label = selectedForceAssignment.label,
+          expression = selectedForceAssignment.expression, alternatives = caseStmtAlternatives, endLabel = selectedForceAssignment.label), owner, context)
     }
   }
 
@@ -2355,6 +2436,27 @@ object SemanticAnalyzer {
           (stmt.copy(expression = expression, target = stmt.target.copy(expression = nameExpression)), context)
         case Right(aggregate) => error("not implemented") // TODO stmt.target.aggregate
       }
+    //VHDL 2008
+    case conditionalVariableAssignment: ConditionalVariableAssignment =>
+      def toVariableAssignment(alternative: ConditionalVariableAssignment.When) = SimpleVariableAssignmentStatement(alternative.expression.position, None, conditionalVariableAssignment.target, alternative.expression)
+      conditionalVariableAssignment.alternatives match {
+        case Seq(alternative) if (alternative.condition == None) => visitVariableAssignmentStatement(toVariableAssignment(alternative), owner, context)
+        case _ =>
+          val last = conditionalVariableAssignment.alternatives.last
+          val mapper = (alternative: ConditionalVariableAssignment.When) => new IfStatement.IfThenPart(alternative.condition.get, Seq(toVariableAssignment(alternative)))
+          val (ifThenList, elseSequentialStatements) = if (last.condition == None) {
+            (conditionalVariableAssignment.alternatives.init.map(mapper), Some(Seq(toVariableAssignment(last))))
+          }
+          else {
+            (conditionalVariableAssignment.alternatives.map(mapper), None)
+          }
+          visitIfStatement(IfStatement(conditionalVariableAssignment.position, label = conditionalVariableAssignment.label, ifThenList = ifThenList,
+            elseSequentialStatements = elseSequentialStatements, endLabel = conditionalVariableAssignment.label), owner, context)
+      }
+    case selectedVariableAssignment: SelectedVariableAssignment =>
+      val caseStmtAlternatives = selectedVariableAssignment.alternatives.map(alternative => new CaseStatement.When(alternative.choices, Seq(SimpleVariableAssignmentStatement(alternative.expression.position, None, selectedVariableAssignment.target, alternative.expression))))
+      visitCaseStatement(CaseStatement(selectedVariableAssignment.position, isMatchingCase = selectedVariableAssignment.isMatchingCase, label = selectedVariableAssignment.label,
+        expression = selectedVariableAssignment.expression, alternatives = caseStmtAlternatives, endLabel = selectedVariableAssignment.label), owner, context)
   }
 
 
@@ -2393,14 +2495,14 @@ object SemanticAnalyzer {
           case _ => addError(expr, "signal expected")
         }
     }
-    val untilCondition = checkExpressionOption(context, waitStmt.untilCondition, SymbolTable.booleanType)
+    val untilCondition = checkConditionOption(context, waitStmt.untilCondition)
     val forExpression = checkExpressionOption(context, waitStmt.forExpression, SymbolTable.timeType)
     (waitStmt.copy(untilCondition = untilCondition, forExpression = forExpression), context)
   }
 
   def visitWhileStatement(whileStmt: WhileStatement, owner: Symbol, context: Context): ReturnType = {
     checkIdentifiersOption(whileStmt.label, whileStmt.endLabel)
-    val condition = checkExpression(context, whileStmt.condition, SymbolTable.booleanType)
+    val condition = checkCondition(context, whileStmt.condition)
     val (sequentialStatements, _) = acceptNodes(whileStmt.sequentialStatements, owner, context.insertLoopLabel(whileStmt.label, whileStmt.position))
     (whileStmt.copy(condition = condition, sequentialStatements = sequentialStatements), context)
   }
