@@ -305,9 +305,9 @@ generic_clause returns [Seq[InterfaceList.AbstractInterfaceElement\] list] :
 
 generic_interface_list returns [Seq[InterfaceList.AbstractInterfaceElement\] list]
 @init{
-	val elements=new Buffer[InterfaceList.InterfaceConstantDeclaration]()
+	val elements=new Buffer[InterfaceList.AbstractInterfaceElement]()
 } :
-	decl1=interface_constant_declaration {elements += $decl1.constElement} ( SEMICOLON decl2=interface_constant_declaration {elements += $decl2.constElement})*
+	decl1=interface_element_generic {elements += $decl1.element} ( SEMICOLON decl2=interface_element_generic {elements += $decl2.element})*
 	{$list=elements.result};
     
 port_clause returns [Seq[InterfaceList.AbstractInterfaceElement\] list] :
@@ -1499,6 +1499,14 @@ ams_break_element returns [BreakElement breakElement] :
 	{breakElement=new BreakElement($quantity_name1.name_,$quantity_name2.name_,$expr.expr)};
 
 // B.7 Interfaces and Associations
+interface_element_generic returns [InterfaceList.AbstractInterfaceElement element] :
+	interface_constant_declaration  {$element=$interface_constant_declaration.constElement}
+	| {vhdl2008}?=>(
+		| v2008_interface_type_declaration {$element=$v2008_interface_type_declaration.typeDecl}
+		| v2008_interface_subprogram_declaration {$element=$v2008_interface_subprogram_declaration.subprogramDecl}
+		| v2008_interface_package_declaration {$element=$v2008_interface_package_declaration.packageDecl}
+		);
+
 interface_element_port returns [InterfaceList.AbstractInterfaceElement element] :
 	interface_signal_declaration_port {$element=$interface_signal_declaration_port.signalElement}
 	| {ams}?=>(
@@ -1514,11 +1522,6 @@ interface_element_procedure returns [InterfaceList.AbstractInterfaceElement elem
 	| {ams}?=>(
 		ams_interface_terminal_declaration {$element=$ams_interface_terminal_declaration.terminalDecl}
 		| ams_interface_quantity_declaration {$element=$ams_interface_quantity_declaration.quantityDecl}
-		)
-	| {vhdl2008}?=>(
-		| v2008_interface_type_declaration {$element=$v2008_interface_type_declaration.typeDecl}
-		| v2008_interface_subprogram_declaration {$element=$v2008_interface_subprogram_declaration.subprogramDecl}
-		| v2008_interface_package_declaration {$element=$v2008_interface_package_declaration.packageDecl}
 		);
 		
 interface_element_function returns [InterfaceList.AbstractInterfaceElement element] :
@@ -1528,11 +1531,6 @@ interface_element_function returns [InterfaceList.AbstractInterfaceElement eleme
 	| {ams}?=>(
 		ams_interface_terminal_declaration {$element=$ams_interface_terminal_declaration.terminalDecl}
 		| ams_interface_quantity_declaration {$element=$ams_interface_quantity_declaration.quantityDecl}
-		)
-	| {vhdl2008}?=>(
-		| v2008_interface_type_declaration {$element=$v2008_interface_type_declaration.typeDecl}
-		| v2008_interface_subprogram_declaration {$element=$v2008_interface_subprogram_declaration.subprogramDecl}
-		| v2008_interface_package_declaration {$element=$v2008_interface_package_declaration.packageDecl}
 		);
 		
 parameter_interface_list_procedure returns [Seq[InterfaceList.AbstractInterfaceElement\] list]
