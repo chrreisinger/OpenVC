@@ -86,7 +86,7 @@ final class SymbolTable(val scopes: Seq[SymbolTable.Scope]) {
   }
 
   def findInCurrentScope[A <: Symbol](name: String, symbolClass: Class[A]): Option[A] =
-    currentScope.get(name).flatMap{
+    currentScope.get(name).flatMap {
       symbol =>
         if (symbolClass.isInstance(symbol)) Some(symbol.asInstanceOf[A])
         else None
@@ -112,7 +112,7 @@ abstract sealed class AbstractLibraryArchive extends java.io.Serializable {
   def close()
 
   def loadSymbol(name: String): Option[Symbol] =
-    getInputStream(name + ".sym").flatMap{
+    getInputStream(name + ".sym").flatMap {
       stream =>
         try {
           Option(new ObjectInputStream(stream).readObject.asInstanceOf[Symbol])
@@ -126,7 +126,7 @@ abstract sealed class AbstractLibraryArchive extends java.io.Serializable {
     }
 
   def loadSymbol[A <: Symbol](name: String, symbolClass: Class[A]): Option[A] =
-    loadSymbol(name).flatMap{
+    loadSymbol(name).flatMap {
       symbol =>
         if (symbolClass.isInstance(symbol)) Some(symbol.asInstanceOf[A])
         else None
@@ -141,7 +141,7 @@ final class JarFileLibraryArchive(val file: String) extends AbstractLibraryArchi
   @transient lazy val jarFile = new java.util.jar.JarFile(file)
 
   @throws(classOf[IOException])
-  override def close() = this.jarFile.close()
+  override def close() = if (this.jarFile != null) this.jarFile.close()
 
   override def getInputStream(file: String): Option[InputStream] =
     jarFile.getEntry(file) match {

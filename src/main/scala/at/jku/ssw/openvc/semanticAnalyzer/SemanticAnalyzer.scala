@@ -88,7 +88,7 @@ object SemanticAnalyzer {
         case (et1: EnumerationType, et2: EnumerationType) => et1.baseType.getOrElse(et1) == et1.baseType.getOrElse(et2)
         case (NullType, _: AccessType) => true
         case (_: AccessType, NullType) => true
-        case (at1: ArrayType, at2: ArrayType) => at1.elementType == at2.elementType && at1.dimensions.size==at2.dimensions.size //TODO check element type and range
+        case (at1: ArrayType, at2: ArrayType) => at1.elementType == at2.elementType && at1.dimensions.size == at2.dimensions.size //TODO check element type and range
         case _ => false
       }
     }
@@ -1432,6 +1432,30 @@ object SemanticAnalyzer {
     }
   }
 
+  def visitContextDeclaration(contextDeclaration: ContextDeclaration, owner: Symbol, context: Context): ReturnType = {
+    val contextItems = contextDeclaration.contextItems.map {
+      _ match {
+        case UseClause(position, oldNames) =>
+          val names = oldNames.flatMap {
+            name =>
+              if (name.identifiers(0) == "work") addError(name, """can not use "work" in a use clause in a context declaration """)
+              else Option(name)
+          }
+          UseClause(position, names)
+        case LibraryClause(position, oldLibraries) =>
+          val libraries = oldLibraries.flatMap {
+            library =>
+              if (library == "work") addError(library, """can not use "work" in a library clause in a context declaration """)
+              else Option(library)
+          }
+          LibraryClause(position, libraries)
+        case contextReference => contextReference
+      }
+    }
+    val contextSymbol = new ContextSymbol(contextDeclaration.identifier, acceptContextItems(contextItems, context).closeScope.map(symbol => (symbol.name, symbol)).toMap, owner)
+    (contextDeclaration.copy(contextItems = contextItems, symbol = contextSymbol), context)
+  }
+
   def visitAssertionStatement(assertStmt: AssertionStatement, context: Context): ReturnType = {
     val condition = checkCondition(context, assertStmt.condition)
     val reportExpression = checkExpressionOption(context, assertStmt.reportExpression, SymbolTable.stringType)
@@ -1756,7 +1780,8 @@ object SemanticAnalyzer {
           case LibraryClause(_, libraries) =>
             val librarySymbols = libraries.distinct.flatMap {
               id =>
-                try {
+                if (id == "work") Option(new LibrarySymbol(id, new DirectoryLibraryArchive(configuration.outputDirectory)))
+                else try {
                   val archive = new JarFileLibraryArchive(configuration.libraryDirectory + id.text + ".jar")
                   require(archive.jarFile != null) //do not remove, this creates the lazy variable jarFile, and throws a FileNotFoundException if the jar file does not exist
                   Some(new LibrarySymbol(id, archive))
@@ -1764,8 +1789,28 @@ object SemanticAnalyzer {
                   case _: java.io.FileNotFoundException => addError(id, "library %s not found", id)
                 }
             }
-            context.insertSymbols(librarySymbols)
-          case ContextReference(_, contexts) => error("not implement")
+            /*
+            generateErrorMessage is false because the LRM says:
+            If two or more logical names having the same identifier (see 15.4) appear in library clauses in the same
+            context clause, the second and subsequent occurrences of the logical name have no effect. The same is true
+            of logical names appearing both in the context clause of a primary unit and in the context clause of a
+            corresponding secondary unit.
+             */
+            context.insertSymbols(librarySymbols, generateErrorMessage = false)
+          case ContextReference(_, contextReferences) => contextReferences.flatMap {
+            contextReference =>
+              contextReference.identifiers match {
+                case Seq(library, contextName) =>
+                  context.findSymbol(library, classOf[LibrarySymbol]).flatMap {
+                    symbol =>
+                      symbol.libraryArchive.loadSymbol(library.text + "/" + contextName.text, classOf[ContextSymbol]).orElse(addError(contextName, "context %s not found", contextName.text))
+                  }.map(_.localSymbols.values)
+                case _ => addError(contextReference, "expected a context reference in the form library.contextName")
+              }
+          }.flatten match {
+            case Seq() => context
+            case symbolList => context.insertSymbols(symbolList, generateErrorMessage = false)
+          }
         }
         acceptContextItems(xs, newContext)
     }
@@ -1774,15 +1819,17 @@ object SemanticAnalyzer {
     val libraryUnitOption = designUnit.libraryUnit.map {
       unit =>
         checkIdentifiers(unit.identifier, unit.endIdentifier)
-        val workSymbol = new LibrarySymbol(Identifier("work"), new DirectoryLibraryArchive(configuration.libraryOutputDirectory))
-        val owner = if (configuration.designLibrary == "work") workSymbol else new LibrarySymbol(Identifier(configuration.designLibrary), new DirectoryLibraryArchive(configuration.libraryOutputDirectory))
-        val contextItems = if ("std" == configuration.designLibrary) designUnit.contextItems
+        val owner = new LibrarySymbol(Identifier(configuration.designLibrary), new DirectoryLibraryArchive(configuration.outputDirectory))
+        val contextItems = if ("std" == configuration.designLibrary || unit.isInstanceOf[ContextDeclaration]) designUnit.contextItems
         else {
-          LibraryClause(Position.NoPosition, Seq(Identifier("std"))) +: UseClause(Position.NoPosition, Seq(new SelectedName(Seq(Identifier("std"), Identifier("standard"), Identifier("all"))))) +: designUnit.contextItems
+          LibraryClause(unit.position, Seq(Identifier(unit.position, "work"))) +: LibraryClause(unit.position, Seq(Identifier(unit.position, "std"))) +: UseClause(Position.NoPosition, Seq(new SelectedName(Seq(Identifier("std"), Identifier("standard"), Identifier("all"))))) +: designUnit.contextItems
         }
 
-        val newContext = acceptContextItems(contextItems, context.openScope)
-        if ("standard" != unit.identifier.text) {
+        val newContext = if (unit.isInstanceOf[ContextDeclaration]) {
+          if (contextItems.nonEmpty) addError(contextItems.head, "a context declaration can not contain context items")
+          context
+        } else acceptContextItems(contextItems, context.openScope)
+        if ("standard" != unit.identifier.text && !unit.isInstanceOf[ContextDeclaration]) {
           // set up universe
           def findType[A](dataType: String): A = newContext.symbolTable.scopes.last(dataType) match {
             case typeSymbol: TypeSymbol => typeSymbol.dataType.asInstanceOf[A]
@@ -1824,9 +1871,10 @@ object SemanticAnalyzer {
             writer.writeObject(libraryUnit.symbol)
           }
         }
-        newContext.closeScope.collect(_ match {
-          case x: LibrarySymbol => x
-        }).foreach(_.libraryArchive.close)
+        if (!unit.isInstanceOf[ContextDeclaration])
+          newContext.closeScope.collect(_ match {
+            case x: LibrarySymbol => x
+          }).foreach(_.libraryArchive.close)
         libraryUnit
     }
     (designUnit.copy(libraryUnit = libraryUnitOption), context)
@@ -2519,6 +2567,7 @@ object SemanticAnalyzer {
     case entityDeclaration: EntityDeclaration => visitEntityDeclaration(entityDeclaration, owner, context)
     case architectureDeclaration: ArchitectureDeclaration => visitArchitectureDeclaration(architectureDeclaration, owner, context)
     case configurationDeclaration: ConfigurationDeclaration => visitConfigurationDeclaration(configurationDeclaration, owner, context)
+    case contextDeclaration: ContextDeclaration => visitContextDeclaration(contextDeclaration, owner, context)
     //declarative Items
     case variableDeclaration: VariableDeclaration => visitVariableDeclaration(variableDeclaration, owner, context)
     case constantDeclaration: ConstantDeclaration => visitConstantDeclaration(constantDeclaration, owner, context)

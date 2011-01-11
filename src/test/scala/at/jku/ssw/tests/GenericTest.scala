@@ -26,7 +26,7 @@ import java.io.{File, PrintWriter}
 
 trait GenericTest extends FunSuite with ShouldMatchers {
   val library = "testLibrary"
-  val configuration = new VHDLCompiler.Configuration(amsEnabled = false, parseOnly = false, outputDirectory = "output/", designLibrary = library, libraryDirectory = "vhdlLibs\\", debugCompiler = false, debugCodeGenerator = false)
+  val configuration = new VHDLCompiler.Configuration(amsEnabled = false, parseOnly = false, vhdl2008 = false, outputDirectory = "output/", designLibrary = library, libraryDirectory = "vhdlLibs\\", debugCompiler = false, debugCodeGenerator = false)
   val directory = new File(configuration.libraryOutputDirectory)
 
   def compile(source: String) {

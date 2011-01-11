@@ -94,6 +94,7 @@ final class Identifier(val position: Position, val originalText: String) extends
 
   override def equals(other: Any): Boolean = other match {
     case anyRef: AnyRef if (anyRef eq this) => true
+    case str: String => str == this.text
     case id: Identifier => id.text == this.text
     case _ => false
   }
@@ -1282,7 +1283,7 @@ final case class PackageInstantiationDeclaration(position: Position, identifier:
   val endIdentifier: Option[Identifier] = None
 }
 
-final case class ContextDeclaration(position: Position, identifier: Identifier, contextItems: Seq[ContextItem], endIdentifier: Option[Identifier], symbol: Symbol = NoSymbol) extends LibraryUnit
+final case class ContextDeclaration(position: Position, identifier: Identifier, contextItems: Seq[ContextItem], endIdentifier: Option[Identifier], symbol: ContextSymbol = null) extends LibraryUnit
 
 final case class SubprogramInstantiationDeclaration(position: Position, isProcedure: Boolean, identifier: Identifier, subprogramName: SelectedName, signature: Signature, genericAssociationList: Option[AssociationList]) extends DeclarativeItem
 

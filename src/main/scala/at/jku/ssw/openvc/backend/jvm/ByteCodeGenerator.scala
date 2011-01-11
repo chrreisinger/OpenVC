@@ -244,7 +244,7 @@ object ByteCodeGenerator {
       case procedureDefinition: ProcedureDefinition => visitProcedureDefinition(procedureDefinition, context)
       case componentDeclaration: ComponentDeclaration => visitComponentDeclaration(componentDeclaration, context)
       case aliasDeclaration: AliasDeclaration => visitAliasDeclaration(aliasDeclaration, context)
-      case _: FunctionDeclaration | _: ProcedureDeclaration | _: SubTypeDeclaration | _: AttributeDeclaration | _: AttributeSpecification | _: GroupTemplateDeclaration | _: GroupDeclaration | _: UseClause => //nothing
+      case _: FunctionDeclaration | _: ProcedureDeclaration | _: SubTypeDeclaration | _: AttributeDeclaration | _: AttributeSpecification | _: GroupTemplateDeclaration | _: GroupDeclaration | _: UseClause | _: ContextDeclaration => //nothing
     }
 
     def acceptExpressionOption(expr: Option[Expression], contextOption: Option[ExpressionContext] = None, createDebugLineNumberInformation: Boolean = true)(implicit mv: RichMethodVisitor) =

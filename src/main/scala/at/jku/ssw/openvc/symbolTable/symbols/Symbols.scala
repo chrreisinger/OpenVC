@@ -42,7 +42,7 @@ abstract sealed class Symbol extends Serializable with Locatable {
 
   lazy val implementationName: String = this match {
     case entitySymbol: EntitySymbol => owner.name + "/" + entitySymbol.name + "/" + entitySymbol.name
-    case configurationSymbol: ConfigurationSymbol => owner.name + "/" + name
+    case _: ConfigurationSymbol | _: ContextSymbol => owner.name + "/" + name
     case architectureSymbol: ArchitectureSymbol => owner.name + "/" + architectureSymbol.entity.name + "/" + architectureSymbol.name
     case packageSymbol: PackageSymbol => owner.name + "/" + packageSymbol.name + (if (packageSymbol.isBody) "_body" else "_header")
     case process: ProcessSymbol => process.owner.implementationName + "$" + process.name
@@ -166,7 +166,7 @@ final case class FunctionSymbol(@transient identifier: Identifier, var parameter
 @SerialVersionUID(1492091303227052136L)
 final case class ProcedureSymbol(@transient identifier: Identifier, var parameters: Seq[RuntimeSymbol], owner: Symbol, var isPassive: Boolean, isImplemented: Boolean = true) extends SubprogramSymbol {
   val returnTypeOption = None
-  lazy val copyBackSymbols = parameters.collect{
+  lazy val copyBackSymbols = parameters.collect {
     _ match {
       case varSymbol: VariableSymbol if (varSymbol.mode != Mode.IN && varSymbol.dataType.isInstanceOf[ScalarType]) => varSymbol
     }
@@ -213,6 +213,9 @@ final case class ConfigurationSymbol(@transient identifier: Identifier, owner: S
 
 @SerialVersionUID(5924008907619747454L)
 final case class ArchitectureSymbol(@transient identifier: Identifier, entity: EntitySymbol, owner: Symbol) extends DesignEntity
+
+@SerialVersionUID(-5716129771330926555L)
+final case class ContextSymbol(@transient identifier: Identifier, localSymbols: Map[String, Symbol], owner: Symbol) extends DesignEntity
 
 @SerialVersionUID(-848787780393119417L)
 final case class PackageSymbol(@transient identifier: Identifier, var localSymbols: Map[String, Symbol], isBody: Boolean, owner: Symbol) extends DesignEntity {

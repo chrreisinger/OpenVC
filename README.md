@@ -11,3 +11,4 @@ To compile the project start the [sbt](http://code.google.com/p/simple-build-too
 * unary logical operators e.g. logical reduction operators
 * Condition operator
 * matching relational operator
+* Context declarations
