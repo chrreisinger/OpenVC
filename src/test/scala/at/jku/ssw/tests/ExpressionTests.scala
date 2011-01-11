@@ -147,4 +147,41 @@ final class ExpressionTests extends GenericTest {
       end main;
     """
   }
+  compileCodeInPackageAndRun("compile bit string literals") {
+    """
+      procedure compare (
+        a, b : string) is
+      begin  -- test
+        assert a = b report "note equal" severity note;
+      end compare;
+
+      procedure main is
+        constant s : string := O"555";
+      begin  -- main
+        compare(B"1111_1111_1111", "111111111111");
+        compare(X"FFF", B"1111_1111_1111");
+        compare(O"777" , B"111_111_111");
+        compare(X"777", B"0111_0111_0111");
+        compare(B"XXXX_01LH", "XXXX01LH");
+        compare(UO"27", B"010_111");
+        compare(UO"2C", B"010_CCC");
+        compare(SX"3W" , B"0011_WWWW");
+        compare(D"35" , B"100011");
+        compare(12UB"X1" , B"0000_0000_00X1");
+        compare(12SB"X1" , B"XXXX_XXXX_XXX1");
+        compare(12UX"F-" , B"0000_1111_----");
+        compare(12SX"F-", B"1111_1111_----");
+        compare(12D"13" , B"0000_0000_1101");
+        compare(12UX"000WWW", B"WWWW_WWWW_WWWW");
+        compare(12SX"FFFC00", B"1100_0000_0000");
+        compare(12SX"XXXX00" , B"XXXX_0000_0000");
+    /* error cases
+        compare(8D"511" , B"11111111");
+        compare(8SX"0FF" , B"");
+        compare(8UO"477" , B"00111111");
+        compare(8SX"FXX" , B"XXXXXXXX");
+    */
+      end main;
+    """
+  }
 }

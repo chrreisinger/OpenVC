@@ -659,7 +659,8 @@ object ByteCodeGenerator {
                 case arrayType: ArrayType =>
                   relation.operator match {
                     case EQ | NEQ =>
-                      if (arrayType.dimensions.size == 1) INVOKESTATIC("java/util/Arrays", "equals", "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
+                      if (relation.left.dataType == SymbolTable.stringType) INVOKEVIRTUAL("java/lang/String", "equals", "(Ljava/lang/Object;)Z")
+                      else if (arrayType.dimensions.size == 1) INVOKESTATIC("java/util/Arrays", "equals", "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
                       else INVOKESTATIC("java/util/Arrays", "deepEquals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z")
 
                       if (relation.operator == EQ) if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)

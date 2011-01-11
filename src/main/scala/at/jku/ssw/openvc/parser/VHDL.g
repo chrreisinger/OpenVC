@@ -502,8 +502,7 @@ package_body_declarative_item returns [DeclarativeItem item] :
 	| alias_declaration {$item=$alias_declaration.aliasDecl}
 	| use_clause {$item=$use_clause.useClause}
 	| {vhdl2008}?=>attribute_declaration {$item=$attribute_declaration.attributeDecl}
-	//| {vhdl2008}?=>attribute_specification
-	| attribute_specification {$item=$attribute_specification.attributeSpec} //attribute_specification is not part of VHDL 2002, added to compile ghdl math_real-body.vhd
+	| /*{vhdl2008}?=>*/attribute_specification {$item=$attribute_specification.attributeSpec} //attribute_specification is not part of VHDL 2002, added to compile ghdl math_real-body.vhd
 	| group_template_declaration {$item=$group_template_declaration.groupTemplateDecl}
 	| group_declaration {$item=$group_declaration.groupDecl};
 
@@ -2010,10 +2009,10 @@ APOSTROPHE :
 //string literals can't contain a single quotation mark
 STRING_LITERAL : '\"' ( '\"\"' | '\\' | GRAPHIC_CHARACTER )* '\"';
   
-BIT_STRING_LITERAL : ({vhdl2008}?=>INTEGER)? BASE_SPECIFIER '\"' BASED_INTEGER? '\"';
+BIT_STRING_LITERAL : ({vhdl2008}?=>INTEGER)? BASE_SPECIFIER '\"' (BASED_INTEGER? | {vhdl2008}?=> GRAPHIC_CHARACTER*) '\"';
 
 fragment
-BASE_SPECIFIER : 'b' | 'o' | 'x' | {vhdl2008}?=>('ub' | 'uo' | 'ux ' | 'sb' | 'so' | 'sx ' | 'd');
+BASE_SPECIFIER : 'b' | 'o' | 'x' | {vhdl2008}?=>('ub' | 'uo' | 'ux' | 'sb' | 'so' | 'sx' | 'd');
 
 fragment
 BASED_INTEGER : EXTENDED_DIGIT ( '_'? EXTENDED_DIGIT )*;

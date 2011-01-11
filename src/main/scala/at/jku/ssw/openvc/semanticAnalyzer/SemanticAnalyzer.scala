@@ -550,21 +550,20 @@ object SemanticAnalyzer {
             case None => literal
           }
         case BIT_STRING_LITERAL =>
-          val Regex = "(b|o|x)\"([a-f0-9]+)\"".r
-          literal.text.replace("_", "").toLowerCase match {
-            case Regex(baseSpecifier, values) =>
-              val INVALID_BIT_STRING_LITERAL_CHARACTER = " invalid character %s in bit string literal with base %s"
-              val valueString = baseSpecifier match {
-                case "b" =>
-                  if (values.zipWithIndex.forall {
-                    case (character, i) =>
-                      if (character != '0' && character != '1') {
-                        addErrorPosition(literal.position.addCharacterOffset(i + 1), INVALID_BIT_STRING_LITERAL_CHARACTER, character.toString, "binary")
-                        false
-                      } else true
-                  }) Integer.parseInt(values, 2).toBinaryString
-                  else values
-                case "o" => values.zipWithIndex.map {
+          val Regex = "([0-9]*)(\\w*)\"(.*)\"".r
+          literal.text.replace("_", "") match {
+            case Regex(lengthString, baseSpecifier, values) =>
+              val INVALID_BIT_STRING_LITERAL_CHARACTER = " invalid character '%s' in bit string literal with base %s"
+              val extendedBitValue = baseSpecifier.toLowerCase match {
+                case "b" | "ub" | "sb" => values.zipWithIndex.map {
+                  case (character, i) =>
+                    if (character == '0' || character == '1' || configuration.vhdl2008) character.toString
+                    else {
+                      addError(literal, INVALID_BIT_STRING_LITERAL_CHARACTER, character.toString, "binary")
+                      '0'
+                    }
+                }.mkString
+                case "o" | "uo" | "so" => values.zipWithIndex.map {
                   case (character, i) =>
                     if (character >= '0' && character <= '7') {
                       val value = Integer.toBinaryString(character - '0')
@@ -574,15 +573,17 @@ object SemanticAnalyzer {
                         case _ => value
                       }
                     }
+                    else if (configuration.vhdl2008) character.toString * 3
                     else {
-                      addErrorPosition(literal.position.addCharacterOffset(i + 1), INVALID_BIT_STRING_LITERAL_CHARACTER, character.toString, "octal")
+                      addError(literal, INVALID_BIT_STRING_LITERAL_CHARACTER, character.toString, "octal")
                       "000"
                     }
                 }.mkString
-                case "x" => values.zipWithIndex.map {
+                case "x" | "ux" | "sx" => values.zipWithIndex.map {
                   case (character, i) =>
-                    if ((character >= '0' && character <= '9') || (character >= 'a' && character <= 'f')) {
-                      val value = Integer.toBinaryString(character - (if (Character.isDigit(character)) '0' else 'W'))
+                    val c = character.toLower
+                    if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
+                      val value = Integer.toBinaryString(c - (if (Character.isDigit(c)) '0' else 'W'))
                       value.length match {
                         case 1 => "000" + value
                         case 2 => "00" + value
@@ -590,12 +591,41 @@ object SemanticAnalyzer {
                         case _ => value
                       }
                     }
+                    else if (configuration.vhdl2008) character.toString * 4
                     else {
-                      addErrorPosition(literal.position.addCharacterOffset(i + 1), INVALID_BIT_STRING_LITERAL_CHARACTER, character.toString, "hexadecimal")
+                      addError(literal, INVALID_BIT_STRING_LITERAL_CHARACTER, character.toString, "hexadecimal")
                       "0000"
                     }
                 }.mkString
+                case "d" =>
+                  if (values.zipWithIndex.forall {
+                    case (character, i) =>
+                      if (character >= '0' && character <= '9') true
+                      else {
+                        addError(literal, INVALID_BIT_STRING_LITERAL_CHARACTER, character.toString, "decimal")
+                        false
+                      }
+                  }) Integer.parseInt(values).toBinaryString
+                  else values
               }
+              val valueString = if (lengthString != "") {
+                val length = lengthString.toInt
+                val diff = (length - extendedBitValue.length).abs
+                if (extendedBitValue.length == length) extendedBitValue
+                else if (length > extendedBitValue.length) baseSpecifier.toLowerCase match {
+                  case "sb" | "so" | "sx" => (extendedBitValue(0).toString * diff) + extendedBitValue
+                  case _ => ("0" * diff) + extendedBitValue
+                }
+                else {
+                  val (deletedChars, rest) = extendedBitValue.splitAt(diff)
+                  val charToSearch = baseSpecifier.toLowerCase match {
+                    case "sb" | "so" | "sx" => rest(0)
+                    case _ => '0'
+                  }
+                  if (!deletedChars.forall(_ == charToSearch)) addError(literal, "it is an error to delete any of the characters other than the digit '%s'", charToSearch.toString)
+                  rest
+                }
+              } else extendedBitValue
               visitLiteral(Literal(literal.position, valueString, STRING_LITERAL))
           }
         case BASED_LITERAL =>

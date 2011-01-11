@@ -12,3 +12,4 @@ To compile the project start the [sbt](http://code.google.com/p/simple-build-too
 * Condition operator
 * matching relational operator
 * Context declarations
+* improved bit string literals
