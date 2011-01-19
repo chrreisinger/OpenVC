@@ -45,7 +45,7 @@ object ByteCodeGenerator {
 
   private final class LoopLabels(val continueLabel: RichLabel, val breakLabel: RichLabel)
 
-  private final case class Context(cw: RichClassWriter, mv: RichMethodVisitor, loopLabels: Map[Position, LoopLabels] = Map(), designUnit: String = "", fileSymbols: Seq[FileSymbol] = Seq()) {
+  private final case class Context(cw: RichClassWriter, mv: RichMethodVisitor = null, loopLabels: Map[Position, LoopLabels] = Map(), designUnit: String = "", fileSymbols: Seq[FileSymbol] = Seq()) {
     def insertLoopLabels(position: Position, loopLabels: LoopLabels): Context = this.copy(loopLabels = this.loopLabels + (position -> loopLabels))
 
     implicit val implicitCW = cw
@@ -208,8 +208,6 @@ object ByteCodeGenerator {
       case architectureDeclaration: ArchitectureDeclaration => visitArchitectureDeclaration(architectureDeclaration)
       case configurationDeclaration: ConfigurationDeclaration => visitConfigurationDeclaration(configurationDeclaration)
       //concurrent Statements
-      case ifGenerateStmt: IfGenerateStatement => visitIfGenerateStatement(ifGenerateStmt, context)
-      case forGenerateStmt: ForGenerateStatement => visitForGenerateStatement(forGenerateStmt)
       case componentInstantiationStmt: ComponentInstantiationStatement => visitComponentInstantiationStatement(componentInstantiationStmt)
       case processStmt: ProcessStatement => visitProcessStatement(processStmt, context)
       case blockStmt: BlockStatement => visitBlockStatement(blockStmt, context)
@@ -244,7 +242,7 @@ object ByteCodeGenerator {
       case procedureDefinition: ProcedureDefinition => visitProcedureDefinition(procedureDefinition, context)
       case componentDeclaration: ComponentDeclaration => visitComponentDeclaration(componentDeclaration, context)
       case aliasDeclaration: AliasDeclaration => visitAliasDeclaration(aliasDeclaration, context)
-      case _: FunctionDeclaration | _: ProcedureDeclaration | _: SubTypeDeclaration | _: AttributeDeclaration | _: AttributeSpecification | _: GroupTemplateDeclaration | _: GroupDeclaration | _: UseClause | _: ContextDeclaration => //nothing
+      case _: GenerateStatement | _: FunctionDeclaration | _: ProcedureDeclaration | _: SubTypeDeclaration | _: AttributeDeclaration | _: AttributeSpecification | _: GroupTemplateDeclaration | _: GroupDeclaration | _: UseClause | _: ContextDeclaration => //nothing
     }
 
     def acceptExpressionOption(expr: Option[Expression], contextOption: Option[ExpressionContext] = None, createDebugLineNumberInformation: Boolean = true)(implicit mv: RichMethodVisitor) =
@@ -872,8 +870,103 @@ object ByteCodeGenerator {
           generateAssertCode()
       }
     }
+    def acceptGenerateStatements(nodes: Seq[ASTNode], context: Context): Unit =
+      nodes.collect(_ match {
+        case x: GenerateStatement => x
+      }).foreach(acceptGenerateStatement(_, context))
 
-    def visitIfGenerateStatement(ifGenerateStmt: IfGenerateStatement, context: Context) = error("not implemented")
+    def acceptGenerateStatement(node: GenerateStatement, context: Context): Unit = {
+      import context._
+      import mv._
+      node match {
+        case ifGenerateStmt: IfGenerateStatement =>
+          val endLabel = createLabel
+          context.cw.visitField(Opcodes.ACC_PUBLIC, ifGenerateStmt.label.get.text, "Ljava/lang/Object;").visitAnnotation(ci(classOf[BlockAnnotation]), true).visitEnd
+          ifGenerateStmt.ifThenList.map {
+            part =>
+              val falseJumpLabel = createLabel
+              val trueJumpLabel = createLabel
+              acceptExpression(part.condition, Some(new ExpressionContext(trueJumpLabel = trueJumpLabel, falseJumpLabel = falseJumpLabel, kind = ExpressionContext.JumpKind.FalseJump)))
+              trueJumpLabel()
+              val blockCW = visitBlockStatement(BlockStatement(part.condition.position, part.label, None, None, None, None, None, part.declarativeItems, part.concurrentStatements, None), context)
+              NEW(blockCW.className)
+              DUP
+              ALOAD(0)
+              INVOKESPECIAL(blockCW.className, "<init>", "(Ljava/lang/Object;)V")
+              PUTSTATIC(context.cw.className, ifGenerateStmt.label.get.text, "Ljava/lang/Object;")
+              GOTO(endLabel)
+              falseJumpLabel()
+          }
+          ifGenerateStmt.elsePart.foreach {
+            part =>
+              part match {
+                case IfGenerateStatement.IfThenPart(None, NoExpression, Seq(), Seq(), None) =>
+                //this comes from a case generate statement that does not contain a others choice
+                  context.mv.throwNewException(p(classOf[VHDLRuntimeException]), "case generate fall through")
+                case _ =>
+                  val blockCW = visitBlockStatement(BlockStatement(Position.NoPosition, part.label.orElse(Some(Identifier("else" + ifGenerateStmt.label.get.text))), None, None, None, None, None, part.declarativeItems, part.concurrentStatements, None), context)
+                  NEW(blockCW.className)
+                  DUP
+                  ALOAD(0)
+                  INVOKESPECIAL(blockCW.className, "<init>", "(Ljava/lang/Object;)V")
+                  PUTSTATIC(context.cw.className, ifGenerateStmt.label.get.text, "Ljava/lang/Object;")
+              }
+          }
+          endLabel()
+        case forGenerateStmt: ForGenerateStatement =>
+          import Range.Direction._
+          val continueLabel = createLabel
+          val breakLabel = createLabel
+          val conditionTestLabel = createLabel
+          val startLabel = createLabel
+          val direction = getDiscreteRangeDirection(forGenerateStmt.discreteRange)
+
+          context.cw.visitField(Opcodes.ACC_PUBLIC, forGenerateStmt.label.get.text, "[Ljava/lang/Object;").visitAnnotation(ci(classOf[BlockAnnotation]), true).visitEnd
+          val blockCW = visitBlockStatement(BlockStatement(forGenerateStmt.position, forGenerateStmt.label, None, None, None, None, None, forGenerateStmt.declarativeItems, forGenerateStmt.concurrentStatements, None), context)
+          startLabel()
+          loadDiscreteRangeRightValue(forGenerateStmt.discreteRange)
+          loadDiscreteRangeLeftValue(forGenerateStmt.discreteRange)
+          ISUB
+          ANEWARRAY("java/lang/Object")
+          PUTSTATIC(cw.className, forGenerateStmt.label.get.text, "[Ljava/lang/Object;")
+          ALOAD(0)
+          loadDiscreteRangeLeftValue(forGenerateStmt.discreteRange)
+          PUTFIELD(cw.className, forGenerateStmt.symbol.name, "I")
+          GOTO(conditionTestLabel)
+          continueLabel()
+          GETSTATIC(cw.className, forGenerateStmt.label.get.text, "[Ljava/lang/Object;")
+          ALOAD(0)
+          GETFIELD(cw.className, forGenerateStmt.symbol.name, "I")
+          NEW(blockCW.className)
+          DUP
+          ALOAD(0)
+          ALOAD(0)
+          GETFIELD(cw.className, forGenerateStmt.symbol.name, "I")
+          INVOKESPECIAL(blockCW.className, "<init>", "(Ljava/lang/Object;I)V")
+          AASTORE
+
+          cw.visitField(Opcodes.ACC_PRIVATE, forGenerateStmt.symbol.name, "I")
+          ALOAD(0)
+          DUP
+          GETFIELD(cw.className, forGenerateStmt.symbol.name, "I")
+          ICONST_1
+          direction match {
+            case To => IADD
+            case Downto => ISUB
+          }
+          PUTFIELD(cw.className, forGenerateStmt.symbol.name, "I")
+          conditionTestLabel()
+          ALOAD(0)
+          GETFIELD(cw.className, forGenerateStmt.symbol.name, "I")
+
+          loadDiscreteRangeRightValue(forGenerateStmt.discreteRange)
+          direction match {
+            case To => IF_ICMPLE(continueLabel)
+            case Downto => IF_ICMPGE(continueLabel)
+          }
+          breakLabel()
+      }
+    }
 
     def visitIfStatement(ifStmt: IfStatement, context: Context) {
       import context._
@@ -939,8 +1032,6 @@ object ByteCodeGenerator {
 
     def visitExitStatement(exitStmt: ExitStatement, context: Context) =
       createConditionalJump(exitStmt, exitStmt.condition, context.loopLabels(exitStmt.loopStatement).breakLabel, context)
-
-    def visitForGenerateStatement(forGenerateStmt: ForGenerateStatement) = error("not implemented")
 
     def getDiscreteRangeDirection(discreteRange: DiscreteRange): Range.Direction =
       discreteRange.rangeOrSubTypeIndication match {
@@ -1066,24 +1157,20 @@ object ByteCodeGenerator {
         }
       }
 
-    def initItems(designUnit: String, flags: Int, functionName: String, declarativeItems: Seq[ASTNode], cw: RichClassWriter, mvOption: Option[RichMethodVisitor] = None) {
+    def acceptDeclarativeItems(declarativeItems: Seq[ASTNode], flags: Int, context: Context) {
       val (objectDeclarations, rest) = declarativeItems.partition(_.isInstanceOf[ObjectDeclaration])
-      objectDeclarations.foreach(x => x.asInstanceOf[ObjectDeclaration].symbols.foreach {
-        symbol =>
-          symbol match {
-            case constantSymbol: ConstantSymbol => if (!(constantSymbol.isDeferred && constantSymbol.isDefined)) cw.visitField(Opcodes.ACC_PUBLIC + flags, symbol.name, getJVMDataType(symbol))
-            case _ => cw.visitField(Opcodes.ACC_PUBLIC + flags, symbol.name, getJVMDataType(symbol))
+      objectDeclarations.foreach {
+        objectDeclaration =>
+          objectDeclaration.asInstanceOf[ObjectDeclaration].symbols.foreach {
+            symbol =>
+              symbol match {
+                case constantSymbol: ConstantSymbol => if (!(constantSymbol.isDeferred && constantSymbol.isDefined)) context.cw.visitField(Opcodes.ACC_PUBLIC + flags, symbol.name, getJVMDataType(symbol))
+                case _ => context.cw.visitField(Opcodes.ACC_PUBLIC + flags, symbol.name, getJVMDataType(symbol))
+              }
           }
-      });
-      {
-        val mv = mvOption.getOrElse(cw.createMethod(flags = flags, name = functionName, parameters = "", returnType = "V"))
-        acceptNodes(objectDeclarations, Context(cw, mv, Map(), designUnit))
-        if (mvOption.isEmpty) {
-          mv.RETURN
-          mv.endMethod
-        }
+          acceptNode(objectDeclaration, context)
       }
-      acceptNodes(rest, Context(cw, null, Map(), designUnit))
+      acceptNodes(rest, context)
     }
 
     def visitComponentInstantiationStatement(componentInstantiationStmt: ComponentInstantiationStatement) = error("not implemented")
@@ -1104,15 +1191,37 @@ object ByteCodeGenerator {
 
     }
 
+    def createClinitAndAcceptItems(designUnit: String, declarativeItems: Seq[ASTNode], cw: RichClassWriter) {
+      val mv = cw.createMethod(flags = Opcodes.ACC_STATIC + Opcodes.ACC_FINAL, name = "<clinit>", parameters = "", returnType = "V")
+      acceptDeclarativeItems(declarativeItems, Opcodes.ACC_STATIC + Opcodes.ACC_FINAL, Context(cw, null, Map(), designUnit))
+      mv.RETURN
+      mv.endMethod
+    }
+
+    def visitEntityDeclaration(entityDeclaration: EntityDeclaration) {
+      val cw = createClass(Opcodes.ACC_ABSTRACT, entityDeclaration.symbol.implementationName, "java/lang/Object", classOf[EntityAnnotation], createEmptyConstructor = true)
+      createDefaultValuesMethods(entityDeclaration.genericInterfaceList, entityDeclaration.symbol.name, cw)
+      createDefaultValuesMethods(entityDeclaration.portInterfaceList, entityDeclaration.symbol.name, cw)
+      createClinitAndAcceptItems(entityDeclaration.identifier.text, entityDeclaration.declarativeItems, cw)
+      acceptNodes(entityDeclaration.concurrentStatements, Context(cw = cw, designUnit = entityDeclaration.identifier.text))
+      cw.writeToFile()
+    }
+
+    def visitConfigurationDeclaration(configurationDeclaration: ConfigurationDeclaration) {
+      val cw = createClass(Opcodes.ACC_FINAL, configurationDeclaration.symbol.implementationName, "java/lang/Object", classOf[ConfigurationAnnotation])
+      createClinitAndAcceptItems(configurationDeclaration.identifier.text, configurationDeclaration.declarativeItems, cw)
+      cw.writeToFile()
+    }
+
     def visitPackageDeclaration(packageDeclaration: PackageDeclaration) {
       val cw = createClass(Opcodes.ACC_ABSTRACT, packageDeclaration.symbol.implementationName, "java/lang/Object", classOf[PackageHeaderAnnotation])
-      initItems(packageDeclaration.identifier.text, Opcodes.ACC_STATIC + Opcodes.ACC_FINAL, "<clinit>", packageDeclaration.declarativeItems, cw)
+      createClinitAndAcceptItems(packageDeclaration.identifier.text, packageDeclaration.declarativeItems, cw)
       cw.writeToFile()
     }
 
     def visitPackageBodyDeclaration(packageBodyDeclaration: PackageBodyDeclaration) {
       val cw = createClass(Opcodes.ACC_FINAL, packageBodyDeclaration.symbol.implementationName, packageBodyDeclaration.symbol.copy(isBody = false).implementationName, classOf[PackageBodyAnnotation])
-      initItems(packageBodyDeclaration.identifier.text, Opcodes.ACC_STATIC + Opcodes.ACC_FINAL, "<clinit>", packageBodyDeclaration.declarativeItems, cw)
+      createClinitAndAcceptItems(packageBodyDeclaration.identifier.text, packageBodyDeclaration.declarativeItems, cw)
       cw.writeToFile()
     }
 
@@ -1133,8 +1242,7 @@ object ByteCodeGenerator {
       }
       {
         val mv = cw.createMethod(name = "<init>", parameters = getJVMParameterList(generics) + getJVMParameterList(ports), returnType = "V")
-        val rmv = mv
-        import rmv._
+        import mv._
 
         ALOAD(0)
         INVOKESPECIAL("java/lang/Object", "<init>", "()V")
@@ -1143,7 +1251,6 @@ object ByteCodeGenerator {
           loadInstruction(symbol.dataType, i + 1)
           PUTFIELD(cw.className, symbol.name, getJVMDataType(symbol))
         }
-        initItems(architectureDeclaration.identifier.text, Opcodes.ACC_FINAL, "<init>", architectureDeclaration.declarativeItems, cw, Some(mv))
         for (symbol <- processSymbols) {
           ALOAD(0)
           NEW(cw.className + "$" + symbol.name)
@@ -1152,25 +1259,13 @@ object ByteCodeGenerator {
           INVOKESPECIAL(cw.className + "$" + symbol.name, "<init>", "(L" + cw.className + ";)V")
           PUTFIELD(cw.className, symbol.name, "L" + cw.className + "$" + symbol.name + ";")
         }
+        val context = Context(cw, mv, Map(), architectureDeclaration.identifier.text)
+        acceptDeclarativeItems(architectureDeclaration.declarativeItems, Opcodes.ACC_FINAL, context)
+        acceptGenerateStatements(architectureDeclaration.concurrentStatements, Context(cw, mv, Map(), architectureDeclaration.identifier.text))
         RETURN
         endMethod
       }
       acceptNodes(architectureDeclaration.concurrentStatements, Context(cw, null, Map(), architectureDeclaration.identifier.text))
-      cw.writeToFile()
-    }
-
-    def visitConfigurationDeclaration(configurationDeclaration: ConfigurationDeclaration) {
-      val cw = createClass(Opcodes.ACC_FINAL, configurationDeclaration.symbol.implementationName, "java/lang/Object", classOf[ConfigurationAnnotation])
-      initItems(configurationDeclaration.identifier.text, Opcodes.ACC_STATIC + Opcodes.ACC_FINAL, "<clinit>", configurationDeclaration.declarativeItems, cw)
-      cw.writeToFile()
-    }
-
-    def visitEntityDeclaration(entityDeclaration: EntityDeclaration) {
-      val cw = createClass(Opcodes.ACC_ABSTRACT, entityDeclaration.symbol.implementationName, "java/lang/Object", classOf[EntityAnnotation], createEmptyConstructor = true)
-      createDefaultValuesMethods(entityDeclaration.genericInterfaceList, entityDeclaration.symbol.name, cw)
-      createDefaultValuesMethods(entityDeclaration.portInterfaceList, entityDeclaration.symbol.name, cw)
-      initItems(entityDeclaration.identifier.text, Opcodes.ACC_STATIC + Opcodes.ACC_FINAL, "<clinit>", entityDeclaration.declarativeItems, cw)
-      acceptNodes(entityDeclaration.concurrentStatements, Context(cw = cw, mv = null, designUnit = entityDeclaration.identifier.text))
       cw.writeToFile()
     }
 
@@ -1386,33 +1481,38 @@ object ByteCodeGenerator {
       endMethod
     }
 
-    def visitBlockStatement(blockStmt: BlockStatement, context: Context) {
+    def visitBlockStatement(blockStmt: BlockStatement, context: Context): RichClassWriter = {
       val name = blockStmt.label match {
-        case None => "block_" + blockStmt.position.line
+        case None => "block" + blockStmt.position.line
         case Some(label) => label.text
       }
       require(blockStmt.guardExpression.isEmpty)
       //createGetSensitivityList(context, name, processStmt.symbol.sensitivityList)
 
       val cw = createInnerClass(context.cw, context.cw.className + "$" + name, name, classOf[BlockAnnotation], createEmptyConstructor = false)
-      cw.visitField(Opcodes.ACC_PRIVATE + Opcodes.ACC_FINAL, "architecture", "L" + context.cw.className + ";");
+      cw.visitField(Opcodes.ACC_PRIVATE + Opcodes.ACC_FINAL, "$owner", "L" + context.cw.className + ";");
       {
         val mv = cw.createMethod(name = "<init>", parameters = "L" + context.cw.className + ";")
         import mv._
+        val startLabel = createLabel
+        val endLabel = createLabel
 
         ALOAD(0)
         INVOKESPECIAL("java/lang/Object", "<init>", "()V")
         ALOAD(0)
         ALOAD(1)
-        PUTFIELD(cw.className, "architecture", "L" + context.cw.className + ";")
+        PUTFIELD(cw.className, "$owner", "L" + context.cw.className + ";")
+        acceptDeclarativeItems(blockStmt.declarativeItems, 0, context.copy(cw = cw, mv = mv))
+        acceptGenerateStatements(blockStmt.concurrentStatements, context.copy(cw = cw, mv = mv))
         RETURN
+        endLabel()
+        visitLocalVariable("this", "L" + cw.className + ";", null, startLabel, endLabel, 0)
+        visitLocalVariable("owner", "L" + context.cw.className + ";", null, startLabel, endLabel, 1)
         endMethod
       }
-
-      initItems(context.designUnit, Opcodes.ACC_STATIC, "<init>", blockStmt.declarativeItems, cw)
       acceptNodes(blockStmt.concurrentStatements, Context(cw = cw, mv = null, loopLabels = Map(), designUnit = context.designUnit))
       cw.writeToFile()
-      error("not implemented")
+      cw
     }
 
     def visitCaseStatement(caseStmt: CaseStatement, context: Context) {
@@ -1534,25 +1634,26 @@ object ByteCodeGenerator {
       val processName = processStmt.symbol.name
       //TODO createGetSensitivityList(context, processName, processStmt.symbol.sensitivityList)
       val cw = createInnerClass(context.cw, context.cw.className + "$" + processName, processName, if (processStmt.isPostponed) classOf[PostponedProcessAnnotation] else classOf[ProcessAnnotation], createEmptyConstructor = false)
-      cw.visitField(Opcodes.ACC_PRIVATE + Opcodes.ACC_FINAL, "owner", "L" + context.cw.className + ";"); //could be a architecture or entity {
-      val mv = cw.createMethod(name = "<init>", parameters = "L" + context.cw.className + ";")
-      import mv._
-      val startLabel = createLabel
-      val endLabel = createLabel
+      cw.visitField(Opcodes.ACC_PRIVATE + Opcodes.ACC_FINAL, "$owner", "L" + context.cw.className + ";"); //could be a architecture or entity
+      {
+        val mv = cw.createMethod(name = "<init>", parameters = "L" + context.cw.className + ";")
+        import mv._
+        val startLabel = createLabel
+        val endLabel = createLabel
 
-      startLabel()
-      ALOAD(0)
-      INVOKESPECIAL("java/lang/Object", "<init>", "()V")
-      ALOAD(0)
-      ALOAD(1)
-      PUTFIELD(cw.className, "architecture", "L" + context.cw.className + ";")
-      RETURN
-      endLabel()
-      visitLocalVariable("this", "L" + cw.className + ";", null, startLabel, endLabel, 0)
-      visitLocalVariable("architecture", "L" + context.cw.className + ";", null, startLabel, endLabel, 1)
-      endMethod
-
-      initItems(context.designUnit, 0, "init", processStmt.declarativeItems, cw);
+        startLabel()
+        ALOAD(0)
+        INVOKESPECIAL("java/lang/Object", "<init>", "()V")
+        ALOAD(0)
+        ALOAD(1)
+        PUTFIELD(cw.className, "$owner", "L" + context.cw.className + ";")
+        acceptDeclarativeItems(processStmt.declarativeItems, 0, Context(cw, mv, Map(), context.designUnit))
+        RETURN
+        endLabel()
+        visitLocalVariable("this", "L" + cw.className + ";", null, startLabel, endLabel, 0)
+        visitLocalVariable("owner", "L" + context.cw.className + ";", null, startLabel, endLabel, 1)
+        endMethod
+      }
       {
         val mv = cw.createMethod(name = "run")
         visitLoopStatement(LoopStatement(Position.NoPosition, None, processStmt.sequentialStatements, None), Context(cw = cw, mv = mv, loopLabels = Map(), designUnit = context.designUnit)) //infinite loop
@@ -1688,7 +1789,6 @@ object ByteCodeGenerator {
       for (defaultExpression <- constantDeclaration.value) initSymbols(constantDeclaration.symbols, context) {
         symbol =>
           import context._
-
           acceptExpression(defaultExpression)
           checkIsInRange(symbol.dataType)
       }
@@ -2101,12 +2201,12 @@ object ByteCodeGenerator {
               (cw, protectedTypeBody.declarativeItems)
           }
           val mv = cw.createMethod(name = "<init>")
-          mv.visitCode
-          mv.ALOAD(0)
-          mv.INVOKESPECIAL("java/lang/Object", "<init>", "()V")
-          initItems(context.designUnit, 0, "<init>", declarativeItems, cw, Some(mv))
-          mv.RETURN
-          mv.endMethod
+          import mv._
+          ALOAD(0)
+          INVOKESPECIAL("java/lang/Object", "<init>", "()V")
+          acceptDeclarativeItems(declarativeItems, 0, Context(cw, mv, Map(), context.designUnit))
+          RETURN
+          endMethod
           cw.writeToFile()
         case _ =>
       }

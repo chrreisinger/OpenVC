@@ -307,7 +307,7 @@ generic_interface_list returns [Seq[InterfaceList.AbstractInterfaceElement\] lis
 @init{
 	val elements=new Buffer[InterfaceList.AbstractInterfaceElement]()
 } :
-	decl1=interface_element_generic {elements += $decl1.element} ( SEMICOLON decl2=interface_element_generic {elements += $decl2.element})*
+	decl1=interface_element_generic {elements += $decl1.element} (SEMICOLON decl2=interface_element_generic {elements += $decl2.element})*
 	{$list=elements.result};
     
 port_clause returns [Seq[InterfaceList.AbstractInterfaceElement\] list] :
@@ -318,7 +318,7 @@ port_interface_list returns [Seq[InterfaceList.AbstractInterfaceElement\] list]
 @init{
 	val elements=new Buffer[InterfaceList.AbstractInterfaceElement]()
 } :
-	decl1=interface_element_port {elements += $decl1.element} ( SEMICOLON decl2=interface_element_port {elements += $decl2.element})*
+	decl1=interface_element_port {elements += $decl1.element} (SEMICOLON decl2=interface_element_port {elements += $decl2.element})*
 	{$list = elements.result};
     		
 entity_declaration returns [EntityDeclaration entityDecl]
@@ -571,10 +571,10 @@ subprogram_declarative_item returns [DeclarativeItem item] :
 	| group_declaration {$item=$group_declaration.groupDecl};
 
 v2008_subprogram_instantiation_declaration returns [SubprogramInstantiationDeclaration subprogramInstantiationDecl] :
-	(procedure=PROCEDURE | function=FUNCTION) identifier IS
+	(PROCEDURE | functionToken=FUNCTION) identifier IS
 		NEW selected_name signature?
 			generic_map_aspect? SEMICOLON
-	{$subprogramInstantiationDecl=new SubprogramInstantiationDeclaration(if ($procedure!=null) $procedure else $function,$procedure!=null,$identifier.id,$selected_name.name_,$signature.signature_,$generic_map_aspect.list)};
+	{$subprogramInstantiationDecl=new SubprogramInstantiationDeclaration(if ($PROCEDURE!=null) $PROCEDURE else $functionToken,$PROCEDURE!=null,$identifier.id,$selected_name.name_,$signature.signature_,$generic_map_aspect.list)};
 
 type_declaration returns [AbstractTypeDeclaration typeDecl] :
 	TYPE identifier (IS type_definition[$identifier.id,toPosition($TYPE)])? SEMICOLON 
@@ -1192,6 +1192,7 @@ for_generate_statement[Identifier label] returns [ForGenerateStatement forGenera
 if_generate_statement[Identifier label] returns [IfGenerateStatement ifGenerateStmt]
 @init{
 	val ifList=new Buffer[IfGenerateStatement.IfThenPart]()
+	var elsePart:Option[IfGenerateStatement.IfThenPart]=None
 } :
 	IF ({vhdl2008}?=>ifLabel=label_colon)? ifCondition=condition GENERATE
 		ifBody=generate_statement_body {ifList += new IfGenerateStatement.IfThenPart($ifLabel.label,$ifCondition.con,$ifBody.declarativeItems,$ifBody.statementList,$ifBody.endLabel)}
@@ -1200,9 +1201,11 @@ if_generate_statement[Identifier label] returns [IfGenerateStatement ifGenerateS
 		{ifList += new IfGenerateStatement.IfThenPart($elseifLabel.label,$elsifCondition.con,$elseIfBody.declarativeItems,$elseIfBody.statementList,$elseIfBody.endLabel)}
 	)*
 	(ELSE 	elseLabel=label_colon? GENERATE
-		elseBody=generate_statement_body)?)?
+		elseBody=generate_statement_body
+		{elsePart=Option(new IfGenerateStatement.IfThenPart($elseLabel.label,NoExpression,$elseBody.declarativeItems,$elseBody.statementList,$elseBody.endLabel))}
+	)?)?
 	END GENERATE identifier? SEMICOLON
-	{$ifGenerateStmt=new IfGenerateStatement($IF,$label,ifList.result,new IfGenerateStatement.IfThenPart($elseLabel.label,NoExpression,$elseBody.declarativeItems,$elseBody.statementList,$elseBody.endLabel),$identifier.id)};
+	{$ifGenerateStmt=new IfGenerateStatement($IF,$label,ifList.result,elsePart,$identifier.id)};
 	
 v2008_case_generate_statement[Identifier label] returns [CaseGenerateStatement caseGenerateStmt] 
 @init{
@@ -1368,8 +1371,8 @@ assignment_statement[Identifier label] returns [SequentialStatement assignmentSt
 simple_assignment[Identifier label] returns [SequentialStatement stmt] :
 	target (
 		VAR_ASSIGN expression {$stmt=new SimpleVariableAssignmentStatement($VAR_ASSIGN,$label,$target.target_,$expression.expr)}
-	 	| LEQ delay_mechanism? waveform {$stmt=new SimpleWaveformAssignmentStatement($LEQ,$label,$target.target_,$delay_mechanism.mechanism,$waveform.waveForm)}
-	 	)SEMICOLON;
+		| LEQ delay_mechanism? waveform {$stmt=new SimpleWaveformAssignmentStatement($LEQ,$label,$target.target_,$delay_mechanism.mechanism,$waveform.waveForm)}
+	       )SEMICOLON;
 	
 v2008_conditional_assignment[Identifier label] returns [SequentialStatement stmt]
 @init{
@@ -1379,11 +1382,11 @@ v2008_conditional_assignment[Identifier label] returns [SequentialStatement stmt
 	target (
 		LEQ (
 			RELEASE forceMode=force_mode? {$stmt=new SimpleReleaseAssignment($LEQ,$label,$target.target_,$forceMode.mode)}
-			| delay_mechanism? conditional_waveforms[waveforms] {$stmt=new ConditionalWaveformAssignment($LEQ,$label,$target.target_,$delay_mechanism.mechanism,waveforms.result)}
-			| FORCE forceMode=force_mode? v2008_conditional_expressions[expressions] {$stmt=new ConditionalForceAssignment($LEQ,$label,$target.target_,$forceMode.mode,expressions.result)}
+			| delay_mechanism? conditional_waveforms[waveforms] {$stmt=new ConditionalWaveformAssignment($LEQ,$label,$target.target_,$delay_mechanism.mechanism,waveforms.result.reverse)}
+			| FORCE forceMode=force_mode? v2008_conditional_expressions[expressions] {$stmt=new ConditionalForceAssignment($LEQ,$label,$target.target_,$forceMode.mode,expressions.result.reverse)}
 		    )
 	        | VAR_ASSIGN v2008_conditional_expressions[expressions] {$stmt=new ConditionalVariableAssignment($VAR_ASSIGN,$label,$target.target_,expressions.result.reverse)}
-	      )SEMICOLON;
+	       )SEMICOLON;
 		
 v2008_selected_assignment[Identifier label] returns [SequentialStatement stmt] :
 	WITH expression SELECT QMARK? target 
@@ -1395,28 +1398,21 @@ v2008_selected_assignment[Identifier label] returns [SequentialStatement stmt] :
 		| VAR_ASSIGN selectedExpression=v2008_selected_expressions {$stmt=new SelectedVariableAssignment($WITH,$label,$expression.expr,$QMARK!=null,$target.target_,$selectedExpression.expressions)}
 	) SEMICOLON;			
 					
-delay_mechanism returns [DelayMechanism mechanism]
-@after{	
-	if ($time_expression.expr==null) $mechanism=new DelayMechanism(DelayMechanism.DelayType.TRANSPORT,None)
-	else $mechanism=new DelayMechanism(DelayMechanism.DelayType.INERTIAL,$time_expression.expr)
-} :
-	TRANSPORT 
-	| (REJECT time_expression=expression)? INERTIAL;
+delay_mechanism returns [DelayMechanism mechanism] :
+	TRANSPORT {$mechanism=new DelayMechanism(DelayMechanism.DelayType.TRANSPORT,None)}
+	| (REJECT expression)? INERTIAL {$mechanism=new DelayMechanism(DelayMechanism.DelayType.INERTIAL,$expression.expr)};
 
 waveform_element returns [Waveform.Element element] :
 	value_expression=expression (AFTER time_expression=expression)?  
- 	{return new Waveform.Element($value_expression.expr,$time_expression.expr)};
+ 	{$element=new Waveform.Element($value_expression.expr,$time_expression.expr)};
 	
 waveform returns [Waveform waveForm]
 @init{
 	val elements=new Buffer[Waveform.Element]()
 	val position=toPosition(input.LT(1))
 } :
-	(
-		e1=waveform_element{elements += $e1.element} (COMMA e2=waveform_element{elements += $e2.element})*
-		| UNAFFECTED 
-	)
-	{$waveForm=new Waveform(position,elements.result)};
+	e1=waveform_element{elements += $e1.element} (COMMA e2=waveform_element{elements += $e2.element})* {$waveForm=new Waveform(position,elements.result)}
+	| UNAFFECTED {$waveForm=new Waveform(position,Seq())};
 				
 procedure_call_statement[Identifier label] returns [ProcedureCallStatement procedureCallStmt] :
 	selected_name (LPAREN association_list RPAREN)? SEMICOLON
@@ -1515,8 +1511,7 @@ interface_element_port returns [InterfaceList.AbstractInterfaceElement element] 
 		);
 	
 interface_element_procedure returns [InterfaceList.AbstractInterfaceElement element] :
-	(VARIABLE | identifier_list COLON (OUT|INOUT))=>interface_variable_declaration  {$element=$interface_variable_declaration.varElement}
-	| interface_constant_declaration  {$element=$interface_constant_declaration.constElement}	
+	interface_variable_or_constant_declaration  {$element=$interface_variable_or_constant_declaration.element}	
 	| interface_signal_declaration_procedure {$element=$interface_signal_declaration_procedure.signalElement}
 	| interface_file_declaration  {$element=$interface_file_declaration.fileElement}
 	| {ams}?=>(
@@ -1546,7 +1541,19 @@ parameter_interface_list_function returns [Seq[InterfaceList.AbstractInterfaceEl
 } :
 	e1=interface_element_function {elements += $e1.element} (SEMICOLON e2=interface_element_function {elements += $e2.element})* 
 	{$list=elements.result};
-			
+
+interface_variable_or_constant_declaration returns [InterfaceList.AbstractInterfaceElement element] :
+	VARIABLE identifier_list COLON interface_mode? subtype_indication (VAR_ASSIGN expression)?
+		{$element=new InterfaceList.InterfaceVariableDeclaration($identifier_list.list,$interface_mode.mode,$subtype_indication.subType,$expression.expr)}
+	| CONSTANT identifier_list COLON IN? subtype_indication (VAR_ASSIGN expression)? 
+		{$element=new InterfaceList.InterfaceConstantDeclaration($identifier_list.list,$subtype_indication.subType,$expression.expr)}
+	| identifier_list COLON interface_mode? subtype_indication (VAR_ASSIGN expression)? 
+		{
+		$element=if ($interface_mode.mode==InterfaceList.Mode.OUT || $interface_mode.mode==InterfaceList.Mode.IN) 
+				new InterfaceList.InterfaceVariableDeclaration($identifier_list.list,$interface_mode.mode,$subtype_indication.subType,$expression.expr)
+			 else new InterfaceList.InterfaceConstantDeclaration($identifier_list.list,$subtype_indication.subType,$expression.expr)			 
+		};
+					
 interface_constant_declaration returns[InterfaceList.InterfaceConstantDeclaration constElement] :
 	CONSTANT? identifier_list COLON IN? subtype_indication (VAR_ASSIGN expression)? 
 	{$constElement=new InterfaceList.InterfaceConstantDeclaration($identifier_list.list,$subtype_indication.subType,$expression.expr)};
@@ -1562,10 +1569,6 @@ interface_signal_declaration_procedure returns [InterfaceList.InterfaceSignalDec
 interface_signal_declaration_function returns [InterfaceList.InterfaceSignalDeclaration signalElement] :
 	SIGNAL identifier_list COLON IN? subtype_indication BUS? (VAR_ASSIGN expression)?
 	{$signalElement=new InterfaceList.InterfaceSignalDeclaration($identifier_list.list,InterfaceList.Mode.IN,$subtype_indication.subType,$BUS!=null,$expression.expr)};
-	
-interface_variable_declaration returns [InterfaceList.InterfaceVariableDeclaration varElement] :
-	VARIABLE? identifier_list COLON interface_mode? subtype_indication (VAR_ASSIGN expression)?
-	{$varElement=new InterfaceList.InterfaceVariableDeclaration($identifier_list.list,$interface_mode.mode,$subtype_indication.subType,$expression.expr)};
 	
 interface_mode returns [InterfaceList.Mode.Value mode] :
 	IN {$mode=InterfaceList.Mode.IN}
@@ -1664,7 +1667,7 @@ logical_operator returns [LogicalExpression.Operator.Value logOp,Position pos]
 relation returns [Expression rel]
 @after{if ($rel==null) $rel=NoExpression} :
 	s1=shift_expression {$rel=$s1.shiftExpr}
-	(op=relational_operator s2=shift_expression {$rel=new Relation($op.pos,$s1.shiftExpr,$op.relOp,$s2.shiftExpr)})?;
+	(relational_operator s2=shift_expression {$rel=new Relation($relational_operator.pos,$s1.shiftExpr,$relational_operator.relOp,$s2.shiftExpr)})?;
 
 relational_operator returns [Relation.Operator.Value relOp,Position pos]
 @init{
@@ -1687,7 +1690,7 @@ relational_operator returns [Relation.Operator.Value relOp,Position pos]
 shift_expression returns [Expression shiftExpr]
 @after{if ($shiftExpr==null) $shiftExpr=NoExpression} :
 	s1=simple_expression { $shiftExpr=$s1.simpleExpr}
-	(op=shift_operator s2=simple_expression {$shiftExpr=new ShiftExpression($op.pos,$s1.simpleExpr,$op.shiftOp,$s2.simpleExpr)})?;
+	(shift_operator s2=simple_expression {$shiftExpr=new ShiftExpression($shift_operator.pos,$s1.simpleExpr,$shift_operator.shiftOp,$s2.simpleExpr)})?;
 
 shift_operator returns [ShiftExpression.Operator.Value shiftOp,Position pos]
 @init{
@@ -1702,7 +1705,7 @@ shift_operator returns [ShiftExpression.Operator.Value shiftOp,Position pos]
 		
 simple_expression returns [Expression simpleExpr]
 @after{if ($simpleExpr==null) $simpleExpr=NoExpression} :
-	s=sign? t1=term 
+	s=sign? t1=term
 	{simpleExpr=if (s!=null) new SimpleExpression($s.pos,$s.signOp,$t1.term_,None,None) else $t1.term_}
 	(op=adding_operator t2=term {$simpleExpr=new SimpleExpression($op.pos,None,$simpleExpr,$op.addOp,$t2.term_)})*;
 
@@ -1763,8 +1766,8 @@ primary returns [Expression obj]
 	| aggregate {$obj=$aggregate.aggregate_}; //LPAREN expression RPAREN handled by aggregate
 
 allocator returns [Expression newExpression] :
-	NEW selected_name 
-		( qualified_expression[$selected_name.name_] {$newExpression=new NewExpression($NEW,Left($qualified_expression.expr))}
+	NEW selected_name (
+		qualified_expression[$selected_name.name_] {$newExpression=new NewExpression($NEW,Left($qualified_expression.expr))}
 	 	| index_constraint? {$newExpression=new NewExpression($NEW,Right(new SubTypeIndication(None,$selected_name.name_,if ($index_constraint.ranges==null) None else Right($index_constraint.ranges),None)))}
 	 	);
 	

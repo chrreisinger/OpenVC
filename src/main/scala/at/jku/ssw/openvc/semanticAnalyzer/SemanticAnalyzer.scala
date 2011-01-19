@@ -250,9 +250,20 @@ object SemanticAnalyzer {
               symbolTable
           }
         case None =>
+        /*
+        ListOfSubprograms and ListOfEnumerations allways contains all symbols with the same name
+        e.g. for ListOfSubprograms: foo(integer),foo(real) -> openScope -> foo(integer),foo(real),foo(boolean)
+        ListOfSubprograms in scope n is allways a superset of the symbols in scope 0 to n-1
+        */
           symbolTable.insert(symbol match {
-            case subprogramSymbol: SubprogramSymbol => new ListOfSubprograms(subprogramSymbol.identifier, Seq(subprogramSymbol))
-            case enum: EnumerationSymbol => new ListOfEnumerations(enum.identifier, Seq(enum))
+            case subprogramSymbol: SubprogramSymbol => symbolTable.find(subprogramSymbol.identifier.text, classOf[ListOfSubprograms]) match {
+              case Some(listOfSubprograms) => new ListOfSubprograms(subprogramSymbol.identifier, subprogramSymbol +: listOfSubprograms.subprograms)
+              case None => new ListOfSubprograms(subprogramSymbol.identifier, Seq(subprogramSymbol))
+            }
+            case enum: EnumerationSymbol => symbolTable.find(enum.identifier.text, classOf[ListOfEnumerations]) match {
+              case Some(listOfEnumerations) => new ListOfEnumerations(enum.identifier, enum +: listOfEnumerations.enumerations)
+              case None => new ListOfEnumerations(enum.identifier, Seq(enum))
+            }
             case _ => symbol
           })
       }
@@ -316,7 +327,7 @@ object SemanticAnalyzer {
 
   def findOverloadedOperatorWithoutError(context: Context, operator: String, loc: Locatable, expressions: Expression*): Option[FunctionCallExpression] = {
     val identifier = Identifier(loc.position, operatorMangleMap(operator))
-    context.findSymbol(identifier, classOf[ListOfSubprograms]).flatMap {
+    context.symbolTable.find(identifier.text, classOf[ListOfSubprograms]).flatMap {
       listOfSubprograms =>
         context.findFunctionInList(listOfSubprograms, expressions.map(_.dataType), NoType).map {
           functionSymbol => FunctionCallExpression(identifier, Option(AssociationList(Seq(), expressions, functionSymbol.parameters)), None, functionSymbol)
@@ -1226,6 +1237,10 @@ object SemanticAnalyzer {
     Identifier(name.position, text)
   }
 
+  def checkIsStaticDiscreteRange(context: Context, discreteRange: DiscreteRange) {
+    //TODO
+  }
+
   def checkIsStaticExpression(expr: Expression) {
     //TODO
   }
@@ -1610,11 +1625,55 @@ object SemanticAnalyzer {
     val guardExpression = checkExpressionOption(newContext, blockStmt.guardExpression, SymbolTable.booleanType)
 
     val cx = blockStmt.guardExpression.map(expr => newContext.insertSymbol(new SignalSymbol(Identifier(expr.position, "guard"), SymbolTable.booleanType, InterfaceList.Mode.LINKAGE, None, -1, owner))).getOrElse(newContext)
-    val (declarativeItems, c) = acceptDeclarativeItems(blockStmt.declarativeItems, owner, insertConcurrentStatementsLabels(cx.copy(varIndex = ports.last.index + 1), blockStmt.concurrentStatements, owner))
+    val (declarativeItems, c) = acceptDeclarativeItems(blockStmt.declarativeItems, owner, insertConcurrentStatementsLabels(cx.copy(varIndex = ports.lastOption.map(_.index + 1).getOrElse(getStartIndex(owner))), blockStmt.concurrentStatements, owner))
     val (concurrentStatements, _) = acceptNodes(blockStmt.concurrentStatements, owner, c)
 
     (blockStmt.copy(genericInterfaceList = genericInterfaceList, genericAssociationList = genericAssociationList, portInterfaceList = portInterfaceList, portAssociationList = portAssociationList,
       guardExpression = guardExpression, declarativeItems = declarativeItems, concurrentStatements = concurrentStatements), context)
+  }
+
+  def choicesToExpr(caseStmtExpression: Expression, choices: Seq[Choices.Choice], context: Context): Expression = {
+    val tmpList: Seq[Expression] = choices.map {
+      choice =>
+        choice.rangeOrExpressionOrIdentifier match {
+          case Some(rangeOrExpressionOrIdentifier) => rangeOrExpressionOrIdentifier match {
+            case First(discreteRange) => error("not implemented")
+            case Second(expression) => Relation(choice.position, expression, Relation.Operator.EQ, caseStmtExpression)
+            case Third(identifier) => error("not implemented")
+          }
+          case None => NoExpression
+        }
+    }
+    return checkExpression(context, tmpList.reduceLeft((r1, r2) => LogicalExpression(r1.position, r1, LogicalExpression.Operator.OR, r2)), SymbolTable.booleanType)
+  }
+
+  def visitCaseGenerateStatement(caseGenerateStmt: CaseGenerateStatement, owner: Symbol, context: Context): ReturnType = {
+    checkIdentifiersOption(caseGenerateStmt.label, caseGenerateStmt.endLabel)
+    val caseStmtExpression = checkExpression(context, caseGenerateStmt.expression, NoType)
+    val containsOthers = caseGenerateStmt.alternatives.exists(when => when.choices.exists(choice => choice.isOthers))
+    val lastAlternative = caseGenerateStmt.alternatives.last
+
+    val ifThenList = caseGenerateStmt.alternatives.init.map {
+      alternative =>
+        checkIdentifiersOption(alternative.label, alternative.endLabel)
+        alternative.choices.foreach {
+          choice => choice.rangeOrExpressionOrIdentifier match {
+            case None =>
+              if (alternative ne lastAlternative) {
+                addError(choice, "the others case must be the last case")
+              }
+              if (alternative.choices.size > 1) {
+                addError(choice, "the others case must be alone")
+              }
+            case _ =>
+          }
+        }
+        val (declarativeItems, c1) = acceptNodes(alternative.declarativeItems, owner, insertConcurrentStatementsLabels(context, alternative.concurrentStatements, owner))
+        val (concurrentStatements, _) = acceptNodes(alternative.concurrentStatements, owner, c1)
+        new IfGenerateStatement.IfThenPart(alternative.label, choicesToExpr(caseStmtExpression, alternative.choices, context), declarativeItems, concurrentStatements, alternative.endLabel)
+    }
+    val fallThroughPart = IfGenerateStatement.IfThenPart(None, NoExpression, Seq(), Seq(), None) //marker for the byte code gnerator to generate a exception
+    (IfGenerateStatement(caseGenerateStmt.position, caseGenerateStmt.label, ifThenList, Option(if (containsOthers) ifThenList.last else fallThroughPart), caseGenerateStmt.endLabel), context)
   }
 
   def visitCaseStatement(caseStmt: CaseStatement, owner: Symbol, context: Context): ReturnType = {
@@ -1667,22 +1726,8 @@ object SemanticAnalyzer {
 
         (caseStmt.copy(expression = caseStmtExpression, keys = keys, alternatives = alternatives), context)
       case _ =>
-        def toExpr(choices: Seq[Choices.Choice]): Expression = {
-          val tmpList: Seq[Expression] = choices.map {
-            choice =>
-              choice.rangeOrExpressionOrIdentifier match {
-                case Some(rangeOrExpressionOrIdentifier) => rangeOrExpressionOrIdentifier match {
-                  case First(discreteRange) => error("not implemented")
-                  case Second(expression) => Relation(choice.position, expression, Relation.Operator.EQ, caseStmtExpression)
-                  case Third(identifier) => error("not implemented")
-                }
-                case None => NoExpression
-              }
-          }
-          return checkExpression(context, tmpList.reduceLeft((r1, r2) => LogicalExpression(r1.position, r1, LogicalExpression.Operator.OR, r2)), SymbolTable.booleanType)
-        }
-        val ifThenList = alternatives.init.map(alternative => new IfStatement.IfThenPart(toExpr(alternative.choices), alternative.sequentialStatements))
-        val ifStmt = IfStatement(caseStmt.position, None, ifThenList, Option(alternatives.last.sequentialStatements), None)
+        val ifThenList = alternatives.init.map(alternative => new IfStatement.IfThenPart(choicesToExpr(caseStmt.expression, alternative.choices, context), alternative.sequentialStatements))
+        val ifStmt = IfStatement(caseStmt.position, caseStmt.label, ifThenList, Option(alternatives.last.sequentialStatements), caseStmt.endLabel)
         (ifStmt, context)
     }
   }
@@ -1825,7 +1870,7 @@ object SemanticAnalyzer {
             context clause, the second and subsequent occurrences of the logical name have no effect. The same is true
             of logical names appearing both in the context clause of a primary unit and in the context clause of a
             corresponding secondary unit.
-             */
+            */
             context.insertSymbols(librarySymbols, generateErrorMessage = false)
           case ContextReference(_, contextReferences) => contextReferences.flatMap {
             contextReference =>
@@ -1962,11 +2007,14 @@ object SemanticAnalyzer {
 
   def visitForGenerateStatement(forGenerateStmt: ForGenerateStatement, owner: Symbol, context: Context): ReturnType = {
     checkIdentifiersOption(forGenerateStmt.label, forGenerateStmt.endLabel)
+    for (endLabel <- forGenerateStmt.alternativeEndLabel) addError(endLabel, "an alternative label is not allowed at the end of the generate statement body in a for generate statement")
     val discreteRange = checkDiscreteRange(context, forGenerateStmt.discreteRange)
-    val symbol = new ConstantSymbol(forGenerateStmt.loopIdentifier, discreteRange.dataType.elementType, -1, owner)
-    val (declarativeItems, c1) = acceptDeclarativeItems(forGenerateStmt.declarativeItems, owner, insertConcurrentStatementsLabels(context.openScope, forGenerateStmt.concurrentStatements, owner).insertSymbol(symbol))
-    val (concurrentStatements, _) = acceptNodes(forGenerateStmt.concurrentStatements, owner, c1)
-    (forGenerateStmt.copy(declarativeItems = declarativeItems, concurrentStatements = concurrentStatements), context)
+    checkIsStaticDiscreteRange(context, forGenerateStmt.discreteRange)
+    val blockSymbol = new BlockSymbol(forGenerateStmt.label.get, owner)
+    val symbol = new ConstantSymbol(forGenerateStmt.loopIdentifier, discreteRange.dataType.elementType, -1, blockSymbol)
+    val (declarativeItems, c1) = acceptDeclarativeItems(forGenerateStmt.declarativeItems, blockSymbol, insertConcurrentStatementsLabels(context.openScope, forGenerateStmt.concurrentStatements, owner).insertSymbol(symbol))
+    val (concurrentStatements, _) = acceptNodes(forGenerateStmt.concurrentStatements, blockSymbol, c1)
+    (forGenerateStmt.copy(discreteRange = discreteRange, declarativeItems = declarativeItems, concurrentStatements = concurrentStatements, symbol = symbol), context)
   }
 
   def visitForStatement(forStmt: ForStatement, owner: Symbol, context: Context): ReturnType = {
@@ -2044,10 +2092,10 @@ object SemanticAnalyzer {
     checkIdentifiersOption(ifGenerateStmt.label, ifGenerateStmt.endLabel)
     def checkIfThenPart(ifThen: IfGenerateStatement.IfThenPart): IfGenerateStatement.IfThenPart = {
       checkIdentifiersOption(ifThen.label, ifThen.endLabel)
+      val condition = checkCondition(context, ifThen.condition)
+      checkIsStaticExpression(ifThen.condition)
       val (declarativeItems, c1) = acceptNodes(ifThen.declarativeItems, owner, insertConcurrentStatementsLabels(context, ifThen.concurrentStatements, owner))
       val (concurrentStatements, _) = acceptNodes(ifThen.concurrentStatements, owner, c1)
-      val condition = checkCondition(context, ifThen.condition)
-      //TODO val value=StaticExpressionCalculator.calcBooleanValue(condition)
       new IfGenerateStatement.IfThenPart(ifThen.label, condition, declarativeItems, concurrentStatements, ifThen.endLabel)
     }
     val ifThenList = ifGenerateStmt.ifThenList.map(checkIfThenPart)
@@ -2637,6 +2685,7 @@ object SemanticAnalyzer {
     case concurrentProcedureCallStmt: ConcurrentProcedureCallStatement => visitConcurrentProcedureCallStatement(concurrentProcedureCallStmt, owner, context)
     case concurrentAssertStmt: ConcurrentAssertionStatement => visitConcurrentAssertionStatement(concurrentAssertStmt, owner, context)
     case ifGenerateStmt: IfGenerateStatement => visitIfGenerateStatement(ifGenerateStmt, owner, context)
+    case caseGenerateStmt: CaseGenerateStatement => visitCaseGenerateStatement(caseGenerateStmt, owner, context)
     case forGenerateStmt: ForGenerateStatement => visitForGenerateStatement(forGenerateStmt, owner, context)
     case componentInstantiationStmt: ComponentInstantiationStatement => visitComponentInstantiationStatement(componentInstantiationStmt, context)
     case processStmt: ProcessStatement => visitProcessStatement(processStmt, owner, context)

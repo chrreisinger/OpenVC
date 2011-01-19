@@ -744,7 +744,7 @@ final case class AMSBreakStatement(position: Position, label: Option[Identifier]
 
 package concurrentStatements {
 
-import at.jku.ssw.openvc.symbolTable.symbols.{Symbol, ProcessSymbol}
+import at.jku.ssw.openvc.symbolTable.symbols.{ConstantSymbol, Symbol, ProcessSymbol}
 
 /**
  * Base class for all concurrent statements
@@ -939,15 +939,15 @@ sealed trait GenerateStatement
 
 object IfGenerateStatement {
 
-  final class IfThenPart(val label: Option[Identifier], val condition: Expression, val declarativeItems: Seq[declarations.DeclarativeItem], val concurrentStatements: Seq[ConcurrentStatement], val endLabel: Option[Identifier])
+  final case class IfThenPart(val label: Option[Identifier], val condition: Expression, val declarativeItems: Seq[declarations.DeclarativeItem], val concurrentStatements: Seq[ConcurrentStatement], val endLabel: Option[Identifier])
 
 }
 
-final case class IfGenerateStatement(position: Position, label: Option[Identifier], ifThenList: Seq[IfGenerateStatement.IfThenPart], elsePart: Option[IfGenerateStatement.IfThenPart], endLabel: Option[Identifier],
-                                     value: Boolean = true) extends ConcurrentStatement with GenerateStatement
+final case class IfGenerateStatement(position: Position, label: Option[Identifier], ifThenList: Seq[IfGenerateStatement.IfThenPart], elsePart: Option[IfGenerateStatement.IfThenPart], endLabel: Option[Identifier])
+  extends ConcurrentStatement with GenerateStatement
 
 final case class ForGenerateStatement(position: Position, label: Option[Identifier], loopIdentifier: Identifier, discreteRange: DiscreteRange, declarativeItems: Seq[declarations.DeclarativeItem],
-                                      concurrentStatements: Seq[ConcurrentStatement], alternativeEndLabel: Option[Identifier], endLabel: Option[Identifier]) extends ConcurrentStatement with GenerateStatement
+                                      concurrentStatements: Seq[ConcurrentStatement], alternativeEndLabel: Option[Identifier], endLabel: Option[Identifier], symbol: ConstantSymbol = null) extends ConcurrentStatement with GenerateStatement
 
 object CaseGenerateStatement {
 

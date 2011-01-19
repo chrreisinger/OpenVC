@@ -79,8 +79,16 @@ final class SymbolTable(val scopes: Seq[SymbolTable.Scope]) {
 
   def find(name: String): Option[Symbol] = {
     for (scope <- this.scopes) {
-      val obj = scope.get(name)
-      if (obj.isDefined) return obj
+      val symbol = scope.get(name)
+      if (symbol.isDefined) return symbol
+    }
+    None
+  }
+
+  def find[A <: Symbol](name: String, symbolClass: Class[A]): Option[A] = {
+    for (scope <- this.scopes) {
+      val symbol = scope.get(name)
+      if (symbol.isDefined && symbolClass.isInstance(symbol.get)) return Some(symbol.get.asInstanceOf[A])
     }
     None
   }

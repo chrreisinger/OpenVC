@@ -189,6 +189,9 @@ final case class GroupSymbol(@transient identifier: Identifier, owner: Symbol) e
 @SerialVersionUID(-6214450543318369430L)
 final case class ProcessSymbol(@transient identifier: Identifier, owner: Symbol, var isPassive: Boolean, isPostponed: Boolean) extends Symbol
 
+@SerialVersionUID(-5713001752033143203L)
+final case class BlockSymbol(@transient identifier: Identifier, owner: Symbol) extends Symbol
+
 @SerialVersionUID(7523805927766617817L)
 final case class TypeSymbol(@transient identifier: Identifier, dataType: DataType, owner: Symbol) extends Symbol {
   override lazy val attributes = mutable.Map(dataType.attributes.toSeq: _*)
