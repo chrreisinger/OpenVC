@@ -33,7 +33,7 @@ import VHDLCompiler.Configuration
 
 import at.jku.ssw.openvs.RuntimeAnnotations._
 import at.jku.ssw.openvs.VHDLRuntime
-import at.jku.ssw.openvs.VHDLRuntime.{EnumerationType => EnumerationTypeInterface, RecordType => RecordTypeInterface, _}
+import at.jku.ssw.openvs.VHDLRuntime.{EnumerationType => EnumerationTypeInterface, RecordType => RecordTypeInterface, ArrayType => ArrayTypeInterface, _}
 
 //opcodes currently not used: jsr,monitorenter,monitorexit,pop2,ret,swap
 object ByteCodeGenerator {
@@ -138,7 +138,7 @@ object ByteCodeGenerator {
     case arrayType: ConstrainedArrayType => ("[" * arrayType.dimensions.size) + getJVMDataType(arrayType.elementType)
     case _: UnconstrainedArrayType => "L" + getJVMName(dataType) + ";"
     case hasOwner: HasOwner => "L" + hasOwner.implementationName + ";" //handles RecordType and ProtectedType
-    case fileType: FileType => "L" + getJVMName(dataType) + ";"
+    case _: FileType | _: RangeType => "L" + getJVMName(dataType) + ";"
     case accessType: AccessType =>
       accessType.pointerType match {
         case scalarType: ScalarType => getMutableScalarAccessType(scalarType)
@@ -175,6 +175,7 @@ object ByteCodeGenerator {
         case scalarType: ScalarType => getMutableScalarAccessName(scalarType)
         case otherType => getJVMName(otherType)
       }
+    case _: RangeType => p(classOf[scala.Range.Inclusive])
     case hasOwner: HasOwner => hasOwner.implementationName
     case fileType: FileType => p(classOf[RuntimeFile])
   }
@@ -410,8 +411,11 @@ object ByteCodeGenerator {
                 symbol.dataType match {
                   case arrayType: ArrayType =>
                     loadSymbol(symbol)
-                    acceptExpressionOption(attributeAccess.parameterExpression)
-                    //"left" | "right" | "low" | "high" | "length" | "ascending"
+                    attributeAccess.parameterExpression match {
+                      case None => ICONST_1 //this must be a array attribute where the dimension is optional
+                      case Some(parameterExpression) => acceptExpression(parameterExpression)
+                    }
+                    //"left" | "right" | "low" | "high" | "length" | "ascending" | "range" | "reverse_range"
                     INVOKEVIRTUAL(getJVMName(symbol), attributeAccess.attribute.name, "(I)" + getJVMDataType(attributeAccess.attribute.dataType))
                 }
             }
@@ -914,57 +918,26 @@ object ByteCodeGenerator {
           }
           endLabel()
         case forGenerateStmt: ForGenerateStatement =>
-          import Range.Direction._
-          val continueLabel = createLabel
-          val breakLabel = createLabel
-          val conditionTestLabel = createLabel
-          val startLabel = createLabel
-          val direction = getDiscreteRangeDirection(forGenerateStmt.discreteRange)
-
           context.cw.visitField(Opcodes.ACC_PUBLIC, forGenerateStmt.label.get.text, "[Ljava/lang/Object;").visitAnnotation(ci(classOf[BlockAnnotation]), true).visitEnd
           val blockCW = visitBlockStatement(BlockStatement(forGenerateStmt.position, forGenerateStmt.label, None, None, None, None, None, forGenerateStmt.declarativeItems, forGenerateStmt.concurrentStatements, None), context)
-          startLabel()
-          loadDiscreteRangeRightValue(forGenerateStmt.discreteRange)
-          loadDiscreteRangeLeftValue(forGenerateStmt.discreteRange)
+          loadDiscreteRange(forGenerateStmt.discreteRange)
+          INVOKEVIRTUAL("scala/collection/immutable/Range$Inclusive", "length", "()I")
           ISUB
           ANEWARRAY("java/lang/Object")
           PUTSTATIC(cw.className, forGenerateStmt.label.get.text, "[Ljava/lang/Object;")
-          ALOAD(0)
-          loadDiscreteRangeLeftValue(forGenerateStmt.discreteRange)
-          PUTFIELD(cw.className, forGenerateStmt.symbol.name, "I")
-          GOTO(conditionTestLabel)
-          continueLabel()
-          GETSTATIC(cw.className, forGenerateStmt.label.get.text, "[Ljava/lang/Object;")
-          ALOAD(0)
-          GETFIELD(cw.className, forGenerateStmt.symbol.name, "I")
-          NEW(blockCW.className)
-          DUP
-          ALOAD(0)
-          ALOAD(0)
-          GETFIELD(cw.className, forGenerateStmt.symbol.name, "I")
-          INVOKESPECIAL(blockCW.className, "<init>", "(Ljava/lang/Object;I)V")
-          AASTORE
-
-          cw.visitField(Opcodes.ACC_PRIVATE, forGenerateStmt.symbol.name, "I")
-          ALOAD(0)
-          DUP
-          GETFIELD(cw.className, forGenerateStmt.symbol.name, "I")
-          ICONST_1
-          direction match {
-            case To => IADD
-            case Downto => ISUB
+          genericForStatement(forGenerateStmt.discreteRange, forGenerateStmt.symbol, forGenerateStmt, context) {
+            (_, _) =>
+              GETSTATIC(cw.className, forGenerateStmt.label.get.text, "[Ljava/lang/Object;")
+              ALOAD(0)
+              GETFIELD(cw.className, forGenerateStmt.symbol.name, "I")
+              NEW(blockCW.className)
+              DUP
+              ALOAD(0)
+              ALOAD(0)
+              GETFIELD(cw.className, forGenerateStmt.symbol.name, "I")
+              INVOKESPECIAL(blockCW.className, "<init>", "(Ljava/lang/Object;I)V")
+              AASTORE
           }
-          PUTFIELD(cw.className, forGenerateStmt.symbol.name, "I")
-          conditionTestLabel()
-          ALOAD(0)
-          GETFIELD(cw.className, forGenerateStmt.symbol.name, "I")
-
-          loadDiscreteRangeRightValue(forGenerateStmt.discreteRange)
-          direction match {
-            case To => IF_ICMPLE(continueLabel)
-            case Downto => IF_ICMPGE(continueLabel)
-          }
-          breakLabel()
       }
     }
 
@@ -1033,101 +1006,109 @@ object ByteCodeGenerator {
     def visitExitStatement(exitStmt: ExitStatement, context: Context) =
       createConditionalJump(exitStmt, exitStmt.condition, context.loopLabels(exitStmt.loopStatement).breakLabel, context)
 
-    def getDiscreteRangeDirection(discreteRange: DiscreteRange): Range.Direction =
+    def loadDiscreteRange(discreteRange: DiscreteRange)(implicit mv: RichMethodVisitor) =
       discreteRange.rangeOrSubTypeIndication match {
         case Left(range) =>
           range.expressionsOrName match {
-            case Right(attributeName) => error("not implemented")
-            case Left((_, direction, _)) => direction
+            case Right(attributeName) => acceptExpression(attributeName)
+            case Left((from, direction, to)) =>
+              mv.NEW(getJVMName(discreteRange.dataType))
+              mv.DUP
+              acceptExpression(from)
+              acceptExpression(to)
+              direction match {
+                case Range.Direction.To => mv.ICONST_1
+                case _ => mv.ICONST_M1
+              }
+              mv.INVOKESPECIAL("scala/collection/immutable/Range$Inclusive", "<init>", "(III)V")
           }
-        case Right(subTypeIndication) => Range.Direction.To
+        case Right(subTypeIndication) =>
+          import mv._
+          NEW(getJVMName(discreteRange.dataType))
+          DUP
+          pushAnyVal(subTypeIndication.dataType.asInstanceOf[ScalarType].left)
+          pushAnyVal(subTypeIndication.dataType.asInstanceOf[ScalarType].right)
+          ICONST_M1
+          INVOKESPECIAL("scala/collection/immutable/Range$Inclusive", "<init>", "(III)V")
       }
 
-    def loadDiscreteRangeLeftValue(discreteRange: DiscreteRange)(implicit mv: RichMethodVisitor) =
-      discreteRange.rangeOrSubTypeIndication match {
-        case Left(range) =>
-          range.expressionsOrName match {
-            case Right(attributeName) => error("not implemented")
-            case Left((fromExpression, _, _)) => acceptExpression(fromExpression)
-          }
-        case Right(subTypeIndication) => mv.pushAnyVal(subTypeIndication.dataType.asInstanceOf[ScalarType].left)
-      }
-
-    def loadDiscreteRangeRightValue(discreteRange: DiscreteRange)(implicit mv: RichMethodVisitor) =
-      discreteRange.rangeOrSubTypeIndication match {
-        case Left(range) =>
-          range.expressionsOrName match {
-            case Right(attributeName) => error("not implemented")
-            case Left((_, _, toExpression)) => acceptExpression(toExpression)
-          }
-        case Right(subTypeIndication) => mv.pushAnyVal(subTypeIndication.dataType.asInstanceOf[ScalarType].right)
-      }
-
-    def loadDiscreteRangeValues(discreteRange: DiscreteRange)(implicit mv: RichMethodVisitor) = {
-      loadDiscreteRangeLeftValue(discreteRange)
-      loadDiscreteRangeRightValue(discreteRange)
-    }
-
-    def visitForStatement(forStmt: ForStatement, context: Context) {
+    /*
+    * generates a generic for in the form:
+    * scala.Range.Inclusive $range
+    * int i
+    * for($range=loadDiscreteRange(discreteRange),i=$range.start;i!=$range.end;i++){
+    *   body
+    * }
+    */
+    def genericForStatement(discreteRange: DiscreteRange, symbol: ConstantSymbol, stmt: ASTNode, context: Context)(body: (RichLabel, RichLabel) => Unit) {
       import context._
       import mv._
       import Range.Direction._
 
-      val varIndex = forStmt.symbol.index
+      val varIndex = symbol.index
       val continueLabel = createLabel
       val breakLabel = createLabel
       val conditionTestLabel = createLabel
       val startLabel = createLabel
-      val direction = getDiscreteRangeDirection(forStmt.discreteRange)
 
       startLabel()
-
-      createDebugLineNumberInformation(forStmt)
-      (forStmt.symbol.owner: @unchecked) match {
+      createDebugLineNumberInformation(stmt)
+      loadDiscreteRange(discreteRange)
+      ASTORE(varIndex + 1)
+      ALOAD(varIndex + 1)
+      (symbol.owner: @unchecked) match {
         case _: SubprogramSymbol =>
-          loadDiscreteRangeLeftValue(forStmt.discreteRange)
+          INVOKEVIRTUAL(p(classOf[scala.Range.Inclusive]), "start", "()I")
           ISTORE(varIndex)
-        case _: ProcessSymbol =>
+        case _: ProcessSymbol | _: BlockSymbol =>
+          cw.visitField(Opcodes.ACC_PRIVATE, symbol.name, "I")
           ALOAD(0)
-          loadDiscreteRangeLeftValue(forStmt.discreteRange)
-          PUTFIELD(cw.className, forStmt.symbol.name, "I")
+          INVOKEVIRTUAL(p(classOf[scala.Range.Inclusive]), "start", "()I")
+          PUTFIELD(cw.className, symbol.name, "I")
       }
 
       GOTO(conditionTestLabel)
       continueLabel()
 
-      acceptNodes(forStmt.sequentialStatements, context.insertLoopLabels(forStmt.position, new LoopLabels(continueLabel, breakLabel)))
-      (forStmt.symbol.owner: @unchecked) match {
+      body(continueLabel, breakLabel)
+
+      (symbol.owner: @unchecked) match {
         case _: SubprogramSymbol =>
-          direction match {
-            case To => IINC(varIndex, 1)
-            case Downto => IINC(varIndex, -1)
-          }
+          ILOAD(varIndex)
+          ALOAD(varIndex + 1)
+          INVOKEVIRTUAL(p(classOf[scala.Range.Inclusive]), "step", "()I")
+          IADD
+          ISTORE(varIndex)
+
           conditionTestLabel()
           ILOAD(varIndex)
-        case _: ProcessSymbol =>
-          cw.visitField(Opcodes.ACC_PRIVATE, forStmt.symbol.name, "I")
+        case _: ProcessSymbol | _: BlockSymbol =>
           ALOAD(0)
           DUP
-          GETFIELD(cw.className, forStmt.symbol.name, "I")
-          ICONST_1
-          direction match {
-            case To => IADD
-            case Downto => ISUB
-          }
-          PUTFIELD(cw.className, forStmt.symbol.name, "I")
+          GETFIELD(cw.className, symbol.name, "I")
+          ALOAD(varIndex + 1)
+          INVOKEVIRTUAL(p(classOf[scala.Range.Inclusive]), "step", "()I")
+          IADD
+          PUTFIELD(cw.className, symbol.name, "I")
           conditionTestLabel()
+
           ALOAD(0)
-          GETFIELD(cw.className, forStmt.symbol.name, "I")
+          GETFIELD(cw.className, symbol.name, "I")
       }
-      loadDiscreteRangeRightValue(forStmt.discreteRange)
-      direction match {
-        case To => IF_ICMPLE(continueLabel)
-        case Downto => IF_ICMPGE(continueLabel)
-      }
+      ALOAD(varIndex + 1)
+      INVOKEVIRTUAL(p(classOf[scala.Range.Inclusive]), "end", "()I")
+      IF_ICMPNE(continueLabel)
       breakLabel()
-      if (forStmt.symbol.owner.isInstanceOf[SubprogramSymbol]) visitLocalVariable(forStmt.symbol.name, "I", null, startLabel, breakLabel, varIndex)
+      if (symbol.owner.isInstanceOf[SubprogramSymbol]) {
+        visitLocalVariable(symbol.name, "I", null, startLabel, breakLabel, varIndex)
+        visitLocalVariable("$range", ci(classOf[scala.Range.Inclusive]), null, startLabel, breakLabel, varIndex + 1)
+      }
     }
+
+    def visitForStatement(forStmt: ForStatement, context: Context) =
+      genericForStatement(forStmt.discreteRange, forStmt.symbol, forStmt, context) {
+        (continueLabel, breakLabel) => acceptNodes(forStmt.sequentialStatements, context.insertLoopLabels(forStmt.position, new LoopLabels(continueLabel, breakLabel)))
+      }
 
     def visitLoopStatement(loopStmt: LoopStatement, context: Context) {
       import context.mv._
@@ -1699,10 +1680,10 @@ object ByteCodeGenerator {
         _ match {
           case Left(_) =>
           case Right(discreteRanges) =>
-            discreteRanges.foreach(loadDiscreteRangeValues)
+            discreteRanges.foreach(loadDiscreteRange)
             val arrayType = subtype.dataType.asInstanceOf[ArrayType]
-            mv.INVOKESTATIC(RUNTIME, "createRuntimeArrayFromOtherArray1D" + getScalaSpecializedMethodSuffix(arrayType.elementType),
-              "(" + ("[" * arrayType.dimensions.size) + getJVMDataType(arrayType.elementType) + ("I" * (arrayType.dimensions.size * 2)) + ")" + getJVMDataType(arrayType))
+            mv.INVOKESTATIC(RUNTIME, "createRuntimeArrayFromOtherArray$" + getScalaSpecializedMethodSuffix(arrayType.elementType),
+              "(" + ("[" * arrayType.dimensions.size) + getJVMDataType(arrayType.elementType) + (ci(classOf[scala.Range.Inclusive]) * arrayType.dimensions.size) + ")" + getJVMDataType(arrayType))
 
         }
       }

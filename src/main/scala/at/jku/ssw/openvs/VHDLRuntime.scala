@@ -46,10 +46,81 @@ object VHDLRuntime {
 
   final case class MutableLong(@BeanProperty var value: Long)
 
-  final class RuntimeArray1D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](val data: Array[A], val left: Int, val right: Int) {
-    val low = math.min(left, right)
-    val high = math.max(left, right)
-    val ascending = left < right
+  trait ArrayType {
+    def left(dim: Int): Int
+
+    def right(dim: Int): Int
+
+    def low(dim: Int): Int
+
+    def high(dim: Int): Int
+
+    def range(dim: Int): scala.Range.Inclusive
+
+    def reverse_range(dim: Int): scala.Range.Inclusive
+
+    def length(dim: Int): Int
+
+    def ascending(dim: Int): Boolean
+  }
+
+  final class RuntimeArray1D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](val data: Array[A], left: Int, right: Int) extends ArrayType {
+
+    def outOfRange(dim: Int) = throw new VHDLRuntimeException("dimension:" + dim + " is invalid in a one dimensional array")
+
+    val isAscending = left < right
+
+    @throws(classOf[VHDLRuntimeException])
+    def ascending(dim: Int) = dim match {
+      case 1 => isAscending
+      case _ => outOfRange(dim)
+    }
+
+    @throws(classOf[VHDLRuntimeException])
+    def range(dim: Int) = dim match {
+      case 1 =>
+        if (isAscending) new Range.Inclusive(left, right, 1)
+        else new Range.Inclusive(left, right, -1)
+      case _ => outOfRange(dim)
+    }
+
+    @throws(classOf[VHDLRuntimeException])
+    def reverse_range(dim: Int) = dim match {
+      case 1 =>
+        if (isAscending) new Range.Inclusive(right, left, -1)
+        else new Range.Inclusive(right, left, 1)
+      case _ => outOfRange(dim)
+    }
+
+    @throws(classOf[VHDLRuntimeException])
+    def left(dim: Int) = dim match {
+      case 1 => left
+      case _ => outOfRange(dim)
+    }
+
+    @throws(classOf[VHDLRuntimeException])
+    def right(dim: Int) = dim match {
+      case 1 => right
+      case _ => outOfRange(dim)
+    }
+
+    @throws(classOf[VHDLRuntimeException])
+    def low(dim: Int) = dim match {
+      case 1 => math.min(left, right)
+      case _ => outOfRange(dim)
+    }
+
+    @throws(classOf[VHDLRuntimeException])
+    def high(dim: Int) = dim match {
+      case 1 => math.max(left, right)
+      case _ => outOfRange(dim)
+    }
+
+    @throws(classOf[VHDLRuntimeException])
+    def length(dim: Int) = dim match {
+      case 1 => data.length
+      case _ => outOfRange(dim)
+    }
 
     def getValue(index: Int): A = if (left < right) data(index - left) else data(left - index)
 
@@ -60,48 +131,72 @@ object VHDLRuntime {
   }
 
   final class RuntimeArray2D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A]
-  (val data: Array[Array[A]], private[this] val dim1Left: Int, private[this] val dim1Right: Int, private[this] val dim2Left: Int, private[this] val dim2Right: Int) {
+  (val data: Array[Array[A]], private[this] val dim1Left: Int, private[this] val dim1Right: Int, private[this] val dim2Left: Int, private[this] val dim2Right: Int) extends ArrayType {
+
+    def outOfRange(dim: Int) = throw new VHDLRuntimeException("dimension:" + dim + " is out of range 1 to 2")
 
     @throws(classOf[VHDLRuntimeException])
     def ascending(dim: Int) = dim match {
-      case 0 => dim1Left < dim1Right
-      case 1 => dim2Left < dim2Right
-      case _ => throw new VHDLRuntimeException("dimension:" + dim + " is out of range 0 to 1")
+      case 1 => dim1Left < dim1Right
+      case 2 => dim2Left < dim2Right
+      case _ => outOfRange(dim)
+    }
+
+    @throws(classOf[VHDLRuntimeException])
+    def range(dim: Int) = dim match {
+      case 1 =>
+        if (dim1Left < dim1Right) new Range.Inclusive(dim1Left, dim1Right, 1)
+        else new Range.Inclusive(dim1Left, dim1Right, -1)
+      case 2 =>
+        if (dim2Left < dim2Right) new Range.Inclusive(dim2Left, dim2Right, 1)
+        else new Range.Inclusive(dim2Left, dim2Right, -1)
+      case _ => outOfRange(dim)
+    }
+
+    @throws(classOf[VHDLRuntimeException])
+    def reverse_range(dim: Int) = dim match {
+      case 1 =>
+        if (dim1Left < dim1Right) new Range.Inclusive(dim1Right, dim1Left, -1)
+        else new Range.Inclusive(dim1Right, dim1Left, 1)
+      case 2 =>
+        if (dim2Left < dim2Right) new Range.Inclusive(dim2Right, dim2Left, -1)
+        else new Range.Inclusive(dim2Right, dim2Left, 1)
+      case _ => outOfRange(dim)
     }
 
     @throws(classOf[VHDLRuntimeException])
     def left(dim: Int) = dim match {
-      case 0 => dim1Left
-      case 1 => dim2Left
-      case _ => throw new VHDLRuntimeException("dimension:" + dim + " is out of range 0 to 1")
+      case 1 => dim1Left
+      case 2 => dim2Left
+      case _ => outOfRange(dim)
     }
 
     @throws(classOf[VHDLRuntimeException])
     def right(dim: Int) = dim match {
-      case 0 => dim1Right
-      case 1 => dim2Right
-      case _ => throw new VHDLRuntimeException("dimension:" + dim + " is out of range 0 to 1")
+      case 1 => dim1Right
+      case 2 => dim2Right
+      case _ => outOfRange(dim)
     }
 
     @throws(classOf[VHDLRuntimeException])
     def low(dim: Int) = dim match {
-      case 0 => math.min(dim1Left, dim1Right)
-      case 1 => math.min(dim2Left, dim2Right)
-      case _ => throw new VHDLRuntimeException("dimension:" + dim + " is out of range 0 to 1")
+      case 1 => math.min(dim1Left, dim1Right)
+      case 2 => math.min(dim2Left, dim2Right)
+      case _ => outOfRange(dim)
     }
 
     @throws(classOf[VHDLRuntimeException])
     def high(dim: Int) = dim match {
-      case 0 => math.max(dim1Left, dim1Right)
-      case 1 => math.max(dim2Left, dim2Right)
-      case _ => throw new VHDLRuntimeException("dimension:" + dim + " is out of range 0 to 1")
+      case 1 => math.max(dim1Left, dim1Right)
+      case 2 => math.max(dim2Left, dim2Right)
+      case _ => outOfRange(dim)
     }
 
     @throws(classOf[VHDLRuntimeException])
     def length(dim: Int) = dim match {
-      case 0 => data.length
-      case 1 => data(0).length
-      case _ => throw new VHDLRuntimeException("dimension:" + dim + " is out of range 0 to 1")
+      case 1 => data.length
+      case 2 => data(0).length
+      case _ => outOfRange(dim)
     }
 
     def getValue(dim1: Int, dim2: Int): A = {
@@ -274,11 +369,11 @@ object VHDLRuntime {
     return if ((mod < 0 && y > 0) || (mod > 0 && y < 0)) mod + y else mod
   }
 
-  def createEmptyRuntimeArray1D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A: ClassManifest](left: Int, right: Int) = new RuntimeArray1D(Array.ofDim[A]((left - right).abs), left, right)
+  def createEmptyRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A: ClassManifest](range: Range.Inclusive) = new RuntimeArray1D(Array.ofDim[A](range.length), range.start, range.end)
 
-  def createRuntimeArrayFromOther1D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A: ClassManifest](other: RuntimeArray1D[A], left: Int, right: Int) = new RuntimeArray1D(other.data, left, right)
+  def createRuntimeArrayFromOther[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](other: RuntimeArray1D[A], range: Range.Inclusive) = new RuntimeArray1D(other.data, range.start, range.end)
 
-  def createRuntimeArrayFromOtherArray1D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A: ClassManifest](other: Array[A], left: Int, right: Int) = new RuntimeArray1D(other, left, right)
+  def createRuntimeArrayFromOtherArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](other: Array[A], range: Range.Inclusive) = new RuntimeArray1D(other, range.start, range.end)
 
   def getArrayIndex1D(index: Int, left: Int, right: Int): Int = if (left < right) index - left else left - index
 

@@ -728,10 +728,7 @@ object SemanticAnalyzer {
                               case None => addError(identifier, "the attribute %s requires a parameter of type %s", attribute.name, requiredDataType.name)
                               case Some(expression) => Option(checkExpression(context, expression, requiredDataType))
                             }
-                            case true => expressionOption match {
-                              case None => Some(Literal(identifier.position, "1", Literal.Type.INTEGER_LITERAL, SymbolTable.universalIntegerType, 1)) //this must be a array attribute where the dimension is optional
-                              case Some(expression) => Option(checkExpression(context, expression, requiredDataType))
-                            }
+                            case true => expressionOption.map(checkExpression(context, _, requiredDataType))
                           }
                           case None => expressionOption.flatMap(addError(_, "the attribute %s does not take a parameter", attribute.name))
                         }
@@ -1123,7 +1120,7 @@ object SemanticAnalyzer {
     discreteRange.rangeOrSubTypeIndication match {
       case Left(range) =>
         val newRange = checkRange(context, range)
-        if (!newRange.dataType.isInstanceOf[DiscreteType]) addError(newRange, "expected a discrete type")
+        if (!newRange.dataType.isInstanceOf[RangeType] || !newRange.dataType.asInstanceOf[RangeType].elementType.isInstanceOf[DiscreteType]) addError(newRange, "expected a discrete range")
         new DiscreteRange(Left(newRange), dataType = new ConstrainedRangeType(newRange.dataType, 0, 10)) //TODO lowLong.toInt, highLong.toInt))
       case Right(subTypeIndication) =>
       // TODO
@@ -1155,7 +1152,7 @@ object SemanticAnalyzer {
 
 
   def checkBlockConfiguration(context: Context, blockConfiguration: BlockConfiguration) {
-
+    error("not implemented")
   }
 
   def checkPure(context: Context, node: ASTNode, owner: Symbol, symbol: Symbol) = owner match {
@@ -1190,40 +1187,11 @@ object SemanticAnalyzer {
       val fromExpression = checkExpression(context, sourceFromExpression, NoType)
       val toExpression = checkExpression(context, sourceToExpression, fromExpression.dataType)
       if (!isCompatible(fromExpression.dataType, toExpression.dataType)) addError(toExpression, "data type %s is not comaptible with %s", toExpression.dataType.name, fromExpression.dataType)
-      new Range(new Left((fromExpression, direction, toExpression)), dataType = fromExpression.dataType)
+      new Range(Left((fromExpression, direction, toExpression)), dataType = new UnconstrainedRangeType(fromExpression.dataType))
     case Right(attributeName) =>
-      range
-  /* TODO context.find(attributeName) match {
-    case None =>
-      addError(attributeName, SemanticMessage.NOT_FOUND, "type or attribute", attributeName.toString)
-      range
-    case Some(symbol) => symbol match {
-      case typeSymbol: TypeSymbol =>
-        typeSymbol.dataType match {
-          case scalar: ScalarType =>
-            val fromExpression = Literal(attributeName.position, scalar.leftAttribute.toString, Literal.Type.DECIMAL_LITERAL, scalar)
-            val toExpression = Literal(attributeName.position, scalar.rightAttribute.toString, Literal.Type.DECIMAL_LITERAL, scalar)
-            lowLong = scalar.leftAttribute.asInstanceOf[Int]
-            highLong = scalar.rightAttribute.asInstanceOf[Int]
-            new Range(fromExpression = fromExpression, toExpression = toExpression, direction = Range.Direction.To, attributeNameOption = None)
-          case dataType =>
-            addError(attributeName, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, "scalar", dataType.name)
-            range
-        }
-      case attribute: AttributeSymbol =>
-        attribute.dataType match {
-          case rangeType: UnconstrainedRangeType =>
-            //TODO  symbol and Expression
-            val dimension = Literal(attributeName.position, "1", Literal.Type.DECIMAL_LITERAL, SymbolTable.integerType)
-            val fromExpression = AttributeExpression(attributeName.position, attribute.owner, new AttributeSymbol("left", rangeType.elementType, None), Some(dimension), rangeType.elementType)
-            val toExpression = AttributeExpression(attributeName.position, attribute.owner, new AttributeSymbol("right", rangeType.elementType, None), Some(dimension), rangeType.elementType)
-            new Range(fromExpression = fromExpression, toExpression = toExpression, direction = if (attribute.name == "range") Range.Direction.To else Range.Direction.Downto, attributeNameOption = None)
-          case dataType =>
-            addError(attributeName, SemanticMessage.EXPECTED_EXPRESSION_OF_TYPE, "range", dataType.name)
-            range
-        }
-    }
-  }*/
+      val expr = acceptExpression(attributeName, NoType, context)
+      if (expr.dataType != NoType && !expr.dataType.isInstanceOf[RangeType]) addError(expr, "expected a range found %s", expr.dataType.name)
+      new Range(Right(expr), expr.dataType)
   }
 
   def getMangledName(name: Identifier): Identifier = {
@@ -1411,7 +1379,7 @@ object SemanticAnalyzer {
 
   def visitAliasDeclaration(aliasDeclaration: AliasDeclaration, context: Context): ReturnType = {
     val (identifiers, rest) = aliasDeclaration.name.parts.span(_.isInstanceOf[Name.SelectedPart])
-    val identifier = new SelectedName(aliasDeclaration.name.identifier +: identifiers.map(_.asInstanceOf[Name.SelectedPart].identifier))
+    val selectedName = new SelectedName(aliasDeclaration.name.identifier +: identifiers.map(_.asInstanceOf[Name.SelectedPart].identifier))
 
     def createAliasSymbol(symbol: Symbol): Option[AliasSymbol] = symbol match {
       case r: RuntimeSymbol =>
@@ -1446,7 +1414,7 @@ object SemanticAnalyzer {
             Some(new AliasSymbol(aliasDeclaration.identifier, symbol))
         }
     }
-    (aliasDeclaration, context.insertSymbol(context.find(identifier).flatMap(createAliasSymbol)))
+    (aliasDeclaration, context.insertSymbol(context.find(selectedName).flatMap(createAliasSymbol)))
   }
 
   def visitArchitectureDeclaration(architectureDeclaration: ArchitectureDeclaration, owner: Symbol, context: Context): ReturnType =
@@ -2021,7 +1989,7 @@ object SemanticAnalyzer {
     checkIdentifiersOption(forStmt.label, forStmt.endLabel)
     val discreteRange = checkDiscreteRange(context, forStmt.discreteRange)
     val symbol = new ConstantSymbol(forStmt.identifier, discreteRange.dataType.elementType, context.varIndex + 1, owner)
-    val (sequentialStatements, _) = acceptNodes(forStmt.sequentialStatements, owner, context.openScope.insertSymbol(symbol).insertLoopLabel(forStmt.label, forStmt.position).copy(varIndex = context.varIndex + 1))
+    val (sequentialStatements, _) = acceptNodes(forStmt.sequentialStatements, owner, context.openScope.insertSymbol(symbol).insertLoopLabel(forStmt.label, forStmt.position).copy(varIndex = context.varIndex + 2)) //one is for the $generate variable
     (forStmt.copy(sequentialStatements = sequentialStatements, symbol = symbol, discreteRange = discreteRange), context)
   }
 
@@ -2375,7 +2343,7 @@ object SemanticAnalyzer {
         require(enumerationType.elements.size <= Char.MaxValue)
         checkDuplicateIdentifiers(enumerationType.elements, "duplicate enumeration value %s")
         val dataType = new EnumerationType(name, elements, None, owner)
-        val symbols = enumerationType.elements.map(id => new EnumerationSymbol(id, dataType, owner)) //TODO is owner the new created TypeSymbol?
+        val symbols = enumerationType.elements.map(id => new EnumerationSymbol(id, dataType, owner))
         (enumerationType.copy(dataType = dataType), symbols)
       case physicalType: PhysicalTypeDefinition =>
         checkIdentifiers(physicalType.identifier, physicalType.endIdentifier)

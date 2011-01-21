@@ -131,7 +131,7 @@ object Range {
 
 }
 
-final class Range(val expressionsOrName: Either[(Expression, Range.Direction, Expression), Name], val dataType: DataType = NoType) extends Locatable {
+final class Range(val expressionsOrName: Either[(Expression, Range.Direction, Expression), Expression], val dataType: DataType = NoType) extends Locatable {
   val position = expressionsOrName match {
     case Left((expr, _, _)) => expr.firstPosition
     case Right(attributeName) => attributeName.position
