@@ -103,7 +103,7 @@ object SemanticAnalyzer {
     this.configuration = configuration
     semanticErrors.clear
     semanticWarnings.clear
-    val (newDesignFile, context) = acceptNode(designFile, NoSymbol, Context(0, new SymbolTable(List()), collection.immutable.Stack()))
+    val (newDesignFile, context) = acceptNode(designFile, NoSymbol, Context(new SymbolTable(0, List()), collection.immutable.Stack()))
     (newDesignFile.asInstanceOf[DesignFile], semanticErrors.result, semanticWarnings.result)
   }
 
@@ -124,7 +124,9 @@ object SemanticAnalyzer {
   def checkIdentifiers(start: Identifier, endOption: Option[Identifier]) =
     for (end <- endOption) if (end.text != start.text) addError(end, "The start label:%s ist differend form this end label:%s", start, end)
 
-  final case class Context(varIndex: Int, symbolTable: SymbolTable, loopLabels: collection.immutable.Stack[(Option[Identifier], Position)]) {
+  final case class Context(symbolTable: SymbolTable, loopLabels: collection.immutable.Stack[(Option[Identifier], Position)]) {
+    def varIndex = symbolTable.varIndex
+
     def insertLoopLabel(label: Option[Identifier], position: Position): Context =
       copy(loopLabels = loopLabels.push((label, position)))
 
@@ -191,7 +193,11 @@ object SemanticAnalyzer {
           })
       }
 
+    def incVarIndex(i: Int) = copy(symbolTable = new SymbolTable(symbolTable.varIndex + i, symbolTable.scopes))
+
     def openScope = copy(symbolTable = symbolTable.openScope)
+
+    def openScope(varIndex: Int) = copy(symbolTable = symbolTable.openScope(varIndex))
 
     def closeScope(): Seq[Symbol] = symbolTable.currentScope.values.toSeq
 
@@ -1432,7 +1438,7 @@ object SemanticAnalyzer {
   def visitArchitectureDeclaration(architectureDeclaration: ArchitectureDeclaration, owner: Symbol, context: Context): ReturnType =
     SymbolTable.getScopesFromFile(configuration.libraryOutputDirectory + architectureDeclaration.entityName) match {
       case Some(scopes) =>
-        val newContext = context.copy(symbolTable = new SymbolTable(scopes ++ context.symbolTable.scopes))
+        val newContext = context.copy(symbolTable = new SymbolTable(0, scopes ++ context.symbolTable.scopes))
         val entitySymbol = newContext.findSymbol(architectureDeclaration.entityName, classOf[EntitySymbol]).get
         if (entitySymbol.owner != owner) addError(architectureDeclaration, "a architecture declaration must be placed into the same design library as the entity declaration")
         val symbol = new ArchitectureSymbol(architectureDeclaration.identifier, entitySymbol, owner)
@@ -1588,7 +1594,7 @@ object SemanticAnalyzer {
           case _ => Option((constantSymbol, expression))
         }
     } match {
-      case Some((constantSymbol, expression)) => (ConstantDeclaration(Position.NoPosition, Seq(), null, Option(expression), Seq(constantSymbol)), context.copy(varIndex = context.varIndex + getNextIndex(constantSymbol.dataType)))
+      case Some((constantSymbol, expression)) => (ConstantDeclaration(Position.NoPosition, Seq(), null, Option(expression), Seq(constantSymbol)), context.incVarIndex(getNextIndex(constantSymbol.dataType)))
       case None => (attributeSpec, context)
     }
 
@@ -1605,7 +1611,7 @@ object SemanticAnalyzer {
     val guardExpression = checkExpressionOption(newContext, blockStmt.guardExpression, SymbolTable.booleanType)
 
     val cx = blockStmt.guardExpression.map(expr => newContext.insertSymbol(new SignalSymbol(Identifier(expr.position, "guard"), SymbolTable.booleanType, InterfaceList.Mode.LINKAGE, None, -1, owner))).getOrElse(newContext)
-    val (declarativeItems, c) = acceptDeclarativeItems(blockStmt.declarativeItems, owner, insertConcurrentStatementsLabels(cx.copy(varIndex = ports.lastOption.map(_.index + 1).getOrElse(getStartIndex(owner))), blockStmt.concurrentStatements, owner))
+    val (declarativeItems, c) = acceptDeclarativeItems(blockStmt.declarativeItems, owner, insertConcurrentStatementsLabels(cx, blockStmt.concurrentStatements, owner))
     val (concurrentStatements, _) = acceptNodes(blockStmt.concurrentStatements, owner, c)
 
     (blockStmt.copy(genericInterfaceList = genericInterfaceList, genericAssociationList = genericAssociationList, portInterfaceList = portInterfaceList, portAssociationList = portAssociationList,
@@ -1820,9 +1826,7 @@ object SemanticAnalyzer {
           new ConstantSymbol(identifier, subType.dataType, context.varIndex + (i * multiplier), owner, false, constantDeclaration.value.isDefined, constantDeclaration.value.isEmpty)
       }
     }
-    val newNode = constantDeclaration.copy(value = value, subType = subType, symbols = symbols)
-    val newContext = context.insertSymbols(symbols).copy(varIndex = context.varIndex + (constantDeclaration.identifiers.size * multiplier) + 1)
-    (newNode, newContext)
+    (constantDeclaration.copy(value = value, subType = subType, symbols = symbols), context.insertSymbols(symbols))
   }
 
   @tailrec
@@ -1980,9 +1984,7 @@ object SemanticAnalyzer {
     val symbols = fileDeclaration.identifiers.zipWithIndex.map {
       case (identifier, i) => new FileSymbol(identifier, subType.dataType, context.varIndex + i, owner)
     }
-    val newNode = fileDeclaration.copy(openKind = openKind, logicalName = logicalName, subType = subType, symbols = symbols)
-    val newContext = context.insertSymbols(symbols).copy(varIndex = context.varIndex + fileDeclaration.identifiers.size + 1)
-    (newNode, newContext)
+    (fileDeclaration.copy(openKind = openKind, logicalName = logicalName, subType = subType, symbols = symbols), context.insertSymbols(symbols))
   }
 
   def visitForGenerateStatement(forGenerateStmt: ForGenerateStatement, owner: Symbol, context: Context): ReturnType = {
@@ -2000,8 +2002,8 @@ object SemanticAnalyzer {
   def visitForStatement(forStmt: ForStatement, owner: Symbol, context: Context): ReturnType = {
     checkIdentifiersOption(forStmt.label, forStmt.endLabel)
     val discreteRange = checkDiscreteRange(context, forStmt.discreteRange)
-    val symbol = new ConstantSymbol(forStmt.identifier, discreteRange.dataType.elementType, context.varIndex + 1, owner)
-    val (sequentialStatements, _) = acceptNodes(forStmt.sequentialStatements, owner, context.openScope.insertSymbol(symbol).insertLoopLabel(forStmt.label, forStmt.position).copy(varIndex = context.varIndex + 2)) //one is for the $generate variable
+    val symbol = new ConstantSymbol(forStmt.identifier, discreteRange.dataType.elementType, context.varIndex + 1, owner) // context.varIndex is for the $generate variable
+    val (sequentialStatements, _) = acceptNodes(forStmt.sequentialStatements, owner, context.openScope.insertSymbol(symbol).insertLoopLabel(forStmt.label, forStmt.position))
     (forStmt.copy(sequentialStatements = sequentialStatements, symbol = symbol, discreteRange = discreteRange), context)
   }
 
@@ -2037,7 +2039,7 @@ object SemanticAnalyzer {
     }
     val tmp = context.insertSymbol(function)
     val (declarativeItems, c1) = acceptDeclarativeItems(functionDefinition.declarativeItems, function,
-      insertSequentialStatementsLabels(tmp.openScope.insertSymbols(function.parameters), functionDefinition.sequentialStatements, function).copy(varIndex = function.parameters.lastOption.map(_.index + 1).getOrElse(getStartIndex(owner))))
+      insertSequentialStatementsLabels(tmp.openScope(getStartIndex(owner)).insertSymbols(function.parameters), functionDefinition.sequentialStatements, function))
     val (sequentialStatements, c2) = acceptNodes(functionDefinition.sequentialStatements, function, c1)
     val newSequentialStatements = sequentialStatements match {
       case Seq(AssertionStatement(pos, _, _, _, _)) =>
@@ -2106,7 +2108,7 @@ object SemanticAnalyzer {
     SymbolTable.getScopesFromFile(configuration.libraryOutputDirectory + packageBodyDeclaration.identifier) match {
       case Some(scopes) =>
         val symbol = new PackageSymbol(packageBodyDeclaration.identifier, Map(), true, owner)
-        val (declarativeItems, newContext) = acceptDeclarativeItems(packageBodyDeclaration.declarativeItems, symbol, context.copy(symbolTable = new SymbolTable(scopes ++ context.symbolTable.scopes)))
+        val (declarativeItems, newContext) = acceptDeclarativeItems(packageBodyDeclaration.declarativeItems, symbol, context.copy(symbolTable = new SymbolTable(0, scopes ++ context.symbolTable.scopes)))
         require(newContext.symbolTable.depth == 3)
         newContext.closeScope().foreach {
           _ match {
@@ -2157,7 +2159,7 @@ object SemanticAnalyzer {
     }
     val tmp = context.insertSymbol(procedure)
     val (declarativeItems, c1) = acceptDeclarativeItems(procedureDefinition.declarativeItems, procedure,
-      insertSequentialStatementsLabels(tmp.openScope.insertSymbols(procedure.parameters), procedureDefinition.sequentialStatements, procedure).copy(varIndex = procedure.parameters.lastOption.map(_.index + 1).getOrElse(getStartIndex(owner))))
+      insertSequentialStatementsLabels(tmp.openScope(getStartIndex(owner)).insertSymbols(procedure.parameters), procedureDefinition.sequentialStatements, procedure))
     val (sequentialStatements, c2) = acceptNodes(procedureDefinition.sequentialStatements, procedure, c1)
     procedure.isPassive = isPassive(sequentialStatements)
     (procedureDefinition.copy(parameterInterfaceList = parameterInterfaceList, declarativeItems = declarativeItems, sequentialStatements = sequentialStatements,
@@ -2320,9 +2322,7 @@ object SemanticAnalyzer {
     val symbols = signalDeclaration.identifiers.zipWithIndex.map {
       case (identifier, i) => new SignalSymbol(identifier, subType.dataType, InterfaceList.Mode.LINKAGE, signalDeclaration.signalType, context.varIndex + i, owner)
     }
-    val newNode = signalDeclaration.copy(defaultExpression = defaultExpression, subType = subType, symbols = symbols)
-    val newContext = context.insertSymbols(symbols).copy(varIndex = context.varIndex + signalDeclaration.identifiers.size + 1)
-    (newNode, newContext)
+    (signalDeclaration.copy(defaultExpression = defaultExpression, subType = subType, symbols = symbols), context.insertSymbols(symbols))
   }
 
   def checkIfNotType(location: Locatable, dataType: DataType, invalidTypes: Set[Class[_]], message: String): Unit = {
@@ -2588,9 +2588,7 @@ object SemanticAnalyzer {
     val symbols = variableDeclaration.identifiers.zipWithIndex.map {
       case (identifier, i) => new VariableSymbol(identifier, subType.dataType, InterfaceList.Mode.LINKAGE, context.varIndex + (i * multiplier), owner)
     }
-    val newNode = variableDeclaration.copy(initialValue = initialValue, subType = subType, symbols = symbols)
-    val newContext = context.insertSymbols(symbols).copy(varIndex = context.varIndex + (variableDeclaration.identifiers.size * multiplier) + 1)
-    (newNode, newContext)
+    (variableDeclaration.copy(initialValue = initialValue, subType = subType, symbols = symbols), context.insertSymbols(symbols))
   }
 
   def visitWaitStatement(waitStmt: WaitStatement, context: Context): ReturnType = {

@@ -1054,8 +1054,8 @@ object ByteCodeGenerator {
       startLabel()
       createDebugLineNumberInformation(stmt)
       loadDiscreteRange(discreteRange)
-      ASTORE(varIndex + 1)
-      ALOAD(varIndex + 1)
+      ASTORE(varIndex - 1)
+      ALOAD(varIndex - 1)
       (symbol.owner: @unchecked) match {
         case _: SubprogramSymbol =>
           INVOKEVIRTUAL(p(classOf[scala.Range.Inclusive]), "start", "()I")
@@ -1075,7 +1075,7 @@ object ByteCodeGenerator {
       (symbol.owner: @unchecked) match {
         case _: SubprogramSymbol =>
           ILOAD(varIndex)
-          ALOAD(varIndex + 1)
+          ALOAD(varIndex - 1)
           INVOKEVIRTUAL(p(classOf[scala.Range.Inclusive]), "step", "()I")
           IADD
           ISTORE(varIndex)
@@ -1086,7 +1086,7 @@ object ByteCodeGenerator {
           ALOAD(0)
           DUP
           GETFIELD(cw.className, symbol.name, "I")
-          ALOAD(varIndex + 1)
+          ALOAD(varIndex - 1)
           INVOKEVIRTUAL(p(classOf[scala.Range.Inclusive]), "step", "()I")
           IADD
           PUTFIELD(cw.className, symbol.name, "I")
@@ -1095,13 +1095,13 @@ object ByteCodeGenerator {
           ALOAD(0)
           GETFIELD(cw.className, symbol.name, "I")
       }
-      ALOAD(varIndex + 1)
+      ALOAD(varIndex - 1)
       INVOKEVIRTUAL(p(classOf[scala.Range.Inclusive]), "end", "()I")
       IF_ICMPNE(continueLabel)
       breakLabel()
       if (symbol.owner.isInstanceOf[SubprogramSymbol]) {
         visitLocalVariable(symbol.name, "I", null, startLabel, breakLabel, varIndex)
-        visitLocalVariable("$range", ci(classOf[scala.Range.Inclusive]), null, startLabel, breakLabel, varIndex + 1)
+        visitLocalVariable("$range", ci(classOf[scala.Range.Inclusive]), null, startLabel, breakLabel, varIndex - 1)
       }
     }
 

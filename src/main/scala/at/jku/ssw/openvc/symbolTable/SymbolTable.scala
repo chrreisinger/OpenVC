@@ -70,7 +70,7 @@ object SymbolTable {
   var foreignAttribute: AttributeDeclarationSymbol = null
 }
 
-final class SymbolTable(val scopes: Seq[SymbolTable.Scope]) {
+final class SymbolTable(val varIndex: Int, val scopes: Seq[SymbolTable.Scope]) {
   override def toString = scopes.mkString
 
   def currentScope = scopes.head
@@ -100,9 +100,14 @@ final class SymbolTable(val scopes: Seq[SymbolTable.Scope]) {
         else None
     }
 
-  def insert(obj: Symbol): SymbolTable = new SymbolTable((this.scopes.head + (obj.name -> obj)) +: this.scopes.tail)
+  def insert(obj: Symbol): SymbolTable = new SymbolTable(obj match {
+    case r: symbols.RuntimeSymbol => r.index + 1
+    case _ => this.varIndex
+  }, (this.scopes.head + (obj.name -> obj)) +: this.scopes.tail)
 
-  def openScope: SymbolTable = new SymbolTable(Map[String, Symbol]() +: this.scopes)
+  def openScope(varIndex: Int): SymbolTable = new SymbolTable(varIndex, Map[String, Symbol]() +: this.scopes)
+
+  def openScope: SymbolTable = openScope(this.varIndex)
 
   @throws(classOf[IOException])
   def writeToFile(file: String) {
