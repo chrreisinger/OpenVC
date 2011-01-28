@@ -369,11 +369,23 @@ object VHDLRuntime {
     return if ((mod < 0 && y > 0) || (mod > 0 && y < 0)) mod + y else mod
   }
 
-  def createEmptyRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A: ClassManifest](range: Range.Inclusive) = new RuntimeArray1D(Array.ofDim[A](range.length), range.start, range.end)
+  def createEmptyRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A: ClassManifest](range: Range.Inclusive) =
+    new RuntimeArray1D(Array.ofDim[A](range.length), range.start, range.end)
 
-  def createRuntimeArrayFromOther[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](other: RuntimeArray1D[A], range: Range.Inclusive) = new RuntimeArray1D(other.data, range.start, range.end)
+  def createRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](range: Range.Inclusive, other: RuntimeArray1D[A]) =
+    new RuntimeArray1D(other.data, range.start, range.end)
 
-  def createRuntimeArrayFromOtherArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](other: Array[A], range: Range.Inclusive) = new RuntimeArray1D(other, range.start, range.end)
+  def createRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](range: Range.Inclusive, other: Array[A]) =
+    new RuntimeArray1D(other, range.start, range.end)
+
+  def createEmptyRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A: ClassManifest](range1: Range.Inclusive, range2: Range.Inclusive) =
+    new RuntimeArray2D(Array.ofDim[A](range1.length, range2.length), range1.start, range1.end, range2.start, range2.end)
+
+  def createRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](range1: Range.Inclusive, range2: Range.Inclusive, other: RuntimeArray2D[A]) =
+    new RuntimeArray2D(other.data, range1.start, range1.end, range2.start, range2.end)
+
+  def createRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](range1: Range.Inclusive, range2: Range.Inclusive, other: Array[Array[A]]) =
+    new RuntimeArray2D(other, range1.start, range1.end, range2.start, range2.end)
 
   def getArrayIndex1D(index: Int, left: Int, right: Int): Int = if (left < right) index - left else left - index
 

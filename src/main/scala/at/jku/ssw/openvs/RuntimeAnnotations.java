@@ -20,7 +20,7 @@ package at.jku.ssw.openvs;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-public class RuntimeAnnotations {
+final public class RuntimeAnnotations {
     @Retention(RetentionPolicy.RUNTIME)
     public static @interface PackageHeaderAnnotation {
     }

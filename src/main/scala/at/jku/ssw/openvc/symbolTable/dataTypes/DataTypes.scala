@@ -94,8 +94,8 @@ abstract sealed class ArrayType extends CompositeType {
     ("right" -> new PreDefinedAttributeSymbol("right", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
     ("low" -> new PreDefinedAttributeSymbol("low", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
     ("high" -> new PreDefinedAttributeSymbol("high", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
-    ("range" -> new PreDefinedAttributeSymbol("range", UnconstrainedRangeType(elementType), Option(SymbolTable.integerType), true)),
-    ("reverse_range" -> new PreDefinedAttributeSymbol("reverse_range", UnconstrainedRangeType(elementType), Option(SymbolTable.integerType), true)),
+    ("range" -> new PreDefinedAttributeSymbol("range", dimensions.head, Option(SymbolTable.integerType), true)),
+    ("reverse_range" -> new PreDefinedAttributeSymbol("reverse_range", dimensions.head, Option(SymbolTable.integerType), true)),
     ("length" -> new PreDefinedAttributeSymbol("length", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
     ("ascending" -> new PreDefinedAttributeSymbol("ascending", SymbolTable.booleanType, Option(SymbolTable.integerType), true))
   )
@@ -124,7 +124,7 @@ abstract sealed class ScalarType extends DataType {
   val upperBound: AnyVal
   val isAscending: Boolean
   val baseType: Option[ScalarType]
-  val isSubType = baseType.isDefined
+  lazy val isSubType = baseType.isDefined
   override val resolutionFunction: Option[FunctionSymbol]
   override lazy val attributes = Map(
     ("left" -> new PreDefinedAttributeSymbol("left", this, None)),
@@ -144,7 +144,11 @@ abstract sealed class ScalarType extends DataType {
 }
 
 @SerialVersionUID(-5746211454960179435L)
-trait DiscreteType //marker trait
+//marker trait
+trait DiscreteType {
+  val left: Int
+  val right: Int
+}
 
 @SerialVersionUID(-2424799647169553170L)
 final case class EnumerationType(name: String, elements: Seq[String], baseType: Option[EnumerationType], owner: Symbol, override val resolutionFunction: Option[FunctionSymbol] = None) extends ScalarType with DiscreteType with HasOwner {

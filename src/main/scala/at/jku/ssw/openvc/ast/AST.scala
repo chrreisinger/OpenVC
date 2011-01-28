@@ -19,7 +19,7 @@
 package at.jku.ssw.openvc.ast {
 
 import at.jku.ssw.openvc.util.TripleEither
-import at.jku.ssw.openvc.symbolTable.dataTypes.{DataType, ConstrainedRangeType, NoType}
+import at.jku.ssw.openvc.symbolTable.dataTypes.{DataType, RangeType, ConstrainedRangeType, NoType}
 import at.jku.ssw.openvc.ast.expressions.{Name, Aggregate, Expression}
 
 object Position {
@@ -131,7 +131,7 @@ object Range {
 
 }
 
-final class Range(val expressionsOrName: Either[(Expression, Range.Direction, Expression), Expression], val dataType: DataType = NoType) extends Locatable {
+final class Range(val expressionsOrName: Either[(Expression, Range.Direction, Expression), Expression], val dataType: RangeType = null) extends Locatable {
   val position = expressionsOrName match {
     case Left((expr, _, _)) => expr.firstPosition
     case Right(attributeName) => attributeName.position

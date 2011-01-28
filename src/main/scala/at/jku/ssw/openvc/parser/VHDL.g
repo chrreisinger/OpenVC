@@ -1629,7 +1629,7 @@ association_list returns [AssociationList list]
 	
 formal_part returns [Either[Identifier,(SelectedName,Name.Part)\] formal_part_] :
 	identifier {formal_part_ = Left($identifier.id)}
-	| selected_name ((name_association_list_part)=>name_association_list_part | name_slice_part) {formal_part_ = Right(($selected_name.name_,null))};
+	| selected_name name_part {formal_part_ = Right(($selected_name.name_,$name_part.part))};
 		
 actual_part returns [Either[Expression,Identifier\] actual_part_ ] :
 	//could be a name(signal_name, variable_name, file_name, subprogram_name, package_name), function_name or type_mark ;could be signal_name or variable_name

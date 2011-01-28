@@ -85,7 +85,7 @@ object SemanticAnalyzer {
         case (_: RealType, SymbolTable.universalRealType) => true
         case (SymbolTable.universalRealType, _: RealType) => true
         case (rt1: RealType, rt2: RealType) => rt1.baseType.getOrElse(rt1) == rt2.baseType.getOrElse(rt2)
-        case (et1: EnumerationType, et2: EnumerationType) => et1.baseType.getOrElse(et1) == et1.baseType.getOrElse(et2)
+        case (et1: EnumerationType, et2: EnumerationType) => et1.baseType.getOrElse(et1) == et2.baseType.getOrElse(et2)
         case (NullType, _: AccessType) => true
         case (_: AccessType, NullType) => true
         case (at1: ArrayType, at2: ArrayType) => at1.elementType == at2.elementType && at1.dimensions.size == at2.dimensions.size //TODO check element type and range
@@ -297,7 +297,7 @@ object SemanticAnalyzer {
           symbol =>
             if (!symbol.isImplemented && !(owner.isInstanceOf[PackageSymbol] && !owner.asInstanceOf[PackageSymbol].isBody) && (symbol.owner == owner) &&
               !(symbol.attributes.contains("foreign") && symbol.attributes("foreign").isInstanceOf[ForeignAttributeSymbol]))
-              addError(owner, "body for subprogram %s not found", symbol.name)
+              addError(owner, "body for subprogram %s not found", symbol.name + symbol.parameters.map(_.dataType.name).mkString("[", ",", "]"))
         }
         case _ =>
       }
@@ -1120,22 +1120,31 @@ object SemanticAnalyzer {
     discreteRange.rangeOrSubTypeIndication match {
       case Left(range) =>
         val newRange = checkRange(context, range)
-        if (!newRange.dataType.isInstanceOf[RangeType] || !newRange.dataType.asInstanceOf[RangeType].elementType.isInstanceOf[DiscreteType]) addError(newRange, "expected a discrete range")
-        new DiscreteRange(Left(newRange), dataType = new ConstrainedRangeType(newRange.dataType, 0, 10)) //TODO lowLong.toInt, highLong.toInt))
+        newRange.dataType match {
+          case rangeType: RangeType =>
+            if (!rangeType.elementType.isInstanceOf[DiscreteType]) addError(newRange, "expected a discrete range")
+            val (low: Int, high: Int) = calcRangeValues(range)(LongIsIntegral).getOrElse((Int.MinValue, Int.MaxValue))
+            new DiscreteRange(Left(newRange), dataType = new ConstrainedRangeType(rangeType.elementType, low.toInt, high.toInt))
+          case _ => new DiscreteRange(Left(newRange))
+        }
       case Right(subTypeIndication) =>
-      // TODO
         val dataType = context.findType(subTypeIndication.typeName)
-        if (!dataType.isInstanceOf[DiscreteType]) addError(subTypeIndication.typeName, "expected a discrete type")
-        for (resolutionFunction <- subTypeIndication.resolutionFunction) addError(resolutionFunction, "a subtype indication in a discrete range can not have a resolution function")
-        subTypeIndication.constraint.flatMap {
-          _ match {
-            case Left(sourceRange) =>
-              val range = checkRange(context, sourceRange)
-              val (low: Long, high: Long) = calcRangeValues(range)(LongIsIntegral).getOrElse((Int.MinValue, Int.MinValue))
-              Option(new DiscreteRange(Left(range), dataType = new ConstrainedRangeType(dataType, low.toInt, high.toInt)))
-            case _ => addError(subTypeIndication.typeName, "expected a subtype indication with a range constraint, found a index constraint")
-          }
-        }.getOrElse(discreteRange)
+        dataType match {
+          case discreteType: DiscreteType =>
+            for (resolutionFunction <- subTypeIndication.resolutionFunction) addError(resolutionFunction, "a subtype indication in a discrete range can not have a resolution function")
+            subTypeIndication.constraint.flatMap {
+              _ match {
+                case Left(sourceRange) =>
+                  val range = checkRange(context, sourceRange)
+                  val (low: Long, high: Long) = calcRangeValues(range)(LongIsIntegral).getOrElse((Int.MinValue, Int.MaxValue))
+                  Option(new DiscreteRange(Right(subTypeIndication.copy(dataType = dataType, constraint = Option(Left(range)))), dataType = new ConstrainedRangeType(dataType, low.toInt, high.toInt)))
+                case _ => addError(subTypeIndication.typeName, "expected a subtype indication with a range constraint, found a index constraint")
+              }
+            }.getOrElse(new DiscreteRange(Right(subTypeIndication.copy(dataType = dataType)), dataType = new ConstrainedRangeType(dataType, discreteType.left, discreteType.right)))
+          case _ =>
+            addError(subTypeIndication.typeName, "expected a discrete type")
+            new DiscreteRange(Right(subTypeIndication), dataType = new ConstrainedRangeType(NoType, Int.MinValue, Int.MaxValue))
+        }
     }
 
   def checkLoopLabel(context: Context, loopLabelOption: Option[Identifier], node: ASTNode, stmtName: String): Position =
@@ -1190,8 +1199,11 @@ object SemanticAnalyzer {
       new Range(Left((fromExpression, direction, toExpression)), dataType = new UnconstrainedRangeType(fromExpression.dataType))
     case Right(attributeName) =>
       val expr = acceptExpression(attributeName, NoType, context)
-      if (expr.dataType != NoType && !expr.dataType.isInstanceOf[RangeType]) addError(expr, "expected a range found %s", expr.dataType.name)
-      new Range(Right(expr), expr.dataType)
+      if (expr.dataType != NoType && !expr.dataType.isInstanceOf[RangeType]) {
+        addError(expr, "expected a range found %s", expr.dataType.name)
+        new Range(Right(expr), new UnconstrainedRangeType(NoType))
+      }
+      else new Range(Right(expr), expr.dataType.asInstanceOf[RangeType])
   }
 
   def getMangledName(name: Identifier): Identifier = {
@@ -1312,7 +1324,7 @@ object SemanticAnalyzer {
         if (upperBound > baseTypeUpperBound) addError(sourceRange, "upper bound %s is greater than the upper bound of the base type %s", upperBound.toString, baseTypeUpperBound.toString)
       }
       val range = checkRange(context, sourceRange)
-      val dataType = range.dataType
+      val dataType = range.dataType.elementType
       if (dataType.getClass eq baseType.getClass) {
         (baseType: @unchecked) match {
           case intBaseType: IntegerType =>
@@ -2339,7 +2351,7 @@ object SemanticAnalyzer {
 
     val (newTypeDeclaration, newSymbols) = typeDeclaration match {
       case enumerationType: EnumerationTypeDefinition =>
-        val elements = enumerationType.elements.map(id => (id.text.replace("'", "")))
+        val elements = enumerationType.elements.map(id => if (id != "'''") id.text.replace("'", "") else "'")
         require(enumerationType.elements.size <= Char.MaxValue)
         checkDuplicateIdentifiers(enumerationType.elements, "duplicate enumeration value %s")
         val dataType = new EnumerationType(name, elements, None, owner)
@@ -2364,18 +2376,18 @@ object SemanticAnalyzer {
             else Some(unitsMap(unit) * unitDef.literal.toLong)
             buildUnitsMap(xs, unitsMap + (unitDef.identifier.text -> value.getOrElse(0)))
         }
-        val (low, high) = calcRangeValues(range).getOrElse((Long.MinValue, Long.MinValue))
+        val (low: Long, high: Long) = calcRangeValues(range)(LongIsIntegral).getOrElse((Long.MinValue, Long.MaxValue))
         val phyType = new PhysicalType(name, low, high, buildUnitsMap(physicalType.elements, Map(physicalType.baseIdentifier.text -> 1)))
         val symbols = new UnitSymbol(physicalType.baseIdentifier, phyType, owner) +: physicalType.elements.map(element => new UnitSymbol(element.identifier, phyType, owner))
         (physicalType.copy(range = range, dataType = phyType), symbols)
       case integerOrRealType: IntegerOrFloatingPointTypeDefinition =>
         val range = checkRange(context, integerOrRealType.range)
-        val dataType = range.dataType match {
+        val dataType = range.dataType.elementType match {
           case _: IntegerType =>
-            val (low: Long, high: Long) = calcRangeValues(range)(LongIsIntegral).getOrElse((Int.MinValue, Int.MinValue))
-            new IntegerType(name, low.toInt, low.toInt, None)
+            val (low: Long, high: Long) = calcRangeValues(range)(LongIsIntegral).getOrElse((Int.MinValue, Int.MaxValue))
+            new IntegerType(name, low.toInt, high.toInt, None)
           case _: RealType =>
-            val (low: Double, high: Double) = calcRangeValues(range)(DoubleAsIfIntegral).getOrElse((Double.MinValue, Double.MinValue))
+            val (low: Double, high: Double) = calcRangeValues(range)(DoubleAsIfIntegral).getOrElse((Double.MinValue, Double.MaxValue))
             new RealType(name, low, high, None)
           case otherType =>
             addError(range, "expected a expression of type integer or real, found %s", otherType.name)

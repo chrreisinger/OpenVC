@@ -59,7 +59,7 @@ object StaticExpressionCalculator {
       import Literal.Type._
 
       literal.literalType match {
-        case INTEGER_LITERAL => literal.toInt.asInstanceOf[A]
+        case INTEGER_LITERAL => literal.toLong.asInstanceOf[A]
         case REAL_LITERAL => literal.toDouble.asInstanceOf[A]
         case CHARACTER_LITERAL =>
           literal.dataType match {
