@@ -403,7 +403,7 @@ final case class WaitStatement(position: Position, label: Option[Identifier], si
  * @param condition the optional condition
  * @param loopStatement the position of the enclosing loop statement is used in the code generation phase to identify the jump labels
  */
-final case class NextStatement(position: Position, label: Option[Identifier], loopLabel: Option[Identifier], condition: Option[Expression], loopStatement: Position = null) extends SequentialStatement
+final case class NextStatement(position: Position, label: Option[Identifier], loopLabel: Option[Identifier], condition: Option[Expression], loopStatement: Position = Position.NoPosition) extends SequentialStatement
 
 /**
  * Represents an exit statement
@@ -417,7 +417,7 @@ final case class NextStatement(position: Position, label: Option[Identifier], lo
  * @param condition the optional condition
  * @param loopStatement the position of the enclosing loop statement is used in the code generation phase to identify the jump labels
  */
-final case class ExitStatement(position: Position, label: Option[Identifier], loopLabel: Option[Identifier], condition: Option[Expression], loopStatement: Position = null) extends SequentialStatement
+final case class ExitStatement(position: Position, label: Option[Identifier], loopLabel: Option[Identifier], condition: Option[Expression], loopStatement: Position = Position.NoPosition) extends SequentialStatement
 
 /**
  * Represents a null statement
@@ -1009,7 +1009,7 @@ object EntityClass extends Enumeration {
   LITERAL, UNITS, GROUP, NATURE, SUBNATURE, QUANTITY, TERMINAL = Value
 }
 
-final case class AliasDeclaration(position: Position, identifier: Identifier, subType: Option[SubTypeIndication], name: Name, signature: Option[Signature]) extends DeclarativeItem
+final case class AliasDeclaration(position: Position, identifier: Identifier, subType: Option[SubTypeIndication], name: Expression, signature: Option[Signature], symbol: RuntimeSymbol = null) extends DeclarativeItem
 
 final case class AttributeSpecification(position: Position, identifier: Identifier, entityList: Either[Seq[(Identifier, Option[Signature])], Identifier], entityClass: EntityClass.Value, expression: Expression, symbol: ConstantSymbol = null) extends DeclarativeItem
 

@@ -37,7 +37,7 @@ import at.jku.ssw.openvc.backend.jvm.ByteCodeGenerator.getNextIndex
 import at.jku.ssw.openvc.CompilerMessage
 
 object SemanticAnalyzer {
-  type SemanticCheckResult = (DesignFile, Seq[CompilerMessage], Seq[CompilerMessage])
+  type SemanticCheckResult = (ASTNode, Seq[CompilerMessage], Seq[CompilerMessage])
   type Buffer[A] = immutable.VectorBuilder[A]
 
   private[this] val operatorMangleMap = Map(
@@ -88,7 +88,8 @@ object SemanticAnalyzer {
         case (et1: EnumerationType, et2: EnumerationType) => et1.baseType.getOrElse(et1) == et2.baseType.getOrElse(et2)
         case (NullType, _: AccessType) => true
         case (_: AccessType, NullType) => true
-        case (at1: ArrayType, at2: ArrayType) => at1.elementType == at2.elementType && at1.dimensions.size == at2.dimensions.size //TODO check element type and range
+        case (at1: ConstrainedArrayType, at2: UnconstrainedArrayType) => at1.elementType == at2.elementType && at1.dimensions.size == at2.dimensions.size
+        case (at1: UnconstrainedArrayType, at2: ConstrainedArrayType) => at1.elementType == at2.elementType && at1.dimensions.size == at2.dimensions.size
         case _ => false
       }
     }
@@ -99,12 +100,12 @@ object SemanticAnalyzer {
   val semanticErrors = new Buffer[CompilerMessage]
   val semanticWarnings = new Buffer[CompilerMessage]
 
-  def apply(designFile: DesignFile, configuration: Configuration): SemanticCheckResult = {
+  def apply(designFile: ASTNode, configuration: Configuration): SemanticCheckResult = {
     this.configuration = configuration
     semanticErrors.clear
     semanticWarnings.clear
     val (newDesignFile, context) = acceptNode(designFile, NoSymbol, Context(new SymbolTable(0, List()), collection.immutable.Stack()))
-    (newDesignFile.asInstanceOf[DesignFile], semanticErrors.result, semanticWarnings.result)
+    (newDesignFile, semanticErrors.result, semanticWarnings.result)
   }
 
   def addError(stmt: Locatable, msg: String, messageParameters: AnyRef*): Option[Nothing] = addErrorPosition(stmt.position, msg, messageParameters: _*)
@@ -143,7 +144,7 @@ object SemanticAnalyzer {
             case librarySymbol: LibrarySymbol =>
               librarySymbol.libraryArchive.loadSymbol(symbol.name + "/" + identifier.text + "_header", classOf[PackageSymbol]).orElse(addError(identifier, "package %s not found", identifier.text))
             case packageSymbol: PackageSymbol =>
-              packageSymbol.localSymbols.get(operatorMangleMap.get(identifier.text).getOrElse(identifier.text)).orElse(addError(identifier, "symbol %s not found", identifier.text))
+              packageSymbol.localSymbols.get(operatorMangleMap.getOrElse(identifier.text, identifier.text)).orElse(addError(identifier, "symbol %s not found", identifier.text))
             case _ => addError(identifier, "%s is not a library or package, so you can not use qualified names", identifier.text)
           }) match {
             case None => None
@@ -246,7 +247,7 @@ object SemanticAnalyzer {
                 case ListOfEnumerations(_, enumerations) => enumerations
               }) match {
                 case Seq() => symbolTable
-                case enumerations => symbolTable.insert(listOfEnumerations.copy(enumerations = enumerations ++ listOfEnumerations.enumerations))
+                case enumerations => symbolTable.insert(ListOfEnumerations(Identifier(enumerations.head.name), enumerations ++ listOfEnumerations.enumerations))
               }
             case constSymbol: ConstantSymbol if (!constSymbol.isDefined) => symbolTable.insert(symbol) //used for deferred constants
             case typeSymbol: TypeSymbol if (typeSymbol.dataType.isInstanceOf[ProtectedType] && !typeSymbol.dataType.asInstanceOf[ProtectedType].isImplemented) =>
@@ -557,13 +558,14 @@ object SemanticAnalyzer {
         }
         case CHARACTER_LITERAL =>
           context.findSymbol(Identifier(literal.position, literal.text), classOf[ListOfEnumerations]).flatMap {
-            list => list.enumerations.filter(_.dataType == expectedType) match {
-              case Seq(enumerationSymbol) => Option(enumerationSymbol.dataType)
-              case Seq() => addError(literal, "enumeration value %s not found in enumeration type %s", literal.text, expectedType.name)
-              case symbols => addError(literal, "ambiguous character literal, found %s matching symbols", symbols.size.toString)
-            }
+            list =>
+              list.enumerations.filter(enumSymbol => isCompatible(enumSymbol.dataType, expectedType)) match {
+                case Seq(enumerationSymbol) => Option(enumerationSymbol)
+                case Seq() => addError(literal, "enumeration value %s not found in enumeration type %s", literal.text, expectedType.name)
+                case symbols => addError(literal, "ambiguous character literal, found %s matching symbols", symbols.size.toString)
+              }
           } match {
-            case Some(dataType) => literal.copy(dataType = dataType, value = dataType.intValue(literal.text.replace("'", "")))
+            case Some(enumerationSymbol) => literal.copy(dataType = enumerationSymbol.dataType, value = enumerationSymbol.dataType.intValue(enumerationSymbol.name.replace("'", "")))
             case None => literal
           }
         case BIT_STRING_LITERAL =>
@@ -666,6 +668,21 @@ object SemanticAnalyzer {
         val (functionSymbol, parameterAssociation) = checkSubprogramAssociationList(context, functionCallExpr.parameterAssociation, listOfSubprograms, returnType, functionCallExpr)
         (functionCallExpr.copy(parameterAssociation = parameterAssociation, symbol = functionSymbol.orNull.asInstanceOf[FunctionSymbol]))
       }
+      def matchSymbol(symbol: Symbol, identifier: Identifier): Expression = symbol match {
+        case AliasSymbol(_, destination) => matchSymbol(destination, identifier)
+        case list: ListOfSubprograms => visitFunctionCallExpression(FunctionCallExpression(identifier, None), list, Option(expectedType))
+        case unitSymbol: UnitSymbol => PhysicalLiteral(identifier.position, "1", new SelectedName(Seq(identifier)), Literal.Type.INTEGER_LITERAL, unitSymbol)
+        case ListOfEnumerations(_, enumerations) => enumerations.find(enumSymbol => isCompatible(enumSymbol.dataType, expectedType)) match {
+          case Some(enumSymbol) => Literal(identifier.position, identifier.text, Literal.Type.INTEGER_LITERAL, enumSymbol.dataType, value = enumSymbol.dataType.intValue(enumSymbol.name.replace("'", "")))
+          case _ =>
+            addError(identifier, "enumerations %s not found in type %s", identifier.text, expectedType.name)
+            NoExpression
+        }
+        case r: RuntimeSymbol => ItemExpression(identifier.position, r)
+        case _ =>
+          addError(identifier, "symbol %s unexpected here" + symbol.name)
+          NoExpression
+      }
       def matchParts(parts: Seq[Name.Part], symbol: Symbol): Option[Expression] = {
         if (symbol.isInstanceOf[AliasSymbol]) matchParts(parts, symbol.asInstanceOf[AliasSymbol].destination)
         else parts match {
@@ -742,7 +759,7 @@ object SemanticAnalyzer {
                       }
                       val expression = attribute match {
                         case preDefinedAttributeSymbol: PreDefinedAttributeSymbol =>
-                          if (identifier.text == "base") matchParts(xs, TypeSymbol(Identifier("base"), preDefinedAttributeSymbol.dataType, null))
+                          if (identifier.text == "base") matchParts(xs, TypeSymbol(Identifier("base"), preDefinedAttributeSymbol.dataType, NoSymbol))
                           else {
                             require(xs.isEmpty)
                             None
@@ -760,6 +777,19 @@ object SemanticAnalyzer {
                   case s => addError(part, "%s is not a array", s.name)
                 }
               case Name.SelectedPart(identifier) => symbol match {
+                case librarySymbol: LibrarySymbol =>
+                  librarySymbol.libraryArchive.loadSymbol(symbol.name + "/" + identifier.text + "_header", classOf[PackageSymbol]) match {
+                    case Some(packageSymbol) => matchParts(xs, packageSymbol)
+                    case _ => addError(part, "package %s not found", identifier.text)
+                  }
+                case packageSymbol: PackageSymbol =>
+                  packageSymbol.localSymbols.get(operatorMangleMap.getOrElse(identifier.text, identifier.text)) match {
+                    case Some(symbol) => xs match {
+                      case Seq() => Option(matchSymbol(symbol, identifier))
+                      case _ => matchParts(xs, symbol)
+                    }
+                    case _ => addError(part, "symbol %s not found", identifier.text)
+                  }
                 case r: RuntimeSymbol if (r.dataType.isInstanceOf[RecordType] || (r.dataType.isInstanceOf[AccessType] && r.dataType.asInstanceOf[AccessType].pointerType.isInstanceOf[RecordType])) =>
                   ((r.dataType: @unchecked) match {
                     case recordType: RecordType => recordType
@@ -768,13 +798,13 @@ object SemanticAnalyzer {
                     case None => addError(part, "field %s not found", identifier.text)
                     case Some(dataType) => Option(new FieldAccessExpression(r, identifier, dataType, matchParts(xs, r.makeCopy(identifier, dataType, symbol))))
                   }
-                case s => addError(part, "%s is not a record", s.name)
+                case s => addError(part, "%s is not a record, library or package", s.name)
               }
             }
         }
       }
 
-      context.symbolTable.find(operatorMangleMap.get(name.identifier.text).getOrElse(name.identifier.originalText)) match {
+      context.symbolTable.find(operatorMangleMap.getOrElse(name.identifier.text, name.identifier.originalText)) match {
         case None => (name.parts match {
           case Seq() => expectedType match {
             case _: ArrayType | NoType => Option(visitLiteral(Literal(name.position, name.identifier.text, Literal.Type.STRING_LITERAL))) //TODO
@@ -783,23 +813,7 @@ object SemanticAnalyzer {
           case xs => addError(name, "symbol %s not found", name.identifier)
         }).getOrElse(NoExpression)
         case Some(symbol) => name.parts match {
-          case Seq() =>
-            def matchSymbol(symbol: Symbol): Expression = symbol match {
-              case AliasSymbol(_, destination) => matchSymbol(destination)
-              case list: ListOfSubprograms => visitFunctionCallExpression(FunctionCallExpression(name.identifier, None), list, Option(expectedType))
-              case unitSymbol: UnitSymbol => PhysicalLiteral(name.position, "1", new SelectedName(Seq(name.identifier)), Literal.Type.INTEGER_LITERAL, unitSymbol)
-              case ListOfEnumerations(_, enumerations) => enumerations.find(_.dataType == expectedType) match {
-                case Some(enumSymbol) => Literal(name.position, name.identifier.text, Literal.Type.INTEGER_LITERAL, enumSymbol.dataType, enumSymbol.dataType.intValue(enumSymbol.name))
-                case _ =>
-                  addError(name, "enumerations value " + name.identifier.text)
-                  NoExpression
-              }
-              case r: RuntimeSymbol => ItemExpression(name.position, r)
-              case _ =>
-                addError(name, "symbol %s unexpected here" + symbol.name)
-                NoExpression
-            }
-            matchSymbol(symbol)
+          case Seq() => matchSymbol(symbol, name.identifier)
           case xs => matchParts(xs, symbol).getOrElse(NoExpression)
         }
       }
@@ -819,7 +833,7 @@ object SemanticAnalyzer {
 
     def visitQualifiedExpression(qualifiedExpression: QualifiedExpression): Expression = {
       //because a qualified expression is parsed as type_mark ' aggregate we must distinguish between the two forms
-      //the two forms are parsed as aggregate because a aggregate is of the from ( (choices ARROW)? expression (, (choices ARROW)? expression)* ), so a input of
+      //the two forms are parsed as aggregate because a aggregate is of the from ( [choices =>] expression {, [choices =>] expression} ), so a input of
       //type_mark ' ( expression ) can also be an aggregate with one element without a choices part
       val dataType = context.findType(qualifiedExpression.typeName)
       val expressionToCheck = qualifiedExpression.expression match {
@@ -1128,7 +1142,7 @@ object SemanticAnalyzer {
         val newRange = checkRange(context, range)
         newRange.dataType match {
           case rangeType: RangeType =>
-            if (!rangeType.elementType.isInstanceOf[DiscreteType]) addError(newRange, "expected a discrete range")
+            if (!rangeType.elementType.isInstanceOf[DiscreteType] && rangeType.elementType != NoType) addError(newRange, "expected a discrete range")
             val (low: Int, high: Int) = calcRangeValues(range)(LongIsIntegral).getOrElse((Int.MinValue, Int.MaxValue))
             new DiscreteRange(Left(newRange), dataType = new ConstrainedRangeType(rangeType.elementType, low.toInt, high.toInt))
           case _ => new DiscreteRange(Left(newRange))
@@ -1163,7 +1177,7 @@ object SemanticAnalyzer {
         case None => addError(loopLabel, "loop label %s not found", loopLabel)
         case Some((_, position)) => Some(position)
       }
-    }).orNull
+    }).getOrElse(Position.NoPosition)
 
 
   def checkBlockConfiguration(context: Context, blockConfiguration: BlockConfiguration) {
@@ -1205,11 +1219,12 @@ object SemanticAnalyzer {
       new Range(Left((fromExpression, direction, toExpression)), dataType = new UnconstrainedRangeType(fromExpression.dataType))
     case Right(attributeName) =>
       val expr = acceptExpression(attributeName, NoType, context)
-      if (expr.dataType != NoType && !expr.dataType.isInstanceOf[RangeType]) {
-        addError(expr, "expected a range found %s", expr.dataType.name)
-        new Range(Right(expr), new UnconstrainedRangeType(NoType))
+      expr.dataType match {
+        case rangeType: RangeType => new Range(Right(expr), rangeType)
+        case dataType =>
+          if (dataType != NoType) addError(expr, "expected a range found %s", expr.dataType.name)
+          new Range(Right(expr), new UnconstrainedRangeType(NoType))
       }
-      else new Range(Right(expr), expr.dataType.asInstanceOf[RangeType])
   }
 
   def getMangledName(name: Identifier): Identifier = {
@@ -1386,8 +1401,8 @@ object SemanticAnalyzer {
             case unconstrainedArrayType: UnconstrainedArrayType =>
               val discreteRanges = arrayConstraint.map(checkDiscreteRange(context, _))
               subTypeIndication.copy(constraint = Option(Right(discreteRanges)), dataType = new ConstrainedArrayType(unconstrainedArrayType.name, unconstrainedArrayType.elementType, discreteRanges.map(_.dataType)))
-            case _ =>
-              addError(subTypeIndication.typeName, "you can not use a array constraint for non array subtypes")
+            case dataType =>
+              if (dataType != NoType) addError(subTypeIndication.typeName, "you can not use a array constraint for non array subtypes")
               subTypeIndication
           }
         }
@@ -1395,44 +1410,60 @@ object SemanticAnalyzer {
     }
   }
 
-  def visitAliasDeclaration(aliasDeclaration: AliasDeclaration, context: Context): ReturnType = {
-    val (identifiers, rest) = aliasDeclaration.name.parts.span(_.isInstanceOf[Name.SelectedPart])
-    val selectedName = new SelectedName(aliasDeclaration.name.identifier +: identifiers.map(_.asInstanceOf[Name.SelectedPart].identifier))
+  def visitAliasDeclaration(aliasDeclaration: AliasDeclaration, owner: Symbol, context: Context): ReturnType = {
+    val (identifiers, rest) = aliasDeclaration.name.asInstanceOf[Name].parts.span(_.isInstanceOf[Name.SelectedPart])
+    val selectedName = new SelectedName(aliasDeclaration.name.asInstanceOf[Name].identifier +: identifiers.map(_.asInstanceOf[Name.SelectedPart].identifier))
 
-    def createAliasSymbol(symbol: Symbol): Option[AliasSymbol] = symbol match {
+    def createAliasSymbol(symbol: Symbol): ReturnType = symbol match {
       case r: RuntimeSymbol =>
       //object alias
         for (signature <- aliasDeclaration.signature) addError(signature, "signature not allowed for object alias")
-        r match {
-        /*
-        TODO
-        case constSymbol: ConstantSymbol => new ConstantSymbol(name, dataType.getOrElse(constSymbol.dataType), constSymbol.index, constSymbol.owner)
-        case varSymbol: VariableSymbol => new VariableSymbol(name, dataType.getOrElse(varSymbol.dataType), varSymbol.modifier, varSymbol.index, varSymbol.owner)
-        case signalSymbol: SignalSymbol => new SignalSymbol(name, dataType.getOrElse(signalSymbol.dataType), signalSymbol.modifier, signalSymbol.signalType, signalSymbol.index, signalSymbol.owner)
-        case fileSymbol: FileSymbol => new FileSymbol(name, dataType.getOrElse(fileSymbol.dataType), fileSymbol.index, fileSymbol.owner)
-        */
-          case _ => None
+        val subTypeOption = aliasDeclaration.subType.map(createType(context, _))
+        val expr = acceptExpression(aliasDeclaration.name, subTypeOption match {
+          case Some(subType) => subType.dataType
+          case None => NoType
+        }, context)
+        subTypeOption match {
+          case Some(subType) if (subType.dataType.isInstanceOf[ArrayType] && subType.constraint.isDefined && subType.constraint.get.isRight) =>
+            val identifier = aliasDeclaration.identifier
+            val dataType = subType.dataType
+            val index = context.varIndex
+            val aliasSymbol = r match {
+              case constSymbol: ConstantSymbol => new ConstantSymbol(identifier, dataType, index, owner)
+              case varSymbol: VariableSymbol => new VariableSymbol(identifier, dataType, varSymbol.mode, index, owner)
+              case signalSymbol: SignalSymbol => new SignalSymbol(identifier, dataType, signalSymbol.mode, signalSymbol.signalType, index, owner)
+              case fileSymbol: FileSymbol => error("not possible")
+            }
+            (aliasDeclaration.copy(subType = subTypeOption, name = expr, symbol = aliasSymbol), context.insertSymbol(aliasSymbol))
+          case None => (aliasDeclaration.copy(subType = subTypeOption), context.insertSymbol(AliasExpression(aliasDeclaration.identifier, expr)))
         }
-      case _: LabelSymbol => addError(aliasDeclaration.name, "aliases for labels are not allowed")
+      case _: LabelSymbol =>
+        addError(aliasDeclaration.name, "aliases for labels are not allowed")
+        (aliasDeclaration, context)
       case _ =>
       //non-object alias
         for (subType <- aliasDeclaration.subType) addError(subType, "a subtype indication is not allowed for a non object alias")
         rest.headOption.foreach(addError(_, "illegal name part in non object alias"))
-        symbol match {
+        val aliasSymbol = symbol match {
           case listOfSubprograms: ListOfSubprograms => aliasDeclaration.signature match {
-            case Some(signature) => findSubprogramFromSignature(context, listOfSubprograms, signature).map(subprogramSymbol => new AliasSymbol(aliasDeclaration.identifier, ListOfSubprograms(subprogramSymbol.identifier, Seq(subprogramSymbol))))
+            case Some(signature) => findSubprogramFromSignature(context, listOfSubprograms, signature).map {
+              subprogramSymbol =>
+                if (subprogramSymbol.isInstanceOf[FunctionSymbol]) checkIsValidOverloadedOperator(aliasDeclaration.identifier, subprogramSymbol.parameters)
+                new AliasSymbol(aliasDeclaration.identifier, ListOfSubprograms(Identifier(subprogramSymbol.name), Seq(subprogramSymbol)))
+            }
             case None => addError(aliasDeclaration.name, "an alias for a subprogram needs signature")
           }
           case ListOfEnumerations(_, enumerations) => aliasDeclaration.signature match {
-            case Some(signature) => findLiteralFromSignature(context, enumerations, signature).map(enumerationSymbol => new AliasSymbol(aliasDeclaration.identifier, ListOfEnumerations(enumerationSymbol.identifier, Seq(enumerationSymbol))))
+            case Some(signature) => findLiteralFromSignature(context, enumerations, signature).map(enumerationSymbol => new AliasSymbol(aliasDeclaration.identifier, ListOfEnumerations(Identifier(enumerationSymbol.name), Seq(enumerationSymbol))))
             case None => addError(aliasDeclaration.name, "an alias for an enumeration literal needs a signature")
           }
           case _ =>
             for (signature <- aliasDeclaration.signature) addError(signature, "signature not allowed for non subprogram or enumeration literal alias")
             Some(new AliasSymbol(aliasDeclaration.identifier, symbol))
         }
+        (aliasDeclaration, context.insertSymbol(aliasSymbol))
     }
-    (aliasDeclaration, context.insertSymbol(context.find(selectedName).flatMap(createAliasSymbol)))
+    context.find(selectedName).map(createAliasSymbol).getOrElse((aliasDeclaration, context))
   }
 
   def visitArchitectureDeclaration(architectureDeclaration: ArchitectureDeclaration, owner: Symbol, context: Context): ReturnType =
@@ -1839,7 +1870,7 @@ object SemanticAnalyzer {
           case LibraryClause(_, libraries) =>
             val librarySymbols = libraries.distinct.flatMap {
               id =>
-                if (id == "work") Option(new LibrarySymbol(id, new DirectoryLibraryArchive(configuration.outputDirectory)))
+                if (id == "work" || id == configuration.designLibrary) Option(new LibrarySymbol(id, new DirectoryLibraryArchive(configuration.outputDirectory)))
                 else try {
                   val archive = new JarFileLibraryArchive(configuration.libraryDirectory + id.text + ".jar")
                   require(archive.jarFile != null) //do not remove, this creates the lazy variable jarFile, and throws a FileNotFoundException if the jar file does not exist
@@ -2007,11 +2038,23 @@ object SemanticAnalyzer {
     (forStmt.copy(sequentialStatements = sequentialStatements, symbol = symbol, discreteRange = discreteRange), context)
   }
 
+  def checkIsValidOverloadedOperator(identifier: Identifier, parameters: Seq[RuntimeSymbol]) {
+    val name = identifier.text
+    if (name == "+" || name == "-") {
+      if (parameters.size != 2 && parameters.size != 1) addError(identifier, "overloaded operator " + name + " must be a unary or binary operator")
+    }
+    else if (name == "abs" || name == "not" || (configuration.vhdl2008 && (name == "and" || name == "or" || name == "nand" || name == "nor" || name == "xor" || name == "xnor" || name == "??"))) {
+      if (parameters.size != 1) addError(identifier, "overloaded unary operator " + name + " must have a single parameter")
+    }
+    else if (identifier.originalText(0) == '"' && parameters.size != 2) addError(identifier, "overloaded binary operator " + name + " must have two parameters")
+  }
+
   def visitFunctionDeclaration(functionDeclaration: FunctionDeclaration, owner: Symbol, context: Context): ReturnType = {
     val returnType = context.findType(functionDeclaration.returnType)
     val function = new FunctionSymbol(getMangledName(functionDeclaration.identifier), Seq(), returnType, owner, functionDeclaration.isPure, false)
     val (parameters, parameterInterfaceList) = createSymbolsFromInterfaceList(context, functionDeclaration.parameterInterfaceList, owner)
     function.parameters = parameters
+    checkIsValidOverloadedOperator(functionDeclaration.identifier, parameters)
     (functionDeclaration.copy(parameterInterfaceList = parameterInterfaceList, symbol = function), context.insertSymbol(function))
   }
 
@@ -2023,14 +2066,7 @@ object SemanticAnalyzer {
     val (parameters, parameterInterfaceList) = createSymbolsFromInterfaceList(context, functionDefinition.parameterInterfaceList, function)
     function.parameters = parameters
 
-    val name = functionDefinition.identifier.text
-    if (name == "+" || name == "-") {
-      if (function.parameters.size != 2 && function.parameters.size != 1) addError(functionDefinition.identifier, "overloaded operator " + name + " must be a unary or binary operator")
-    }
-    else if (name == "abs" || name == "not" || (configuration.vhdl2008 && (name == "and" || name == "or" || name == "nand" || name == "nor" || name == "xor" || name == "xnor" || name == "??"))) {
-      if (function.parameters.size != 1) addError(functionDefinition.identifier, "overloaded unary operator " + name + " must have a single parameter")
-    }
-    else if (functionDefinition.identifier.originalText(0) == '"' && function.parameters.size != 2) addError(functionDefinition.identifier, "overloaded binary operator " + name + " must have two parameters")
+    checkIsValidOverloadedOperator(functionDefinition.identifier, parameters)
 
     if (owner.isInstanceOf[TypeSymbol]) {
       //this is a method in a protected Type
@@ -2639,7 +2675,7 @@ object SemanticAnalyzer {
     case attributeDeclaration: AttributeDeclaration => visitAttributeDeclaration(attributeDeclaration, owner, context)
     case attributeSpecification: AttributeSpecification => visitAttributeSpecification(attributeSpecification, owner, context)
     case useClause: UseClause => visitUseClause(useClause, context)
-    case aliasDeclaration: AliasDeclaration => visitAliasDeclaration(aliasDeclaration, context)
+    case aliasDeclaration: AliasDeclaration => visitAliasDeclaration(aliasDeclaration, owner, context)
     case groupDeclaration: GroupDeclaration => visitGroupDeclaration(groupDeclaration, owner, context)
     case groupTemplateDeclaration: GroupTemplateDeclaration => visitGroupTemplateDeclaration(groupTemplateDeclaration, owner, context)
     //sequential Statements

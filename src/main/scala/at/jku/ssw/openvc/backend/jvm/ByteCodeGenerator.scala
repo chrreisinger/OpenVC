@@ -135,8 +135,9 @@ object ByteCodeGenerator {
       if (enumeration == SymbolTable.booleanType || enumeration == SymbolTable.bitType) "Z"
       else if (enumeration.elements.size <= Byte.MaxValue) "B"
       else "C"
-    case arrayType: ConstrainedArrayType => ("[" * arrayType.dimensions.size) + getJVMDataType(arrayType.elementType)
-    case _: UnconstrainedArrayType => "L" + getJVMName(dataType) + ";"
+    //case arrayType: ConstrainedArrayType => ("[" * arrayType.dimensions.size) + getJVMDataType(arrayType.elementType)
+    //case _: UnconstrainedArrayType => "L" + getJVMName(dataType) + ";"
+    case _: ArrayType => "L" + getJVMName(dataType) + ";"
     case hasOwner: HasOwner => "L" + hasOwner.implementationName + ";" //handles RecordType and ProtectedType
     case _: FileType | _: RangeType => "L" + getJVMName(dataType) + ";"
     case accessType: AccessType =>
@@ -195,7 +196,7 @@ object ByteCodeGenerator {
     case _ => 1
   }
 
-  def apply(configuration: Configuration, sourceFileName: String, designFile: DesignFile) {
+  def apply(configuration: Configuration, sourceFileName: String, designFile: ASTNode) {
     acceptNode(designFile, null)
 
     def acceptNodes(nodes: Seq[ASTNode], context: Context): Unit = for (node <- nodes) acceptNode(node, context)
@@ -1169,12 +1170,25 @@ object ByteCodeGenerator {
     }
 
     def visitAliasDeclaration(aliasDeclaration: AliasDeclaration, context: Context) {
-
+      for (subType <- aliasDeclaration.subType; constraint <- subType.constraint) {
+        constraint match {
+          case Right(discreteRanges) =>
+            import context._
+            import mv._
+            discreteRanges.foreach(loadDiscreteRange)
+            acceptExpression(aliasDeclaration.name)
+            val arrayType = subType.dataType.asInstanceOf[ArrayType]
+            INVOKESTATIC(RUNTIME, "createRuntimeArray$" + getScalaSpecializedMethodSuffix(arrayType.elementType),
+              "(" + (ci(classOf[scala.Range.Inclusive]) * arrayType.dimensions.size) + getJVMDataType(arrayType) + ")" + getJVMDataType(arrayType))
+            ASTORE(aliasDeclaration.symbol.index)
+          case _ => error("not possible")
+        }
+      }
     }
 
     def createClinitAndAcceptItems(designUnit: String, declarativeItems: Seq[ASTNode], cw: RichClassWriter) {
       val mv = cw.createMethod(flags = Opcodes.ACC_STATIC + Opcodes.ACC_FINAL, name = "<clinit>", parameters = "", returnType = "V")
-      acceptDeclarativeItems(declarativeItems, Opcodes.ACC_STATIC + Opcodes.ACC_FINAL, Context(cw, null, Map(), designUnit))
+      acceptDeclarativeItems(declarativeItems, Opcodes.ACC_STATIC + Opcodes.ACC_FINAL, Context(cw, mv, Map(), designUnit))
       mv.RETURN
       mv.endMethod
     }
@@ -1682,8 +1696,8 @@ object ByteCodeGenerator {
           case Right(discreteRanges) =>
             discreteRanges.foreach(loadDiscreteRange)
             val arrayType = subtype.dataType.asInstanceOf[ArrayType]
-            mv.INVOKESTATIC(RUNTIME, "createRuntimeArrayFromOtherArray$" + getScalaSpecializedMethodSuffix(arrayType.elementType),
-              "(" + ("[" * arrayType.dimensions.size) + getJVMDataType(arrayType.elementType) + (ci(classOf[scala.Range.Inclusive]) * arrayType.dimensions.size) + ")" + getJVMDataType(arrayType))
+            mv.INVOKESTATIC(RUNTIME, "createRuntimeArray$" + getScalaSpecializedMethodSuffix(arrayType.elementType),
+              "(" + (ci(classOf[scala.Range.Inclusive]) * arrayType.dimensions.size) + ("[" * arrayType.dimensions.size) + getJVMDataType(arrayType.elementType) + ")" + getJVMDataType(arrayType))
 
         }
       }

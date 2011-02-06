@@ -23,6 +23,7 @@ import java.io.Serializable
 import collection.mutable
 
 import at.jku.ssw.openvc.ast.{Locatable, Identifier}
+import at.jku.ssw.openvc.ast.expressions.Expression
 import at.jku.ssw.openvc.ast.declarations.SignalDeclaration
 import at.jku.ssw.openvc.ast.InterfaceList.{InterfaceMode, Mode}
 import at.jku.ssw.openvc.ast.declarations.EntityClass.{Value => EntityClass}
@@ -62,6 +63,11 @@ case object NoSymbol extends Symbol {
 @SerialVersionUID(7944297999105157076L)
 final case class AliasSymbol(@transient identifier: Identifier, destination: Symbol) extends Symbol {
   val owner = destination.owner
+}
+
+@SerialVersionUID(191777956741368631L)
+final case class AliasExpression(@transient identifier: Identifier, expression: Expression) extends Symbol {
+  val owner = NoSymbol
 }
 
 @SerialVersionUID(-9011130501372090278L)
