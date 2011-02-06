@@ -1629,7 +1629,7 @@ association_list returns [AssociationList list]
 	
 formal_part returns [Either[Identifier,(SelectedName,Name.Part)\] formal_part_] :
 	identifier {formal_part_ = Left($identifier.id)}
-	| selected_name name_part {formal_part_ = Right(($selected_name.name_,$name_part.part))};
+	| selected_name ((name_association_list_part)=>name_association_list_part | name_slice_part) {formal_part_ = Right(($selected_name.name_,null))};
 		
 actual_part returns [Either[Expression,Identifier\] actual_part_ ] :
 	//could be a name(signal_name, variable_name, file_name, subprogram_name, package_name), function_name or type_mark ;could be signal_name or variable_name
@@ -2042,13 +2042,13 @@ GRAPHIC_CHARACTER :
 	| LOWER_CASE_LETTER
 	| OTHER_SPECIAL_CHARACTER;  
   
-//A B C D E F G H I J K L M N O P Q R S T U V W X Y Z À Á Â Ã Ä Å Æ Ç È É Ê Ë Ì Í Î Ï D . Ñ Ò Ó Ô Õ Ö Ø Ù Ú Û Ü ´ Y P '
+//A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ D . ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ Y P '
 fragment
-UPPER_CASE_LETTER : 'A'..'Z' | '\u00c0'..'\u00d6' | '\u00d8' .. '\u00de'; //A - Z,À - Ö, Ø - Þ
+UPPER_CASE_LETTER : 'A'..'Z' | '\u00c0'..'\u00d6' | '\u00d8' .. '\u00de'; //A - Z,ï¿½ - ï¿½, ï¿½ - ï¿½
 
-//a b c d e f g h i j k l m n o p q r s t u v w x y z ß à á â ã ä å æ ç è é ê ë ì í î ï  ñ ò ó ô õ ö ø ù ú û ü ´ y ' p ÿ
+//a b c d e f g h i j k l m n o p q r s t u v w x y z ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½  ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ y ' p ï¿½
 fragment
-LOWER_CASE_LETTER : 'a'..'z' | '\u00df'..'\u00f6' | '\u00f8'.. '\u00ff'; //a-z,ß - ö, ø - ÿ
+LOWER_CASE_LETTER : 'a'..'z' | '\u00df'..'\u00f6' | '\u00f8'.. '\u00ff'; //a-z,ï¿½ - ï¿½, ï¿½ - ï¿½
 
 fragment
 DIGIT : '0'..'9';
@@ -2064,7 +2064,7 @@ SPACE_CHARACTER : ' ' | '\u00a0'; //space, non-breaking space
 fragment
 OTHER_SPECIAL_CHARACTER :
 	'!' | '$' | '%' | '@' | '?' | '^' | '`' | '{' | '}' | '~'
-	| '\u00a1'..'\u00bf' | '\u00d7' | '\u00f7';//  ¡ - ¿, × - ÷
+	| '\u00a1'..'\u00bf' | '\u00d7' | '\u00f7';//  ï¿½ - ï¿½, ï¿½ - ï¿½
 
 fragment
 CHARACTER_LITERAL : ;
