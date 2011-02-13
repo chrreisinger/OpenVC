@@ -32,22 +32,22 @@ object Position {
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.toPosition]]
  * @param line the line in the source file
- * @param charPosition the character position in the line
+ * @param column the character position in the line
  */
-final case class Position(line: Int, charPosition: Int) extends Ordered[Position] {
+final case class Position(line: Int, column: Int) extends Ordered[Position] {
   /**
    * returns a new position with a line offset
    * @param lineOffset the offset
    * @return the new position
    */
-  def addLineOffset(lineOffset: Int) = new Position(this.line + lineOffset, this.charPosition)
+  def addLineOffset(lineOffset: Int) = new Position(this.line + lineOffset, this.column)
 
   /**
    * returns a new position with a character offset
    * @param characterOffset the offset
    * @return the new position
    */
-  def addCharacterOffset(characterOffset: Int) = new Position(this.line, this.charPosition + characterOffset)
+  def addCharacterOffset(characterOffset: Int) = new Position(this.line, this.column + characterOffset)
 
   /**Result of comparing <code>this</code> with operand <code>that</code>.
    *  returns <code>x</code> where
@@ -57,7 +57,7 @@ final case class Position(line: Int, charPosition: Int) extends Ordered[Position
    */
   override def compare(that: Position): Int =
     if (this.line < that.line) -1
-    else if (this.line == that.line) this.charPosition - that.charPosition
+    else if (this.line == that.line) this.column - that.column
     else 1
 }
 

@@ -50,9 +50,9 @@ object Main {
                     val sourceLines = toLines(file)
                     messages.foreach{
                       msg =>
-                        println("--" + file + ": line:" + msg.position.line + " col:" + msg.position.charPosition + " " + msg.message)
+                        println("--" + file + ": line:" + msg.position.line + " col:" + msg.position.column + " " + msg.message)
                         println(sourceLines(msg.position.line - 1).toLowerCase)
-                        println((" " * msg.position.charPosition) + "^")
+                        println((" " * msg.position.column) + "^")
                     }
                 }
             }
@@ -75,9 +75,9 @@ object Main {
                     val sourceLines = toLines(file)
                     messages.foreach{
                       msg =>
-                        println("--" + file + ": line:" + msg.position.line + " col:" + msg.position.charPosition + " " + msg.message)
+                        println("--" + file + ": line:" + msg.position.line + " col:" + msg.position.column + " " + msg.message)
                         println(sourceLines(msg.position.line - 1).toLowerCase)
-                        println((" " * msg.position.charPosition) + "^")
+                        println((" " * msg.position.column) + "^")
                     }
                 }
             }

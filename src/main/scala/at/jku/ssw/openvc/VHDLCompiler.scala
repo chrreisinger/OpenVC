@@ -51,9 +51,13 @@ object ASTBuilder {
   type ASTResult = (DesignFile, Seq[CompilerMessage])
 
   private def fromCharStream(caseInsensitiveStringStream: ANTLRStringStream, configuration: VHDLCompiler.Configuration): ASTResult = {
-    val lexer = new VHDLLexer(caseInsensitiveStringStream, configuration.amsEnabled, configuration.vhdl2008)
+    val lexer = new VHDLLexer(caseInsensitiveStringStream)
+    lexer.ams = configuration.amsEnabled
+    lexer.vhdl2008 = configuration.vhdl2008
     val tokens = new CommonTokenStream(lexer)
-    val parser = new VHDLParser(tokens, configuration.amsEnabled, configuration.vhdl2008)
+    val parser = new VHDLParser(tokens)
+    parser.ams = configuration.amsEnabled
+    parser.vhdl2008 = configuration.vhdl2008
     val designFile = parser.design_file()
     (designFile, parser.syntaxErrors ++ lexer.lexerErrors)
   }
@@ -81,11 +85,11 @@ object VHDLCompiler {
       }
       def printMessages(prefix: String, messages: Seq[CompilerMessage]) {
         for (msg <- messages) {
-          writer.println(prefix + sourceFile + ": line:" + msg.position.line + " col:" + msg.position.charPosition + " " + msg.message)
+          writer.println(prefix + sourceFile + ": line:" + msg.position.line + " col:" + msg.position.column + " " + msg.message)
           sourceLinesOption.foreach {
             sourceLines =>
-              writer.println(sourceLines(msg.position.line - 1).toLowerCase)
-              writer.println((" " * msg.position.charPosition) + "^")
+              writer.println(sourceLines(math.min(msg.position.line - 1, sourceLines.size - 1)).toLowerCase)
+              writer.println((" " * msg.position.column) + "^")
           }
         }
       }

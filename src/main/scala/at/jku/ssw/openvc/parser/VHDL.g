@@ -21,6 +21,7 @@ grammar VHDL;
 options{
 	language=Java;
 	memoize=true;
+	superClass=AbstractParser;	
 }
 tokens{
 	//includes only VHDL 2002 keywords
@@ -137,41 +138,42 @@ tokens{
 	VPROP='vprop';
 	VUNIT='vunit';*/
 	
-  	DOUBLESTAR    = '**';
   	AMS_ASSIGN    = '==';
-  	LEQ           = '<=';
-  	GEQ           = '>=';
-  	ARROW         = '=>';
-  	NEQ           = '/=';
   	VAR_ASSIGN    = ':=';
   	BOX           = '<>';
   	DBLQUOTE      = '\"';
-  	SEMICOLON     = ';';
   	COMMA         = ',';
-  	AMPERSAND     = '&';
+  	SEMICOLON     = ';';
   	LPAREN        = '(';
   	RPAREN        = ')';
   	LBRACKET      = '[';
   	RBRACKET      = ']';
   	COLON         = ':';
+  	DOT           = '.';
+  	AMPERSAND     = '&';
+  	BAR           = '|';
+  	ARROW         = '=>';
+  	//BACKSLASH     = '\\';
+  	AT            = '@';
+  	QMARK 	      = '?';
+  	//operators
+  	DOUBLESTAR    = '**';
   	MUL           = '*';
   	DIV           = '/';
   	PLUS          = '+';
   	MINUS         = '-';
+ 	EQ            = '=';
+  	NEQ           = '/=';
   	LT            = '<';
  	GT            = '>';
-  	EQ            = '=';
-  	BAR           = '|';
-  	DOT           = '.';
-  	//BACKSLASH     = '\\';
-  	MEQ	      = '?=';  
+  	LEQ           = '<=';
+  	GEQ           = '>=';
+  	MEQ           = '?=';
   	MNEQ	      = '?/='; 
-  	MLT	      = '?<'; 
+  	MLT           = '?<';
+  	MGT           = '?>';
   	MLEQ	      = '?<='; 
-  	MGT	      = '?>'; 
   	MGEQ	      = '?>=';
-  	AT 	      = '@';
-  	QMARK 	      = '?';
   	CONDITION_OPERATOR = '??';
 }
 @lexer::header{
@@ -199,14 +201,25 @@ import at.jku.ssw.openvc._
 import at.jku.ssw.openvc.ast.Position
 }
 @lexer::members{
+	var ams=false
+	var vhdl2008=false
 	type Buffer[A] = scala.collection.immutable.VectorBuilder[A] //scala.collection.mutable.ListBuffer[A]
 
 	private val lexerErrorList = new Buffer[CompilerMessage]()
 
   	def lexerErrors: Seq[CompilerMessage] = this.lexerErrorList.result
 
+  	override def getErrorMessage(e: RecognitionException, tokenNames: Array[String]): String =
+  	    if (e.isInstanceOf[NoViableAltException]) {
+	      if (e.c == Token.EOF)
+	        "Sorry, I scanned to the end of your file from around line " + e.line + " but could not see how to process it. " +
+	          "This can happen if you forget a closing delimiter such as ''' or '\"'"
+	      else "The character " + getCharErrorDisplay(e.c) + " is not allowed here."
+	    }
+	    else super.getErrorMessage(e, tokenNames)
+    
 	override def displayRecognitionError(tokenNames: Array[String], e: RecognitionException) =
-	    lexerErrorList += new CompilerMessage(position = Position(e.line,e.charPositionInLine), message = super.getErrorMessage(e, tokenNames))
+	    lexerErrorList += new CompilerMessage(position = Position(e.line,e.charPositionInLine), message = getErrorMessage(e, tokenNames))
 }
 @parser::header{
 /*
@@ -238,25 +251,26 @@ import at.jku.ssw.openvc.ast.sequentialStatements._
 import at.jku.ssw.openvc.ast.ams._
 import at.jku.ssw.openvc.util._
 }
-@parser::members{
-	type Buffer[A] = scala.collection.immutable.VectorBuilder[A] //scala.collection.mutable.ListBuffer[A]
-	
-	private val syntaxErrorList = new Buffer[CompilerMessage]()
-	
-	def syntaxErrors :Seq[CompilerMessage] = this.syntaxErrorList.result
-	
-	private implicit def toPosition(token:Token):Position = new Position(line=token.getLine(),charPosition=token.getCharPositionInLine())
 
-	private def toIdentifier(token:Token,toLowerCase:Boolean=true):Identifier =
-	    if (token.getType()!=STRING_LITERAL && token.getType()!=CHARACTER_LITERAL)
-	        new Identifier(toPosition(token),if (toLowerCase) token.getText().toLowerCase() else token.getText().replace("""\\""","\\"))
-	    else new Identifier(toPosition(token),token.getText())
-
-    override def displayRecognitionError(tokenNames:Array[String],e:RecognitionException) =
-        syntaxErrorList += new CompilerMessage(position=toPosition(e.token),message=super.getErrorMessage(e, tokenNames))
-        	
-    private implicit def anyToOption[A](value:A):Option[A] = Option(value)
-}
+sync [String message]
+@init{
+    // Consume any garbled tokens that come before the next statement
+    // or the end of the block. The only slight risk here is that the
+    // block becomes MORE inclusive than it should but as the script is
+    // in error, this is a better course than throwing out the block
+    // when the error occurs and screwing up the whole meaning of
+    // the rest of the token stream.
+    //
+    val startToken=input.LT(1)
+    syncToSet()
+} 
+@after{
+	// If we consume any tokens at this point then we create an error.
+	if (startToken ne input.LT(1)) {
+		syntaxErrorList += new CompilerMessage(position=toPosition(startToken),message="garbled " + message)
+	}
+}:;   // Deliberately match nothing, causing this rule always to be entered.
+    
 //B.1 Design File
 
 design_file returns [DesignFile designFile]
@@ -266,16 +280,16 @@ design_file returns [DesignFile designFile]
 	(design_unit{units += $design_unit.designUnit})+ EOF
 	{$designFile=new DesignFile(units.result)};
 
+context_item returns [ContextItem contextItem] :
+	library_clause {contextItem = $library_clause.libraryClause}
+	| use_clause {contextItem = $use_clause.useClause}
+	| {vhdl2008}?=>v2008_context_reference {contextItem = $v2008_context_reference.contextReference};
+	
 context_items returns [Seq[ContextItem\] contextItems] 
 @init {
 	val items=new Buffer[ContextItem]()
 } :
-	(
-	library_clause {items += $library_clause.libraryClause}
-	| use_clause {items += $use_clause.useClause}
-	| {vhdl2008}?=>v2008_context_reference {items += $v2008_context_reference.contextReference}
-	)*
-	{$contextItems=items.result};
+	(context_item{items += $context_item.contextItem})* {$contextItems=items.result};
 	
 design_unit returns [DesignUnit designUnit] :
 	context_items library_unit 
@@ -325,11 +339,12 @@ entity_declaration returns [EntityDeclaration entityDecl]
 @init{
  	val declarativeItems=new Buffer[DeclarativeItem]()
  	val concurrentStmt=new Buffer[ConcurrentStatement]()
+ 	val syncMessage="package declarative item"
 } :
 	entityToken=ENTITY start_identifier=identifier IS
 		(generic_clause SEMICOLON)?
 		port_clause?
-		(entity_declarative_item{declarativeItems += $entity_declarative_item.item})* 
+		sync[syncMessage] (entity_declarative_item{declarativeItems += $entity_declarative_item.item} sync[syncMessage])* 
 	(BEGIN
 		(label=label_colon? postponed=POSTPONED? (
 			concurrent_assertion_statement[$label.label,postponed!=null] {concurrentStmt += $concurrent_assertion_statement.assertStmt}
@@ -376,9 +391,10 @@ entity_declarative_item returns [DeclarativeItem item] :
 architecture_body returns [ArchitectureDeclaration archDecl]
 @init{
 	val declarativeItems=new Buffer[DeclarativeItem]()
+	val syncMessage="block declarative item"
 } :
 	architectureToken=ARCHITECTURE start_identifier=identifier OF selected_name IS
-		(block_declarative_item{declarativeItems += $block_declarative_item.item})*
+		sync[syncMessage] (block_declarative_item{declarativeItems += $block_declarative_item.item} sync[syncMessage])*
 	BEGIN
 		concurrent_statement_list
 	END ARCHITECTURE? end_identifier=identifier? SEMICOLON
@@ -392,9 +408,10 @@ configuration_declarative_item returns [DeclarativeItem item] :
 configuration_declaration returns [ConfigurationDeclaration configDecl]
 @init{
  	val declarativeItems=new Buffer[DeclarativeItem]()
+ 	val syncMessage="configuration declarative item"
 } :
 	configurationToken=CONFIGURATION start_identifier=identifier OF selected_name IS
-		(configuration_declarative_item{declarativeItems += $configuration_declarative_item.item})*
+		sync[syncMessage] (configuration_declarative_item{declarativeItems += $configuration_declarative_item.item} sync[syncMessage])*
 		//({psl}?=> psl_verification_unit_binding_indication)*
 		block_configuration
 	END CONFIGURATION? end_identifier=identifier? SEMICOLON
@@ -443,11 +460,12 @@ v2008_context_declaration returns [ContextDeclaration contextDecl] :
 package_declaration returns [PackageDeclaration packageDecl]
 @init{
 	val declarativeItems=new Buffer[DeclarativeItem]()
+	val syncMessage="package declarative item"
 } :
 	packageToken=PACKAGE start_identifier=identifier IS
 		({vhdl2008}?=> generic_clause SEMICOLON
 		(generic_map_aspect SEMICOLON)?)?
-		(package_declarative_item{declarativeItems += $package_declarative_item.item})*
+		sync[syncMessage] (package_declarative_item{declarativeItems += $package_declarative_item.item} sync[syncMessage])*
 	END PACKAGE? end_identifier=identifier? SEMICOLON
 	{$packageDecl=new PackageDeclaration($packageToken,$start_identifier.id,$generic_clause.list,$generic_map_aspect.list,declarativeItems.result,$end_identifier.id)};
 		
@@ -481,9 +499,10 @@ package_declarative_item returns [DeclarativeItem item] :
 package_body returns [PackageBodyDeclaration packageBody]
 @init{
 	val declarativeItems = new Buffer[DeclarativeItem]()
+	val syncMessage="package declarative item"
 } :
 	packageToken=PACKAGE BODY start_identifier=identifier IS
-		(package_body_declarative_item{declarativeItems += $package_body_declarative_item.item})*
+		sync[syncMessage] (package_body_declarative_item{declarativeItems += $package_body_declarative_item.item} sync[syncMessage])*
 	END (PACKAGE BODY)? end_identifier=identifier? SEMICOLON
 	{$packageBody = new PackageBodyDeclaration($packageToken,$start_identifier.id,declarativeItems.result,$end_identifier.id)};
     
@@ -536,9 +555,10 @@ subprogram_declaration returns [DeclarativeItem subprogramDecl] :
 subprogram_body[SubProgramDeclaration subprogramDecl] returns [SubProgramDefinition subProgramDef]
 @init{
 	val declItems=new Buffer[DeclarativeItem]()
+	val syncMessage="subprogram declarative item"
 } :
 	IS
-		(subprogram_declarative_item{declItems += $subprogram_declarative_item.item})* 
+		sync[syncMessage] (subprogram_declarative_item{declItems += $subprogram_declarative_item.item} sync[syncMessage])* 
 	BEGIN
 		sequence_of_statements
 	END ({$subprogramDecl.isInstanceOf[ProcedureDeclaration]}?=>PROCEDURE | {$subprogramDecl.isInstanceOf[FunctionDeclaration]}?=>FUNCTION)? endIdent=designator?
@@ -791,7 +811,7 @@ group_constituent_list returns [Seq[Either[Name,Identifier\]\] list]
 @init{
 	val elements=new Buffer[Either[Name,Identifier]]()
 } :
-	c1=group_constituent{elements += $c1.constituent} ( COMMA c2=group_constituent {elements += $c2.constituent})*
+	c1=group_constituent{elements += $c1.constituent} (COMMA c2=group_constituent {elements += $c2.constituent})*
 	{$list=elements.result};
     
 use_clause returns [UseClause useClause] :
@@ -907,9 +927,10 @@ ams_nature_mark returns [SelectedName typeName] :
 protected_type_declaration[Identifier id,Position pos] returns [ProtectedTypeDeclaration protectedTypeDecl]
 @init{
 	val items=new Buffer[DeclarativeItem]()
+	val syncMessage="protected_type declarative item"
 } :
 	PROTECTED
-		(protected_type_declarative_item{items += $protected_type_declarative_item.item})*
+		sync[syncMessage] (protected_type_declarative_item{items += $protected_type_declarative_item.item} sync[syncMessage])*
 	END PROTECTED identifier?
 	{$protectedTypeDecl=new ProtectedTypeDeclaration($pos,$id,items.result,$identifier.id)};
 		
@@ -922,9 +943,10 @@ protected_type_declarative_item returns [DeclarativeItem item] :
 protected_type_body[Identifier id,Position pos] returns [ProtectedTypeBodyDeclaration protectedTypeBody]
 @init{
 	val items=new Buffer[DeclarativeItem]()
+	val syncMessage="protected_type declarative item"
 } :
 	PROTECTED BODY
-		(protected_type_body_declarative_item{items += $protected_type_body_declarative_item.item})*
+		sync[syncMessage] (protected_type_body_declarative_item{items += $protected_type_body_declarative_item.item} sync[syncMessage])*
 	END PROTECTED BODY identifier?
 	{$protectedTypeBody=new ProtectedTypeBodyDeclaration($pos,$id,items.result,$identifier.id)};
 		
@@ -1006,12 +1028,11 @@ type_mark returns [SelectedName typeName] :
 	selected_name {$typeName=$selected_name.name_}; // could be type_name or subtype_name
 
 // B.5 Concurrent Statements
-//was concurrent_statement
 concurrent_statement_list returns [Seq[ConcurrentStatement\] list] 
 @init{
 	val statementList=new Buffer[ConcurrentStatement]()
 } : 
-	(concurrent_statement {statementList += $concurrent_statement.stmt} )*
+	(concurrent_statement {statementList += $concurrent_statement.stmt})*
 	{$list=statementList.result};
 
 concurrent_statement returns [ConcurrentStatement stmt] :
@@ -1047,11 +1068,12 @@ port_map_aspect returns [AssociationList list] :
 block_statement[Identifier label] returns [BlockStatement blockStmt]
 @init{
 	val declItems=new Buffer[DeclarativeItem]()
+	val syncMessage="block declarative item"
 } :
 	blockToken=BLOCK (LPAREN guard_expression=expression RPAREN)? IS?
 		(generic_clause SEMICOLON (generic_map_aspect SEMICOLON)?)?
 		(port_clause (port_map_aspect SEMICOLON)?)?
-		(block_declarative_item{declItems += $block_declarative_item.item})*
+		sync[syncMessage] (block_declarative_item{declItems += $block_declarative_item.item} sync[syncMessage])*
 	BEGIN
 		concurrent_statement_list
 	END BLOCK end_block_label=identifier? SEMICOLON 
@@ -1095,9 +1117,10 @@ block_declarative_item returns [DeclarativeItem item] :
 process_statement[Identifier label,Boolean postponed] returns [ProcessStatement processStmt]
 @init{
 	val declItem=new Buffer[DeclarativeItem]()
+	val syncMessage="process declarative item"
 } :
 	processToken=PROCESS (LPAREN name_list RPAREN)? IS?
-		(process_declarative_item {declItem += $process_declarative_item.item})*
+		sync[syncMessage] (process_declarative_item {declItem += $process_declarative_item.item} sync[syncMessage])*
 	BEGIN
 		sequence_of_statements
 	END POSTPONED? PROCESS end_process_label=identifier? SEMICOLON
@@ -1219,9 +1242,10 @@ v2008_case_generate_statement[Identifier label] returns [CaseGenerateStatement c
 generate_statement_body returns [Seq[DeclarativeItem\] declarativeItems,Seq[ConcurrentStatement\] statementList,Identifier endLabel]
 @init{
 	val items=new Buffer[DeclarativeItem]()
+	val syncMessage="block declarative item"
 } :
 	(
-		(block_declarative_item{items += $block_declarative_item.item})*
+		(block_declarative_item{items += $block_declarative_item.item} sync[syncMessage])*
 		BEGIN
 	)?
 		concurrent_statement_list
@@ -1282,9 +1306,10 @@ ams_simultaneous_case_statement[Identifier label] returns [SimultaneousCaseState
 ams_simultaneous_procedural_statement[Identifier label] returns [SimultaneousProceduralStatement proceduralStmt]
 @init{
 	val items=new Buffer[DeclarativeItem]()
+	val syncMessage="simultaneous procedural declarative item"
 } :
 	proceduralToken=PROCEDURAL IS?
-		(ams_simultaneous_procedural_declarative_item{items += $ams_simultaneous_procedural_declarative_item.item})*
+		sync[syncMessage] (ams_simultaneous_procedural_declarative_item{items += $ams_simultaneous_procedural_declarative_item.item} sync[syncMessage])*
 	BEGIN
 		sequence_of_statements
 	END PROCEDURAL end_procedural_label=identifier? SEMICOLON
@@ -1779,7 +1804,7 @@ selected_name_list returns [Seq[SelectedName\] list]
 @init{
 	val tmpList=new Buffer[SelectedName]()
 } :
-	n1=selected_name {tmpList += $n1.name_} (COMMA n2=selected_name {tmpList += $n2.name_} )*
+	n1=selected_name {tmpList += $n1.name_} (COMMA n2=selected_name {tmpList += $n2.name_})*
 	{$list=tmpList.result};
 		
 selected_name returns [SelectedName name_]
@@ -1793,7 +1818,7 @@ name_list returns [Seq[Name\] list]
 @init{
 	val tmpList=new Buffer[Name]()
 } :
-	n1=name {tmpList += $n1.name_} (COMMA n2=name {tmpList += $n2.name_} )*
+	n1=name {tmpList += $n1.name_} (COMMA n2=name {tmpList += $n2.name_})*
 	{$list=tmpList.result};
 			
 name returns [Name name_]
