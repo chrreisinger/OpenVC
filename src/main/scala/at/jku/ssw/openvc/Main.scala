@@ -28,33 +28,19 @@ object Main {
     try {
       /*
       val (c, _) = parseCommandLineArguments(arguments)
-      //ASTBuilder.fromFile("""C:\Users\christian\Desktop\grlib-gpl-1.0.22-b4095\lib\fmf\fifo\idt7202.vhd""", c.get)
-      val x=ASTBuilder.fromFile("""C:\Users\christian\Desktop\OpenVC\vhdlSrc\alu_tb.vhd""", c.get)._2
-      println(x)
-      require(x.size==0)
       val filter = new FilenameFilter() {
         override def accept(dir: File, name: String): Boolean = (name.endsWith(".vhd") || name.endsWith(".vhdl")) && !name.endsWith("in.vhd")
       }
+      val allVHDLFiles = listFiles(new File("""C:\Users\christian\Desktop\grlib-gpl-1.0.22-b4095\"""), filter, true)
+      def toLines(sourceFile: String) = scala.io.Source.fromFile(sourceFile).getLines().toIndexedSeq
       for (i <- 0 to 10) {
         val start = System.currentTimeMillis
-        c.foreach{
+        c.foreach {
           configuration =>
-            def toLines(sourceFile: String) = scala.io.Source.fromFile(sourceFile).getLines().toIndexedSeq
-            listFiles(new File("""C:\Users\christian\Desktop\grlib-gpl-1.0.22-b4095\"""), filter, true).map{
-              fileX =>
-                val file = fileX.getAbsolutePath
-                //println(file)
-                ASTBuilder.fromFile(file, configuration)._2 match {
-                  case Seq() =>
-                  case messages =>
-                    val sourceLines = toLines(file)
-                    messages.foreach{
-                      msg =>
-                        println("--" + file + ": line:" + msg.position.line + " col:" + msg.position.column + " " + msg.message)
-                        println(sourceLines(msg.position.line - 1).toLowerCase)
-                        println((" " * msg.position.column) + "^")
-                    }
-                }
+            allVHDLFiles.foreach {
+              file =>
+                val result = VHDLCompiler.compileFile(file.getAbsolutePath, configuration)
+                result.printErrors(new PrintWriter(System.out), Some(toLines(result.sourceFile)))
             }
         }
         println("time:" + (System.currentTimeMillis - start))
@@ -62,33 +48,15 @@ object Main {
       return
       */
       val (configurationOption, files) = parseCommandLineArguments(arguments)
-      configurationOption.foreach{
+      configurationOption.foreach {
         configuration =>
           def toLines(sourceFile: String) = scala.io.Source.fromFile(sourceFile).getLines().toIndexedSeq
-          if (configuration.parseOnly) {
-            files.map{
-              file =>
-                println(file)
-                ASTBuilder.fromFile(file, configuration)._2 match {
-                  case Seq() =>
-                  case messages =>
-                    val sourceLines = toLines(file)
-                    messages.foreach{
-                      msg =>
-                        println("--" + file + ": line:" + msg.position.line + " col:" + msg.position.column + " " + msg.message)
-                        println(sourceLines(msg.position.line - 1).toLowerCase)
-                        println((" " * msg.position.column) + "^")
-                    }
-                }
-            }
-          } else {
-            val classFilter = new FilenameFilter() {
-              override def accept(dir: File, name: String): Boolean = name.endsWith(".class")
-            }
-            files.map(file => VHDLCompiler.compileFile(file, configuration)).foreach(result => result.printErrors(new PrintWriter(System.out), Some(toLines(result.sourceFile))))
-            Simulator.loadFiles(this.getClass.getClassLoader, configuration.outputDirectory, listFiles(new File(configuration.libraryOutputDirectory), classFilter, true).map(file => file.getPath.substring(file.getPath.indexOf('\\') + 1).split('.').head.replace('\\', '.')), List("std.jar", "ieee.jar"))
-            Simulator.runClass(this.getClass.getClassLoader, configuration.outputDirectory, configuration.designLibrary + ".alu_tb_body", "main$1106182723", List("std.jar", "ieee.jar"))
+          val classFilter = new FilenameFilter() {
+            override def accept(dir: File, name: String): Boolean = name.endsWith(".class")
           }
+          files.map(file => VHDLCompiler.compileFile(file, configuration)).foreach(result => result.printErrors(new PrintWriter(System.out), Some(toLines(result.sourceFile))))
+          Simulator.loadFiles(this.getClass.getClassLoader, configuration.outputDirectory, listFiles(new File(configuration.libraryOutputDirectory), classFilter, true).map(file => file.getPath.substring(file.getPath.indexOf('\\') + 1).split('.').head.replace('\\', '.')), List("std.jar", "ieee.jar"))
+          Simulator.runClass(this.getClass.getClassLoader, configuration.outputDirectory, configuration.designLibrary + ".alu_tb_body", "main$1106182723", List("std.jar", "ieee.jar"))
       }
     } catch {
       case ex@(_: java.lang.reflect.InvocationTargetException | _: java.lang.ExceptionInInitializerError) if (ex.getStackTrace.exists(element => element != null && (element.getFileName.endsWith(".vhd") || element.getFileName.endsWith(".vhdl")))) =>
@@ -103,7 +71,7 @@ object Main {
   }
 
   def listFiles(directory: File, filter: FilenameFilter, recursive: Boolean): Seq[File] =
-    directory.listFiles().toSeq.flatMap{
+    directory.listFiles().toSeq.flatMap {
       case entry if (filter.accept(directory, entry.getName())) => Seq(entry)
       case entry if (recursive && entry.isDirectory()) => listFiles(entry, filter, recursive)
       case _ => Seq()

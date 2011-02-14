@@ -99,32 +99,35 @@ object VHDLCompiler {
     }
   }
 
-  private def compile(configuration: Configuration, builder: (String, Configuration) => (DesignFile, Seq[CompilerMessage]), source: String, fileName: String): CompileResult = {
+  private def compile(configuration: Configuration, astBuilder: (String, Configuration) => (DesignFile, Seq[CompilerMessage]), source: String, fileName: String): CompileResult = {
     import java.io.File
     import semanticAnalyzer.SemanticAnalyzer
     val directory = new File(configuration.libraryOutputDirectory)
     if (!directory.exists) directory.mkdirs
 
     val parseStart = System.currentTimeMillis
-    val (designFile, syntaxErrors) = builder(source, configuration)
+    val (designFile, syntaxErrors) = astBuilder(source, configuration)
     val parseTime = System.currentTimeMillis - parseStart
 
-    val semanticCheckStart = System.currentTimeMillis
-    val (checkedDesignFile, semanticErrors, semanticWarnings) = SemanticAnalyzer(designFile, configuration)
-    val semanticCheckTime = System.currentTimeMillis - semanticCheckStart
+    if (configuration.parseOnly) new CompileResult(syntaxErrors, Seq(), Seq(), designFile, fileName)
+    else {
+      val semanticCheckStart = System.currentTimeMillis
+      val (checkedDesignFile, semanticErrors, semanticWarnings) = SemanticAnalyzer(designFile, configuration)
+      val semanticCheckTime = System.currentTimeMillis - semanticCheckStart
 
-    val codeGenStart = System.currentTimeMillis
-    if (semanticErrors.isEmpty && syntaxErrors.isEmpty) {
-      ByteCodeGenerator(configuration, fileName, checkedDesignFile)
+      val codeGenStart = System.currentTimeMillis
+      if (semanticErrors.isEmpty && syntaxErrors.isEmpty) {
+        ByteCodeGenerator(configuration, fileName, checkedDesignFile)
+      }
+      val codeGenTime = System.currentTimeMillis - codeGenStart
+      if (configuration.debugCompiler) {
+        println("parse time:" + parseTime)
+        println("sema check time:" + semanticCheckTime)
+        println("code gen time:" + codeGenTime)
+        println("complete time:" + (System.currentTimeMillis - parseStart))
+      }
+      new CompileResult(syntaxErrors, semanticErrors, semanticWarnings, designFile, fileName)
     }
-    val codeGenTime = System.currentTimeMillis - codeGenStart
-    if (configuration.debugCompiler) {
-      println("parse time:" + parseTime)
-      println("sema check time:" + semanticCheckTime)
-      println("code gen time:" + codeGenTime)
-      println("complete time:" + (System.currentTimeMillis - parseStart))
-    }
-    new CompileResult(syntaxErrors, semanticErrors, semanticWarnings, designFile, fileName)
   }
 
   def compileFile(file: String, configuration: Configuration): CompileResult = this.compile(configuration, ASTBuilder.fromFile, file, file)

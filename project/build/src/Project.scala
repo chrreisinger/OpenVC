@@ -31,7 +31,8 @@ final class Project(info: ProjectInfo) extends DefaultProject(info) with Eclipsi
   lazy val dir = Path.fromFile(grammarPath.asFile.getParent)
 
   //A task to delete the generated Antlr parser.
-  lazy val cleanAntlr = cleanTask((dir / (grammarName + "Lexer.scala")) +++ (dir / (grammarName + "Parser.scala")))
+  lazy val cleanAntlr =
+    cleanTask((dir / (grammarName + "Lexer.scala")) +++ (dir / (grammarName + "Parser.scala"))) describedAs ("delete the generated Antlr parser and lexer")
 
   /**
    * A task to run Antlr on the main parser module.  The generated parser and lexer
