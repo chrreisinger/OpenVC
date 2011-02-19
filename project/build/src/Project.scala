@@ -5,7 +5,7 @@ import de.element34.sbteclipsify._
 final class Project(info: ProjectInfo) extends DefaultProject(info) with Eclipsify with IdeaProject with ProguardProject {
   val antlrComplete = "org.antlr" % "antlr" % "3.3"
   val antlrRuntimeJar = "org.antlr" % "antlr-runtime" % "3.3" withSources()
-  val asmJar = "asm" % "asm-all" % "3.3" withSources()
+  val asmJar = "asm" % "asm-all" % "3.3.1" withSources()
   val scalaTestJar = "org.scalatest" % "scalatest" % "1.3" withSources() withJavadoc()
   val commonsCLI = "commons-cli" % "commons-cli" % "1.2" withSources() withJavadoc()
 
