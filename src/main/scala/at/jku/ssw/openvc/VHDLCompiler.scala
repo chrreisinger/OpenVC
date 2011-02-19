@@ -88,8 +88,10 @@ object VHDLCompiler {
           writer.println(prefix + sourceFile + ": line:" + msg.position.line + " col:" + msg.position.column + " " + msg.message)
           sourceLinesOption.foreach {
             sourceLines =>
-              writer.println(sourceLines(math.min(msg.position.line - 1, sourceLines.size - 1)).toLowerCase)
-              writer.println((" " * msg.position.column) + "^")
+              if (msg.position != Position.NoPosition) {
+                writer.println(sourceLines(math.min(msg.position.line - 1, sourceLines.size - 1)).toLowerCase)
+                writer.println((" " * msg.position.column) + "^")
+              }
           }
         }
       }

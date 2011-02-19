@@ -73,6 +73,8 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
 
   import ByteCodeGenerator.{getJVMDataType, getJVMName}
 
+  private[this] var lastLine = -1
+
   def NOP = this.visitInsn(Opcodes.NOP)
 
   def ACONST_NULL = this.visitInsn(Opcodes.ACONST_NULL)
@@ -444,23 +446,21 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
     case _: SubprogramSymbol => storeInstruction(symbol)
   }
 
-  def storeSymbol(symbol: RuntimeSymbol, targetType: DataType) = {
-    symbol.owner match {
-      case _: ArchitectureSymbol | _: TypeSymbol | _: ProcessSymbol | _: EntitySymbol => PUTFIELD(symbol.owner.implementationName, symbol.name, getJVMDataType(symbol))
-      case _: PackageSymbol => PUTSTATIC(symbol.owner.implementationName, symbol.name, getJVMDataType(symbol))
-      case _: SubprogramSymbol => storeInstruction(symbol)
-      case r: RuntimeSymbol =>
-        symbol.dataType match {
-          case recordType: RecordType =>
-            PUTFIELD(recordType.implementationName, symbol.name, getJVMDataType(targetType))
-          case accessType: AccessType =>
-            PUTFIELD(getJVMName(accessType.pointerType), symbol.name, getJVMDataType(targetType))
-          case constraintArray: ConstrainedArrayType =>
-            arrayStoreInstruction(constraintArray.elementType)
-          case unconstrainedArrayType: UnconstrainedArrayType =>
-            INVOKEVIRTUAL(getJVMName(unconstrainedArrayType), "setValue", "(" + ("I" * unconstrainedArrayType.dimensions.size) + getJVMDataType(unconstrainedArrayType.elementType) + ")V")
-        }
-    }
+  def storeSymbol(symbol: RuntimeSymbol, targetType: DataType) = symbol.owner match {
+    case _: ArchitectureSymbol | _: TypeSymbol | _: ProcessSymbol | _: EntitySymbol => PUTFIELD(symbol.owner.implementationName, symbol.name, getJVMDataType(symbol))
+    case _: PackageSymbol => PUTSTATIC(symbol.owner.implementationName, symbol.name, getJVMDataType(symbol))
+    case _: SubprogramSymbol => storeInstruction(symbol)
+    case r: RuntimeSymbol =>
+      symbol.dataType match {
+        case recordType: RecordType =>
+          PUTFIELD(recordType.implementationName, symbol.name, getJVMDataType(targetType))
+        case accessType: AccessType =>
+          PUTFIELD(getJVMName(accessType.pointerType), symbol.name, getJVMDataType(targetType))
+        case constraintArray: ConstrainedArrayType =>
+          arrayStoreInstruction(constraintArray.elementType)
+        case unconstrainedArrayType: UnconstrainedArrayType =>
+          INVOKEVIRTUAL(getJVMName(unconstrainedArrayType), "setValue", "(" + ("I" * unconstrainedArrayType.dimensions.size) + getJVMDataType(unconstrainedArrayType.elementType) + ")V")
+      }
   }
 
   def pushAnyVal(value: AnyVal) = value match {
@@ -506,8 +506,6 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
     case java.lang.Long.MAX_VALUE => GETSTATIC("java/lang/Long", "MAX_VALUE", "J")
     case _ => LDC(java.lang.Long.valueOf(value))
   }
-
-  private[this] var lastLine = -1
 
   def createDebugLineNumberInformation(node: Locatable): Unit = createDebugLineNumberInformation(node.position)
 
