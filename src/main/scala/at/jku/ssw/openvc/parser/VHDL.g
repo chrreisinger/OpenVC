@@ -197,8 +197,8 @@ tokens{
 
 package at.jku.ssw.openvc.parser
 
-import at.jku.ssw.openvc._
-import at.jku.ssw.openvc.ast.Position
+import at.jku.ssw.openvc.CompilerMessage
+import at.jku.ssw.openvc.util.OffsetPosition
 }
 @lexer::members{
 	var ams=false
@@ -219,7 +219,7 @@ import at.jku.ssw.openvc.ast.Position
 	    else super.getErrorMessage(e, tokenNames)
     
 	override def displayRecognitionError(tokenNames: Array[String], e: RecognitionException) =
-	    lexerErrorList += new CompilerMessage(position = Position(e.line,e.charPositionInLine), message = getErrorMessage(e, tokenNames))
+	    lexerErrorList += new CompilerMessage(position = new OffsetPosition(e.line,e.charPositionInLine, e.index, e.index+1), message = getErrorMessage(e, tokenNames))
 }
 @parser::header{
 /*

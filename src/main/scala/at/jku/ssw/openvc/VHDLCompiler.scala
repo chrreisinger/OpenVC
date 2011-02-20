@@ -19,7 +19,7 @@
 package at.jku.ssw.openvc
 
 import ast.declarations.DesignFile
-import ast.Position
+import util.{Position, NoPosition}
 
 final class CompilerMessage(val position: Position, val message: String) extends Ordered[CompilerMessage] {
   override def toString = position + " " + message
@@ -88,7 +88,7 @@ object VHDLCompiler {
           writer.println(prefix + sourceFile + ": line:" + msg.position.line + " col:" + msg.position.column + " " + msg.message)
           sourceLinesOption.foreach {
             sourceLines =>
-              if (msg.position != Position.NoPosition) {
+              if (msg.position != NoPosition) {
                 writer.println(sourceLines(math.min(msg.position.line - 1, sourceLines.size - 1)).toLowerCase)
                 writer.println((" " * msg.position.column) + "^")
               }

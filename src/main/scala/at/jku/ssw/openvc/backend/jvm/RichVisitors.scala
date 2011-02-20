@@ -69,7 +69,8 @@ final class RichClassWriter(private val outputDirectory: String, val className: 
 
 final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
 
-  import at.jku.ssw.openvc.ast.{Locatable, Position}
+  import at.jku.ssw.openvc.ast.Locatable
+  import at.jku.ssw.openvc.util.{Position, NoPosition}
 
   import ByteCodeGenerator.{getJVMDataType, getJVMName}
 
@@ -511,7 +512,7 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
 
   def createDebugLineNumberInformation(position: Position) {
     val line = position.line
-    if (lastLine != line && position != Position.NoPosition) {
+    if (lastLine != line && position != NoPosition) {
       lastLine = line
       val label = createLabel
       label()

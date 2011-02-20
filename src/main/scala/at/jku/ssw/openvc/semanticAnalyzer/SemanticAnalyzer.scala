@@ -1177,7 +1177,7 @@ object SemanticAnalyzer {
         case None => addError(loopLabel, "loop label %s not found", loopLabel)
         case Some((_, position)) => Some(position)
       }
-    }).getOrElse(Position.NoPosition)
+    }).getOrElse(NoPosition)
 
 
   def checkBlockConfiguration(context: Context, blockConfiguration: BlockConfiguration) {
@@ -1625,7 +1625,7 @@ object SemanticAnalyzer {
           case _ => Option((constantSymbol, expression))
         }
     } match {
-      case Some((constantSymbol, expression)) => (ConstantDeclaration(Position.NoPosition, Seq(), null, Option(expression), Seq(constantSymbol)), context.incVarIndex(getNextIndex(constantSymbol.dataType)))
+      case Some((constantSymbol, expression)) => (ConstantDeclaration(NoPosition, Seq(), null, Option(expression), Seq(constantSymbol)), context.incVarIndex(getNextIndex(constantSymbol.dataType)))
       case None => (attributeSpec, context)
     }
 
@@ -1725,7 +1725,7 @@ object SemanticAnalyzer {
 
     val alternatives = if (!containsOthers) {
       //add default error handling
-      val caseError = new CaseStatement.When(Seq(new Choices.Choice(Position.NoPosition, None)), List(ThrowStatement(lastAlternative.choices.head.position.addLineOffset(1), "case fall through")))
+      val caseError = new CaseStatement.When(Seq(new Choices.Choice(NoPosition, None)), List(ThrowStatement(lastAlternative.choices.head.position.addLineOffset(1), "case fall through")))
       alternativesMapped :+ caseError
     } else {
       alternativesMapped
@@ -1912,7 +1912,7 @@ object SemanticAnalyzer {
         val owner = new LibrarySymbol(Identifier(configuration.designLibrary), new DirectoryLibraryArchive(configuration.outputDirectory))
         val contextItems = if ("std" == configuration.designLibrary || unit.isInstanceOf[ContextDeclaration]) designUnit.contextItems
         else {
-          LibraryClause(unit.position, Seq(Identifier(unit.position, "work"))) +: LibraryClause(unit.position, Seq(Identifier(unit.position, "std"))) +: UseClause(Position.NoPosition, Seq(new SelectedName(Seq(Identifier("std"), Identifier("standard"), Identifier("all"))))) +: designUnit.contextItems
+          LibraryClause(unit.position, Seq(Identifier(unit.position, "work"))) +: LibraryClause(unit.position, Seq(Identifier(unit.position, "std"))) +: UseClause(NoPosition, Seq(new SelectedName(Seq(Identifier("std"), Identifier("standard"), Identifier("all"))))) +: designUnit.contextItems
         }
 
         val newContext = if (unit.isInstanceOf[ContextDeclaration]) {

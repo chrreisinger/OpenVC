@@ -18,48 +18,9 @@
 
 package at.jku.ssw.openvc.ast {
 
-import at.jku.ssw.openvc.util.TripleEither
+import at.jku.ssw.openvc.util.{TripleEither, Position, NoPosition}
 import at.jku.ssw.openvc.symbolTable.dataTypes.{DataType, RangeType, ConstrainedRangeType, NoType}
 import at.jku.ssw.openvc.ast.expressions.{Name, Aggregate, Expression}
-
-object Position {
-  val NoPosition = Position(-1, -1)
-}
-
-/**
- * Represents a position in a source file
- *
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.toPosition]]
- * @param line the line in the source file
- * @param column the character position in the line
- */
-final case class Position(line: Int, column: Int) extends Ordered[Position] {
-  /**
-   * returns a new position with a line offset
-   * @param lineOffset the offset
-   * @return the new position
-   */
-  def addLineOffset(lineOffset: Int) = new Position(this.line + lineOffset, this.column)
-
-  /**
-   * returns a new position with a character offset
-   * @param characterOffset the offset
-   * @return the new position
-   */
-  def addCharacterOffset(characterOffset: Int) = new Position(this.line, this.column + characterOffset)
-
-  /**Result of comparing <code>this</code> with operand <code>that</code>.
-   *  returns <code>x</code> where
-   *  <code>x &lt; 0</code>    iff    <code>this &lt; that</code>
-   *  <code>x == 0</code>   iff    <code>this == that</code>
-   *  <code>x &gt; 0</code>    iff    <code>this &gt; that</code>
-   */
-  override def compare(that: Position): Int =
-    if (this.line < that.line) -1
-    else if (this.line == that.line) this.column - that.column
-    else 1
-}
 
 /**
  * Marks all classes that contain a position information
@@ -85,7 +46,7 @@ object Identifier {
 
   def apply(position: Position, text: String) = new Identifier(position, text)
 
-  def apply(text: String) = new Identifier(Position.NoPosition, text)
+  def apply(text: String) = new Identifier(NoPosition, text)
 }
 
 final class Identifier(val position: Position, val originalText: String) extends Locatable {
@@ -403,7 +364,7 @@ final case class WaitStatement(position: Position, label: Option[Identifier], si
  * @param condition the optional condition
  * @param loopStatement the position of the enclosing loop statement is used in the code generation phase to identify the jump labels
  */
-final case class NextStatement(position: Position, label: Option[Identifier], loopLabel: Option[Identifier], condition: Option[Expression], loopStatement: Position = Position.NoPosition) extends SequentialStatement
+final case class NextStatement(position: Position, label: Option[Identifier], loopLabel: Option[Identifier], condition: Option[Expression], loopStatement: Position = NoPosition) extends SequentialStatement
 
 /**
  * Represents an exit statement
@@ -417,7 +378,7 @@ final case class NextStatement(position: Position, label: Option[Identifier], lo
  * @param condition the optional condition
  * @param loopStatement the position of the enclosing loop statement is used in the code generation phase to identify the jump labels
  */
-final case class ExitStatement(position: Position, label: Option[Identifier], loopLabel: Option[Identifier], condition: Option[Expression], loopStatement: Position = Position.NoPosition) extends SequentialStatement
+final case class ExitStatement(position: Position, label: Option[Identifier], loopLabel: Option[Identifier], condition: Option[Expression], loopStatement: Position = NoPosition) extends SequentialStatement
 
 /**
  * Represents a null statement

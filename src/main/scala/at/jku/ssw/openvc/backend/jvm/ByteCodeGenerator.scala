@@ -21,6 +21,7 @@ package at.jku.ssw.openvc.backend.jvm
 import org.objectweb.asm.{ClassWriter, Label, Opcodes, Type}
 
 import at.jku.ssw.openvc._
+import util._
 import ast._
 import ast.concurrentStatements._
 import ast.sequentialStatements._
@@ -909,7 +910,7 @@ object ByteCodeGenerator {
                 //this comes from a case generate statement that does not contain a others choice
                   context.mv.throwNewException(p(classOf[VHDLRuntimeException]), "case generate fall through")
                 case _ =>
-                  val blockCW = visitBlockStatement(BlockStatement(Position.NoPosition, part.label.orElse(Some(Identifier("else" + ifGenerateStmt.label.get.text))), None, None, None, None, None, part.declarativeItems, part.concurrentStatements, None), context)
+                  val blockCW = visitBlockStatement(BlockStatement(NoPosition, part.label.orElse(Some(Identifier("else" + ifGenerateStmt.label.get.text))), None, None, None, None, None, part.declarativeItems, part.concurrentStatements, None), context)
                   NEW(blockCW.className)
                   DUP
                   ALOAD(0)
@@ -1131,7 +1132,7 @@ object ByteCodeGenerator {
               for (expression <- objectDecl.expression) {
                 for (identifier <- objectDecl.identifiers) {
                   val mv = cw.createMethod(Opcodes.ACC_STATIC, "$default$" + parentName + "_" + identifier.text, returnType = getJVMDataType(expression.dataType))
-                  visitReturnStatement(ReturnStatement(Position.NoPosition, None, objectDecl.expression), Context(cw, mv))
+                  visitReturnStatement(ReturnStatement(NoPosition, None, objectDecl.expression), Context(cw, mv))
                   mv.endMethod
                 }
               }
@@ -1470,7 +1471,7 @@ object ByteCodeGenerator {
       startLabel()
       acceptNodes(procedureDefinition.declarativeItems, newContext)
       acceptNodes(procedureDefinition.sequentialStatements, newContext)
-      visitReturnStatement(ReturnStatement(Position.NoPosition, None, None, procedureSymbol), newContext)
+      visitReturnStatement(ReturnStatement(NoPosition, None, None, procedureSymbol), newContext)
       stopLabel()
       createDebugLocalVariableInformation(procedureDefinition.localSymbols, startLabel, stopLabel)
       endMethod
@@ -1651,7 +1652,7 @@ object ByteCodeGenerator {
       }
       {
         val mv = cw.createMethod(name = "run")
-        visitLoopStatement(LoopStatement(Position.NoPosition, None, processStmt.sequentialStatements, None), Context(cw = cw, mv = mv, loopLabels = Map(), designUnit = context.designUnit)) //infinite loop
+        visitLoopStatement(LoopStatement(NoPosition, None, processStmt.sequentialStatements, None), Context(cw = cw, mv = mv, loopLabels = Map(), designUnit = context.designUnit)) //infinite loop
         mv.RETURN
         mv.endMethod
       }

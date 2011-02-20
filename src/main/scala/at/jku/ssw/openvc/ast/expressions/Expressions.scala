@@ -21,6 +21,7 @@ package at.jku.ssw.openvc.ast.expressions
 import at.jku.ssw.openvc.ast._
 import at.jku.ssw.openvc.symbolTable.dataTypes.{DataType, NoType}
 import at.jku.ssw.openvc.symbolTable.symbols._
+import at.jku.ssw.openvc.util.{Position, NoPosition}
 
 /**
  * Base class for all expressions nodes
@@ -55,7 +56,7 @@ case object NoExpression extends Expression {
   /**
    * is always NoType
    */
-  val position = Position.NoPosition
+  val position = NoPosition
 }
 
 final case class ConditionExpression(position: Position, left: Expression, dataType: DataType = NoType) extends Expression
@@ -273,7 +274,7 @@ trait WithSymbol {
  * @param symbol the symbol of a interface list for which the default value should be loaded
  */
 final case class DefaultExpression(symbol: RuntimeSymbol) extends Expression {
-  val position = Position.NoPosition
+  val position = NoPosition
   val dataType = symbol.dataType
 }
 
@@ -287,7 +288,7 @@ final case class DefaultExpression(symbol: RuntimeSymbol) extends Expression {
  * @param symbol the symbol of a interface list which is open
  */
 final case class OpenExpression(symbol: RuntimeSymbol) extends Expression {
-  val position = Position.NoPosition
+  val position = NoPosition
   val dataType = symbol.dataType
 }
 

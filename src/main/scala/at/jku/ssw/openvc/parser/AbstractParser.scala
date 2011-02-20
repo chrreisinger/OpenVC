@@ -20,7 +20,8 @@ package at.jku.ssw.openvc.parser
 
 import org.antlr.runtime._
 import at.jku.ssw.openvc.CompilerMessage
-import at.jku.ssw.openvc.ast.{Identifier, Position}
+import at.jku.ssw.openvc.ast.Identifier
+import at.jku.ssw.openvc.util.{OffsetPosition, RangePosition}
 import VHDLParser._
 
 abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) extends Parser(input, state) {
@@ -33,7 +34,8 @@ abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) 
 
   def syntaxErrors: Seq[CompilerMessage] = this.syntaxErrorList.result
 
-  protected implicit def toPosition(token: Token): Position = new Position(line = token.getLine(), column = token.getCharPositionInLine())
+  protected implicit def toPosition(token: Token): OffsetPosition =
+    new OffsetPosition(token.getLine, token.getCharPositionInLine, token.asInstanceOf[CommonToken].getStartIndex, token.asInstanceOf[CommonToken].getStopIndex)
 
   protected implicit def anyToOption[A](value: A): Option[A] = Option(value)
 
@@ -267,7 +269,7 @@ abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) 
         // The start and end points come directly from the mismatched token.
         (e.token.asInstanceOf[CommonToken].getStartIndex(), e.token.asInstanceOf[CommonToken].getStopIndex() + 1)
     }
-    syntaxErrorList += new CompilerMessage(position = toPosition(e.token), message = mb.toString)
+    syntaxErrorList += new CompilerMessage(position = new RangePosition(e.token, startPoint, endPoint), message = mb.toString)
   }
 
   //The following code was taken from http://www.antlr.org/wiki/display/ANTLR3/Custom+Syntax+Error+Recovery
