@@ -33,7 +33,7 @@ trait GenericTest extends FunSuite with ShouldMatchers {
     if (directory.exists) directory.listFiles.foreach(_.delete())
 
     val result = VHDLCompiler.compileFileFromText(source, "testFile", configuration)
-    result.printErrors(new PrintWriter(System.out), Some(source.split('\n').toIndexedSeq))
+    result.printErrors(new PrintWriter(System.out))
     result.syntaxErrors.size should equal(0)
     result.semanticErrors.size should equal(0)
   }

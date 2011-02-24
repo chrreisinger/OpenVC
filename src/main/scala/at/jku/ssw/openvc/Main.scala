@@ -32,7 +32,6 @@ object Main {
         override def accept(dir: File, name: String): Boolean = (name.endsWith(".vhd") || name.endsWith(".vhdl")) && !name.endsWith("in.vhd")
       }
       val allVHDLFiles = listFiles(new File("""C:\Users\christian\Desktop\grlib-gpl-1.0.22-b4095\"""), filter, true)
-      def toLines(sourceFile: String) = scala.io.Source.fromFile(sourceFile).getLines().toIndexedSeq
       for (i <- 0 to 10) {
         val start = System.currentTimeMillis
         c.foreach {
@@ -40,7 +39,7 @@ object Main {
             allVHDLFiles.foreach {
               file =>
                 val result = VHDLCompiler.compileFile(file.getAbsolutePath, configuration)
-                result.printErrors(new PrintWriter(System.out), Some(toLines(result.sourceFile)))
+                result.printErrors(new PrintWriter(System.out))
             }
         }
         println("time:" + (System.currentTimeMillis - start))
@@ -50,11 +49,10 @@ object Main {
       val (configurationOption, files) = parseCommandLineArguments(arguments)
       configurationOption.foreach {
         configuration =>
-          def toLines(sourceFile: String) = scala.io.Source.fromFile(sourceFile).getLines().toIndexedSeq
           val classFilter = new FilenameFilter() {
             override def accept(dir: File, name: String): Boolean = name.endsWith(".class")
           }
-          files.map(file => VHDLCompiler.compileFile(file, configuration)).foreach(result => result.printErrors(new PrintWriter(System.out), Some(toLines(result.sourceFile))))
+          files.map(file => VHDLCompiler.compileFile(file, configuration)).foreach(result => result.printErrors(new PrintWriter(System.out)))
           Simulator.loadFiles(this.getClass.getClassLoader, configuration.outputDirectory, listFiles(new File(configuration.libraryOutputDirectory), classFilter, true).map(file => file.getPath.substring(file.getPath.indexOf('\\') + 1).split('.').head.replace('\\', '.')), List("std.jar", "ieee.jar"))
           Simulator.runClass(this.getClass.getClassLoader, configuration.outputDirectory, configuration.designLibrary + ".alu_tb_body", "main$1106182723", List("std.jar", "ieee.jar"))
       }
