@@ -18,7 +18,7 @@
 
 package at.jku.ssw.openvc
 
-import at.jku.ssw.openvc.VHDLCompiler.Configuration
+import VHDLCompiler.Configuration
 import at.jku.ssw.openvs.VHDLRuntime.VHDLRuntimeException
 import at.jku.ssw.openvs.Simulator
 import java.io.{PrintWriter, FilenameFilter, File}

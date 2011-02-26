@@ -243,13 +243,14 @@ import at.jku.ssw.openvc.util.OffsetPosition
 package at.jku.ssw.openvc.parser
 
 import at.jku.ssw.openvc._
-import at.jku.ssw.openvc.ast._
-import at.jku.ssw.openvc.ast.concurrentStatements._
-import at.jku.ssw.openvc.ast.declarations._
-import at.jku.ssw.openvc.ast.expressions._
-import at.jku.ssw.openvc.ast.sequentialStatements._
-import at.jku.ssw.openvc.ast.ams._
-import at.jku.ssw.openvc.util._
+import ast._
+import ast.concurrentStatements._
+import ast.sequentialStatements._
+import ast.designUnits._
+import ast.declarativeItems._
+import ast.expressions._
+import ast.simultaneousStatements._
+import util._
 }
 
 sync [String message]

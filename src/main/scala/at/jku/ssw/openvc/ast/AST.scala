@@ -41,6 +41,11 @@ trait Locatable {
  */
 abstract sealed class ASTNode extends Locatable
 
+case object NoNode extends ASTNode with sequentialStatements.SequentialStatement with concurrentStatements.ConcurrentStatement with declarativeItems.DeclarativeItem with designUnits.ContextItem {
+  val position = NoPosition
+  val label = None
+}
+
 object Identifier {
   val NoIdentifier = Identifier("$NoIdentifier")
 
@@ -142,6 +147,8 @@ final class DiscreteRange(val rangeOrSubTypeIndication: Either[Range, SubTypeInd
 final case class SubTypeIndication(resolutionFunction: Option[SelectedName], typeName: SelectedName, constraint: Option[Either[Range, Seq[DiscreteRange]]], amsToleranceExpression: Option[Expression], dataType: DataType = NoType) extends Locatable {
   val position = resolutionFunction.getOrElse(typeName).position
 }
+
+final case class SubNatureIndication(natureMark: SelectedName, ranges: Option[Seq[DiscreteRange]], toleranceExpression: Option[Expression], acrossExpression: Option[Expression])
 
 /**
  * Represents a signature for a subprogram or a enumeration literal
@@ -266,7 +273,7 @@ object InterfaceList {
     val mode = Some(Mode.IN)
   }
 
-  final case class InterfaceTerminalDeclaration(identifiers: Seq[Identifier], subNature: ams.SubNatureIndication) extends AbstractInterfaceElement
+  final case class InterfaceTerminalDeclaration(identifiers: Seq[Identifier], subNature: SubNatureIndication) extends AbstractInterfaceElement
 
   final case class InterfaceQuantityDeclaration(identifiers: Seq[Identifier], mode: Option[InterfaceMode], subType: SubTypeIndication, expression: Option[Expression]) extends AbstractInterfaceElement
 
@@ -286,9 +293,543 @@ final class BindingIndication(val entityAspect: Option[Option[Either[(SelectedNa
 
 final class BlockConfigurationSpecification(val nameOrLabel: Either[SelectedName, (Identifier, Option[TripleEither[DiscreteRange, Identifier, Expression]])]) //SelectedName,(label,blockConfigureIndex)
 
-final class BlockConfiguration(val blockConfigSpec: BlockConfigurationSpecification, val useClauses: Seq[declarations.UseClause], val configurations: Seq[Either[BlockConfiguration, ComponentConfiguration]])
+final class BlockConfiguration(val blockConfigSpec: BlockConfigurationSpecification, val useClauses: Seq[designUnits.UseClause], val configurations: Seq[Either[BlockConfiguration, ComponentConfiguration]])
 
 final class ComponentConfiguration(val componentSpecification: ComponentSpecification, val bindingIndication: Option[BindingIndication], val blockConfiguration: Option[BlockConfiguration])
+
+final class BreakElement(val forQuantityName: Option[Name], val name: Name, val expression: Expression)
+
+package designUnits {
+
+import at.jku.ssw.openvc.ast.declarativeItems.DeclarativeItem
+import at.jku.ssw.openvc.symbolTable.symbols._
+import at.jku.ssw.openvc.ast.concurrentStatements.ConcurrentStatement
+
+sealed trait ContextItem extends ASTNode
+
+/**
+ * Represents a use clause
+ *
+ * grammar: <pre> '''USE''' selected_name_list; </pre>
+ *
+ * example: {{{ use ieee.std_logic_1164.all; std.standard.all; ieee.math_complex."+"; }}}
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.use_clause]]
+ * @param names the names of the symbols to import in the current scope of the symbol table
+ */
+final case class UseClause(position: Position, names: Seq[SelectedName]) extends declarativeItems.DeclarativeItem with ContextItem
+
+final case class LibraryClause(position: Position, libraries: Seq[Identifier]) extends ContextItem
+
+final case class ContextReference(position: Position, contexts: Seq[SelectedName]) extends ContextItem
+
+/**
+ * Represents a design file, a design file is the ast of the complete source file
+ *
+ * grammar: <pre> (design_unit)+ EOF </pre>
+ *
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.design_file]]
+ * @param designUnits the design units in this design file
+ */
+final case class DesignFile(designUnits: Seq[DesignUnit]) extends ASTNode {
+  lazy val position = designUnits.head.position
+}
+
+final case class DesignUnit(contextItems: Seq[ContextItem], libraryUnit: Option[LibraryUnit]) extends ASTNode {
+  lazy val position = contextItems.head.position
+}
+
+/**
+ * Base class for all library units
+ *
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.library_unit]]
+ */
+abstract sealed class LibraryUnit extends ASTNode {
+  val symbol: Symbol
+  val identifier: Identifier
+  val endIdentifier: Option[Identifier]
+}
+
+final case class ConfigurationDeclaration(position: Position, identifier: Identifier, declarativeItems: Seq[DeclarativeItem], entityName: SelectedName, blockConfiguration: BlockConfiguration,
+                                          endIdentifier: Option[Identifier], symbol: ConfigurationSymbol = null) extends LibraryUnit
+
+/**
+ * Represents a architecture body
+ *
+ * grammar: <pre>
+ * '''ARCHITECTURE''' identifier '''OF''' selected_name '''IS'''
+ *
+ * {block_declarative_item}
+ *
+ * '''BEGIN'''
+ *
+ * {concurrent_statement}
+ *
+ * '''END''' ['''ARCHITECTURE'''] [identifier];
+ *
+ * example: {{{
+ * architecture rtl of alu is
+ * begin
+ *  a<='0';
+ *  b<='1';
+ * end architecture rtl;
+ * }}}
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.architecture_body]]
+ * @param entityName the name of the entity to which this architecture body is associated
+ * @param concurrentStatements the concurrent statments in this architecture body
+ */
+final case class ArchitectureDeclaration(position: Position, identifier: Identifier, declarativeItems: Seq[DeclarativeItem], entityName: SelectedName,
+                                         concurrentStatements: Seq[ConcurrentStatement], endIdentifier: Option[Identifier],
+                                         symbol: ArchitectureSymbol = null) extends LibraryUnit
+
+final case class EntityDeclaration(position: Position, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], portInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]],
+                                   declarativeItems: Seq[DeclarativeItem], concurrentStatements: Seq[ConcurrentStatement], endIdentifier: Option[Identifier], symbol: EntitySymbol = null) extends LibraryUnit
+
+/**
+ * Represents a package declaration
+ *
+ * grammar: <pre>
+ * '''PACKAGE''' identifier '''IS'''
+ *
+ * 	[{vhdl2008}?=> generic_clause ;
+ *
+ *  [(generic_map_aspect ;)]]
+ *
+ * {package_body_declarative_item}
+ *
+ * '''END''' ['''PACKAGE'''] [identifier];
+ * </pre>
+ *
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.package_declaration]]
+ * @param genericInterfaceList TODO
+ * @param genericAssociationList TODO
+ */
+final case class PackageDeclaration(position: Position, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], genericAssociationList: Option[AssociationList], declarativeItems: Seq[DeclarativeItem], endIdentifier: Option[Identifier], symbol: PackageSymbol = null) extends LibraryUnit with DeclarativeItem
+
+/**
+ * Represents a package body declaration
+ *
+ * grammar: <pre>
+ * '''PACKAGE''' '''BODY''' identifier '''IS'''
+ *
+ * {package_body_declarative_item}
+ *
+ * '''END''' ['''PACKAGE''' '''BODY'''] [identifier];
+ * </pre>
+ *
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.package_body]]
+ */
+final case class PackageBodyDeclaration(position: Position, identifier: Identifier, declarativeItems: Seq[DeclarativeItem], endIdentifier: Option[Identifier], symbol: PackageSymbol = null) extends LibraryUnit with DeclarativeItem
+
+final case class PackageInstantiationDeclaration(position: Position, identifier: Identifier, packageName: SelectedName, genericAssociationList: Option[AssociationList], symbol: Symbol = NoSymbol) extends LibraryUnit with DeclarativeItem {
+  val endIdentifier: Option[Identifier] = None
+}
+
+final case class ContextDeclaration(position: Position, identifier: Identifier, contextItems: Seq[ContextItem], endIdentifier: Option[Identifier], symbol: ContextSymbol = null) extends LibraryUnit
+
+}
+
+package declarativeItems {
+
+import at.jku.ssw.openvc.ast.sequentialStatements.SequentialStatement
+import at.jku.ssw.openvc.symbolTable.symbols._
+import at.jku.ssw.openvc.symbolTable.dataTypes.ProtectedType
+
+/**
+ * Base class for all declarative items
+ *
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.entity_declarative_item]] ams_simultaneous_procedural_declarative_item
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.block_declarative_item]]
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.configuration_declarative_item]]
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.package_declarative_item]]
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.package_body_declarative_item]]
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.subprogram_declarative_item]]
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.protected_type_declarative_item]]
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.protected_type_body_declarative_item]]
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.process_declarative_item]]
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.ams_simultaneous_procedural_declarative_item]]
+ */
+sealed trait DeclarativeItem extends ASTNode
+
+object EntityClass extends Enumeration {
+  val ENTITY, ARCHITECTURE, CONFIGURATION, PACKAGE, PROCEDURE, FUNCTION, TYPE, SUBTYPE, CONSTANT, SIGNAL, VARIABLE, FILE, COMPONENT, LABEL,
+  LITERAL, UNITS, GROUP, NATURE, SUBNATURE, QUANTITY, TERMINAL = Value
+}
+
+final case class AliasDeclaration(position: Position, identifier: Identifier, subType: Option[SubTypeIndication], name: Expression, signature: Option[Signature], symbol: RuntimeSymbol = null) extends DeclarativeItem
+
+final case class AttributeSpecification(position: Position, identifier: Identifier, entityList: Either[Seq[(Identifier, Option[Signature])], Identifier], entityClass: EntityClass.Value, expression: Expression, symbol: ConstantSymbol = null) extends DeclarativeItem
+
+/**
+ * Represents a attribute declaration
+ *
+ * grammar: <pre> '''ATTRIBUTE''' identifier : type_mark; </pre>
+ *
+ * example: {{{ attribute myAttribute : string; }}}
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.attribute_declaration]]
+ * @param identifier the name of the attribute
+ * @param typeName the type of the attribute
+ */
+final case class AttributeDeclaration(position: Position, identifier: Identifier, typeName: SelectedName) extends DeclarativeItem
+
+/**
+ * Base class for all object declarations
+ *
+ * An object declaration declares an object of a specified type. Such an object is called an explicitly declared object.
+ *
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ */
+abstract sealed class ObjectDeclaration extends DeclarativeItem {
+  /**
+   * the names of the new objects
+   */
+  val identifiers: Seq[Identifier]
+  /**
+   * the type of the new objects
+   */
+  val subType: SubTypeIndication
+  /**
+   * the new created symbols for this declaration
+   */
+  val symbols: Seq[RuntimeSymbol]
+}
+
+/**
+ * Represents a variable declaration
+ *
+ * grammar: <pre> ['''SHARED'''] '''VARIABLE''' identifier_list : subtype_indication [:= expression]; </pre>
+ *
+ * example: {{{ variable i : INTEGER range 0 to 99 := 0; }}}
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.variable_declaration]]
+ * @param isShared true if this is a shared variable declaration
+ * @param initialValue the optional initial value of the variables
+ */
+final case class VariableDeclaration(position: Position, isShared: Boolean, identifiers: Seq[Identifier], subType: SubTypeIndication, initialValue: Option[Expression], symbols: Seq[RuntimeSymbol] = Seq())
+  extends ObjectDeclaration
+
+/**
+ * Represents a constant declaration
+ *
+ * grammar: <pre> '''CONSTANT''' identifier_list : subtype_indication [:= expression];  </pre>
+ *
+ * example: {{{ constant pi : real := 3.141592; }}}
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.constant_declaration]]
+ * @param value if None this are deferred constants else it specifies the value of the constants
+ */
+final case class ConstantDeclaration(position: Position, identifiers: Seq[Identifier], subType: SubTypeIndication, value: Option[Expression], symbols: Seq[RuntimeSymbol] = Seq())
+  extends ObjectDeclaration
+
+/**
+ * Represents a file declaration
+ *
+ * grammar: <pre> '''FILE''' identifier_list : subtype_indication [ ['''OPEN''' ''file_open_kind_''expression ] '''IS''' ''file_logical_name_''expression ]; </pre>
+ *
+ * example: {{{ file f : myFileType open write_mode is "test.dat"; }}}
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.file_declaration]]
+ * @param openKind the kind of the file (read_mode,write_mode or append_mode)
+ * @param logicalName the name of the file
+ */
+final case class FileDeclaration(position: Position, identifiers: Seq[Identifier], subType: SubTypeIndication, openKind: Option[Expression], logicalName: Option[Expression], symbols: Seq[RuntimeSymbol] = Seq())
+  extends ObjectDeclaration
+
+object SignalDeclaration {
+  type Type = Type.Value
+
+  object Type extends Enumeration {
+    val REGISTER, BUS = Value
+  }
+
+}
+
+final case class SignalDeclaration(position: Position, identifiers: Seq[Identifier], subType: SubTypeIndication, signalType: Option[SignalDeclaration.Type], defaultExpression: Option[Expression], symbols: Seq[RuntimeSymbol] = Seq())
+  extends ObjectDeclaration
+
+/**
+ * Represents a component declaration
+ *
+ * grammar: <pre>
+ * '''COMPONENT''' identifier '''IS'''
+ *
+ *    [generic_clause]
+ *
+ *    [port_clause]
+ *
+ * '''END''' '''COMPONENT''' [identifier];
+ * </pre>
+ *
+ * example:
+ * {{{
+ * component myComponent is
+ *    generic (a : integer; b : integer);
+ *    port(c : std_ulogic; d : std_ulogic);
+ * end component myComponent;
+ * }}}
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.component_declaration]]
+ * @param identifier the name of the component
+ * @param genericInterfaceList the generics of the component
+ * @param portInterfaceList the ports of the component
+ * @param endIdentifier the optional repeated name of the component
+ * @param symbol the symbol of the new declared component
+ */
+final case class ComponentDeclaration(position: Position, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], portInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], endIdentifier: Option[Identifier], symbol: ComponentSymbol = null)
+  extends DeclarativeItem
+
+/**
+ * Represents a subtype declaration
+ *
+ * grammar: <pre> '''SUBTYPE''' identifier '''IS''' subtype_indication; </pre>
+ *
+ * example: {{{ subtype myType is integer range 5 to 10; }}}
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.subtype_declaration]]
+ * @param identifier the name of the new subtype
+ * @param subType the the type of the new subtype
+ */
+final case class SubTypeDeclaration(position: Position, identifier: Identifier, subType: SubTypeIndication) extends DeclarativeItem
+
+abstract sealed class SubProgramDeclaration extends DeclarativeItem {
+  val identifier: Identifier
+  val parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]]
+  val genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]]
+  val genericAssociationList: Option[AssociationList]
+}
+
+final case class FunctionDeclaration(position: Position, isPure: Boolean, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], genericAssociationList: Option[AssociationList], parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], returnType: SelectedName, symbol: FunctionSymbol = null)
+  extends SubProgramDeclaration
+
+final case class ProcedureDeclaration(position: Position, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], genericAssociationList: Option[AssociationList], parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], symbol: ProcedureSymbol = null)
+  extends SubProgramDeclaration
+
+final case class SubprogramInstantiationDeclaration(position: Position, isProcedure: Boolean, identifier: Identifier, subprogramName: SelectedName, signature: Signature, genericAssociationList: Option[AssociationList]) extends DeclarativeItem
+
+abstract sealed class SubProgramDefinition extends DeclarativeItem {
+  val identifier: Identifier
+  val genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]]
+  val genericAssociationList: Option[AssociationList]
+  val parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]]
+  val symbol: SubprogramSymbol
+}
+
+final case class FunctionDefinition(position: Position, isPure: Boolean, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], genericAssociationList: Option[AssociationList],
+                                    parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], returnType: SelectedName,
+                                    declarativeItems: Seq[DeclarativeItem], sequentialStatements: Seq[SequentialStatement], endIdentifier: Option[Identifier],
+                                    localSymbols: Seq[Symbol] = Seq(), symbol: FunctionSymbol = null) extends SubProgramDefinition
+
+final case class ProcedureDefinition(position: Position, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], genericAssociationList: Option[AssociationList],
+                                     parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], declarativeItems: Seq[DeclarativeItem],
+                                     sequentialStatements: Seq[SequentialStatement], endIdentifier: Option[Identifier],
+                                     localSymbols: Seq[Symbol] = Seq(), symbol: ProcedureSymbol = null) extends SubProgramDefinition
+
+final case class ConfigurationSpecification(position: Position, componentSpecification: ComponentSpecification, bindingIndication: BindingIndication) extends DeclarativeItem
+
+final case class GroupDeclaration(position: Position, identifier: Identifier, groupTemplateName: SelectedName, constituents: Seq[Either[Name, Identifier]]) extends DeclarativeItem
+
+object GroupTemplateDeclaration {
+
+  final class EntityClassEntry(val entityClass: EntityClass.Value, val isInfinite: Boolean)
+
+}
+
+/**
+ * Represents a group template declaration
+ *
+ * grammar: <pre> '''GROUP''' identifier '''IS''' ( entity_class_entry {, entity_class_entry }  );
+ *
+ * entity_class_entry  : entity_class [BOX]
+ *
+ * </pre>
+ *
+ * example: {{{ group PIN2PIN is (signal, signal); }}}
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.group_template_declaration]]
+ * @param entries the entity class entires for this template
+ */
+final case class GroupTemplateDeclaration(position: Position, identifier: Identifier, entries: Seq[GroupTemplateDeclaration.EntityClassEntry]) extends DeclarativeItem
+
+final case class DisconnectionSpecification(position: Position, signalListOrIdentifier: Either[Seq[SelectedName], Identifier], typeName: SelectedName, timeExpression: Expression) extends DeclarativeItem
+
+final case class TerminalDeclaration(position: Position, identifiers: Seq[Identifier], subNature: SubNatureIndication) extends DeclarativeItem
+
+final case class SubNatureDeclaration(position: Position, identifier: Identifier, subNature: SubNatureIndication) extends DeclarativeItem
+
+final case class StepLimitSpecification(position: Position, signalListOrIdentifier: Either[Seq[SelectedName], Identifier], typeName: SelectedName, withExpression: Expression) extends DeclarativeItem
+
+/**
+ * Base class for all type declarations
+ *
+ * grammar: <pre> '''TYPE''' identifier ['''IS''' type_definition]
+ *
+ * where type_definition is :
+ *
+enumeration_type_definition
+
+	| physical_type_definition
+
+	| integer_or_floating_point_type_definition
+
+	| array_type_definition
+
+	| record_type_definition
+
+	| access_type_definition
+
+	| file_type_definition
+
+	| protected_type_body
+
+	| protected_type_declaration
+ *  </pre>
+ *
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.type_declaration]]
+ */
+abstract sealed class AbstractTypeDeclaration extends DeclarativeItem {
+  /**
+   * the name of the new type
+   */
+  val identifier: Identifier
+  /**
+   * dataType is the new created type
+   */
+  val dataType: DataType
+}
+
+/**
+ * Represents a incomplete type declaration
+ *
+ * example: {{{ type myType; }}}
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ */
+final case class IncompleteTypeDeclaration(position: Position, identifier: Identifier, dataType: DataType = NoType) extends AbstractTypeDeclaration
+
+/**
+ * Represents a integer or real type definition
+ *
+ * grammar: <pre> '''TYPE''' identifier '''IS''' '''RANGE''' range </pre>
+ *
+ * example: {{{ type myInteger is range 0 to 10; }}} {{{ type myInteger is range a'range }}}
+ *
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.integer_or_floating_point_type_definition]]
+ * @param range the range of the new integer or real type
+ */
+final case class IntegerOrFloatingPointTypeDefinition(position: Position, identifier: Identifier, range: Range, dataType: DataType = NoType) extends AbstractTypeDeclaration
+
+/**
+ * Represents a file type definition
+ *
+ * grammar: <pre> '''TYPE''' identifier '''IS''' '''ACCESS''' subtype_indication </pre>
+ *
+ * example: {{{ type myAcces is integer; }}}
+ *
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.access_type_definition]]
+ * @param subType the type of the access type
+ */
+final case class AccessTypeDefinition(position: Position, identifier: Identifier, subType: SubTypeIndication, dataType: DataType = NoType) extends AbstractTypeDeclaration
+
+object RecordTypeDefinition {
+
+  final class Element(val identifiers: Seq[Identifier], val subType: SubTypeIndication)
+
+}
+
+final case class RecordTypeDefinition(position: Position, identifier: Identifier, elements: Seq[RecordTypeDefinition.Element], endIdentifier: Option[Identifier], dataType: DataType = NoType) extends AbstractTypeDeclaration
+
+object PhysicalTypeDefinition {
+
+  final class Element(val identifier: Identifier, val literal: expressions.PhysicalLiteral)
+
+}
+
+final case class PhysicalTypeDefinition(position: Position, identifier: Identifier, range: Range, baseIdentifier: Identifier, elements: Seq[PhysicalTypeDefinition.Element], endIdentifier: Option[Identifier], dataType: DataType = NoType) extends AbstractTypeDeclaration
+
+/**
+ * Represents a file type definition
+ *
+ * grammar: <pre> '''TYPE''' identifier '''IS''' '''FILE''' '''OF''' type_mark </pre>
+ *
+ * example: {{{ type myFile is file of integer; }}}
+ *
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.file_type_definition]]
+ * @param typeName the type of the file
+ */
+final case class FileTypeDefinition(position: Position, identifier: Identifier, typeName: SelectedName, dataType: DataType = NoType) extends AbstractTypeDeclaration
+
+/**
+ * Represents a array type definition
+ *
+ * grammar: <pre> '''TYPE''' identifier '''IS''' '''ARRAY''' (
+ *
+ * ( index_subtype_definition {, index_subtype_definition} )
+ *
+ * | index_constraint
+ *
+ * ) '''OF''' subtype_indication
+ *
+ * index_subtype_definition : type_mark '''RANGE''' <>
+ *
+ * </pre>
+ *
+ * example: {{{ type myArray is array (integer RANGE <>, integer RANGE <> ) of integer; }}} {{{ type myArray is array (0 to 10, 20 to 30) of real; }}}
+ *
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.array_type_definition]]
+ * @param dimensions the information about the dimension of the array type
+ */
+final case class ArrayTypeDefinition(position: Position, identifier: Identifier, dimensions: Either[Seq[SelectedName], Seq[DiscreteRange]], subType: SubTypeIndication, dataType: DataType = NoType) extends AbstractTypeDeclaration
+
+/**
+ * Represents a enumeration type definition
+ *
+ * grammar: <pre> '''TYPE''' identifier '''IS''' ( enumeration_literal {, enumeration_literal} ) </pre>
+ *
+ * example: {{{ type myEnum is ('0', '1', 'H', 'L'); }}}
+ *
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.parser.VHDLParser.enumeration_type_definition]]
+ * @param elements the different enumeration values
+ */
+final case class EnumerationTypeDefinition(position: Position, identifier: Identifier, elements: Seq[Identifier], dataType: DataType = NoType) extends AbstractTypeDeclaration
+
+final case class ProtectedTypeBodyDeclaration(position: Position, identifier: Identifier, declarativeItems: Seq[DeclarativeItem], endIdentifier: Option[Identifier], dataType: DataType = NoType, header: ProtectedType = null) extends AbstractTypeDeclaration
+
+final case class ProtectedTypeDeclaration(position: Position, identifier: Identifier, declarativeItems: Seq[DeclarativeItem], endIdentifier: Option[Identifier], dataType: DataType = NoType) extends AbstractTypeDeclaration
+
+final case class ScalarNatureDefinition(position: Position, identifier: Identifier, typeName: SelectedName, acrossType: SelectedName, throughIdentifier: Identifier, dataType: DataType = NoType) extends declarativeItems.AbstractTypeDeclaration
+
+final case class ArrayNatureTypeDefinition(position: Position, identifier: Identifier, dimensions: Either[Seq[SelectedName], Seq[DiscreteRange]], subNature: SubNatureIndication, dataType: DataType = NoType) extends declarativeItems.AbstractTypeDeclaration
+
+object RecordNatureDefinition {
+
+  final class Element(val identifiers: Seq[Identifier], val subNature: SubNatureIndication)
+
+}
+
+final case class RecordNatureDefinition(position: Position, identifier: Identifier, elements: Seq[RecordNatureDefinition.Element], endIdentifier: Option[Identifier], dataType: DataType = NoType) extends declarativeItems.AbstractTypeDeclaration
+
+abstract sealed class AbstractQuantityDeclaration extends declarativeItems.DeclarativeItem
+
+final case class FreeQuantityDeclaration(position: Position, identifiers: Seq[Identifier], subType: SubTypeIndication, expression: Option[Expression]) extends AbstractQuantityDeclaration
+
+final case class BranchQuantityDeclaration(position: Position, acrossAspect: Option[(Seq[Identifier], Option[Expression], Option[Expression])], throughAspect: Option[(Seq[Identifier], Option[Expression], Option[Expression])],
+                                           terminalAspect: Option[(Name, Option[Name])]) extends AbstractQuantityDeclaration
+
+final case class SourceQuantityDeclaration(position: Position, identifiers: Seq[Identifier], subType: SubTypeIndication, sourceAspect: Either[(Expression, Expression), Expression]) extends AbstractQuantityDeclaration
+
+}
 
 package sequentialStatements {
 
@@ -300,7 +841,7 @@ import at.jku.ssw.openvc.symbolTable.symbols.{SignalSymbol, ConstantSymbol, Proc
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.sequential_statement]]
  */
-abstract sealed class SequentialStatement extends ASTNode {
+sealed trait SequentialStatement extends ASTNode {
   /**
    * the optional label for this sequential statement
    */
@@ -699,13 +1240,14 @@ object IfStatement {
  */
 final case class IfStatement(position: Position, label: Option[Identifier], ifThenList: Seq[IfStatement.IfThenPart], elseSequentialStatements: Option[Seq[SequentialStatement]], endLabel: Option[Identifier]) extends SequentialStatement
 
-final case class AMSBreakStatement(position: Position, label: Option[Identifier], elements: Seq[ams.BreakElement], whenExpression: Option[Expression]) extends SequentialStatement
+final case class AMSBreakStatement(position: Position, label: Option[Identifier], elements: Seq[BreakElement], whenExpression: Option[Expression]) extends SequentialStatement
 
 }
 
 package concurrentStatements {
 
 import at.jku.ssw.openvc.symbolTable.symbols.{ConstantSymbol, Symbol, ProcessSymbol}
+import declarativeItems.DeclarativeItem
 
 /**
  * Base class for all concurrent statements
@@ -713,7 +1255,7 @@ import at.jku.ssw.openvc.symbolTable.symbols.{ConstantSymbol, Symbol, ProcessSym
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.concurrent_statement]]
  */
-abstract sealed class ConcurrentStatement extends ASTNode {
+sealed trait ConcurrentStatement extends ASTNode {
   /**
    * the optional label for this concurrent statement
    */
@@ -896,27 +1438,27 @@ final case class ConcurrentProcedureCallStatement(label: Option[Identifier], isP
  */
 final case class ConcurrentAssertionStatement(position: Position, label: Option[Identifier], isPostponed: Boolean, condition: Expression, reportExpression: Option[Expression], severityExpression: Option[Expression]) extends ConcurrentStatement
 
-sealed trait GenerateStatement
+sealed trait GenerateStatement extends ConcurrentStatement
 
 object IfGenerateStatement {
 
-  final case class IfThenPart(val label: Option[Identifier], val condition: Expression, val declarativeItems: Seq[declarations.DeclarativeItem], val concurrentStatements: Seq[ConcurrentStatement], val endLabel: Option[Identifier])
+  final case class IfThenPart(label: Option[Identifier], condition: Expression, declarativeItems: Seq[DeclarativeItem], concurrentStatements: Seq[ConcurrentStatement], endLabel: Option[Identifier])
 
 }
 
 final case class IfGenerateStatement(position: Position, label: Option[Identifier], ifThenList: Seq[IfGenerateStatement.IfThenPart], elsePart: Option[IfGenerateStatement.IfThenPart], endLabel: Option[Identifier])
-  extends ConcurrentStatement with GenerateStatement
+  extends GenerateStatement
 
-final case class ForGenerateStatement(position: Position, label: Option[Identifier], loopIdentifier: Identifier, discreteRange: DiscreteRange, declarativeItems: Seq[declarations.DeclarativeItem],
-                                      concurrentStatements: Seq[ConcurrentStatement], alternativeEndLabel: Option[Identifier], endLabel: Option[Identifier], symbol: ConstantSymbol = null) extends ConcurrentStatement with GenerateStatement
+final case class ForGenerateStatement(position: Position, label: Option[Identifier], loopIdentifier: Identifier, discreteRange: DiscreteRange, declarativeItems: Seq[DeclarativeItem],
+                                      concurrentStatements: Seq[ConcurrentStatement], alternativeEndLabel: Option[Identifier], endLabel: Option[Identifier], symbol: ConstantSymbol = null) extends GenerateStatement
 
 object CaseGenerateStatement {
 
-  final class When(val label: Option[Identifier], val choices: Seq[Choices.Choice], val declarativeItems: Seq[declarations.DeclarativeItem], val concurrentStatements: Seq[ConcurrentStatement], val endLabel: Option[Identifier])
+  final class When(val label: Option[Identifier], val choices: Seq[Choices.Choice], val declarativeItems: Seq[DeclarativeItem], val concurrentStatements: Seq[ConcurrentStatement], val endLabel: Option[Identifier])
 
 }
 
-final case class CaseGenerateStatement(position: Position, label: Option[Identifier], expression: Expression, alternatives: Seq[CaseGenerateStatement.When], endLabel: Option[Identifier]) extends ConcurrentStatement with GenerateStatement
+final case class CaseGenerateStatement(position: Position, label: Option[Identifier], expression: Expression, alternatives: Seq[CaseGenerateStatement.When], endLabel: Option[Identifier]) extends GenerateStatement
 
 object ComponentInstantiationStatement {
   type ComponentType = ComponentType.Value
@@ -930,516 +1472,22 @@ object ComponentInstantiationStatement {
 final case class ComponentInstantiationStatement(position: Position, label: Option[Identifier], componentType: ComponentInstantiationStatement.ComponentType, name: SelectedName, architectureIdentifier: Option[Identifier],
                                                  genericAssociationList: Option[AssociationList], portAssociationList: Option[AssociationList], symbol: Symbol = null) extends ConcurrentStatement
 
-final case class ProcessStatement(position: Position, label: Option[Identifier], isPostponed: Boolean, sensitivityList: Option[Seq[Name]], declarativeItems: Seq[declarations.DeclarativeItem],
+final case class ProcessStatement(position: Position, label: Option[Identifier], isPostponed: Boolean, sensitivityList: Option[Seq[Name]], declarativeItems: Seq[DeclarativeItem],
                                   sequentialStatements: Seq[at.jku.ssw.openvc.ast.sequentialStatements.SequentialStatement], endLabel: Option[Identifier],
                                   localSymbols: Seq[Symbol] = Seq(), symbol: ProcessSymbol = null) extends ConcurrentStatement
 
 final case class BlockStatement(position: Position, label: Option[Identifier], guardExpression: Option[Expression], genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]],
                                 genericAssociationList: Option[AssociationList], portInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], portAssociationList: Option[AssociationList],
-                                declarativeItems: Seq[declarations.DeclarativeItem], concurrentStatements: Seq[ConcurrentStatement], endLabel: Option[Identifier]) extends ConcurrentStatement
+                                declarativeItems: Seq[DeclarativeItem], concurrentStatements: Seq[ConcurrentStatement], endLabel: Option[Identifier]) extends ConcurrentStatement
 
-final case class ConcurrentBreakStatement(position: Position, label: Option[Identifier], breakElements: Option[Seq[ams.BreakElement]], onNameList: Option[Seq[Name]], whenExpression: Option[Expression]) extends ConcurrentStatement
-
-}
-
-package declarations {
-
-import at.jku.ssw.openvc.symbolTable.symbols._
-import concurrentStatements.ConcurrentStatement
-import at.jku.ssw.openvc.symbolTable.dataTypes.ProtectedType
-
-/**
- * Base class for all declarative items
- *
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.entity_declarative_item]] ams_simultaneous_procedural_declarative_item
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.block_declarative_item]]
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.configuration_declarative_item]]
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.package_declarative_item]]
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.package_body_declarative_item]]
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.subprogram_declarative_item]]
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.protected_type_declarative_item]]
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.protected_type_body_declarative_item]]
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.process_declarative_item]]
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.ams_simultaneous_procedural_declarative_item]]
- */
-sealed trait DeclarativeItem extends ASTNode
-
-object EntityClass extends Enumeration {
-  val ENTITY, ARCHITECTURE, CONFIGURATION, PACKAGE, PROCEDURE, FUNCTION, TYPE, SUBTYPE, CONSTANT, SIGNAL, VARIABLE, FILE, COMPONENT, LABEL,
-  LITERAL, UNITS, GROUP, NATURE, SUBNATURE, QUANTITY, TERMINAL = Value
-}
-
-final case class AliasDeclaration(position: Position, identifier: Identifier, subType: Option[SubTypeIndication], name: Expression, signature: Option[Signature], symbol: RuntimeSymbol = null) extends DeclarativeItem
-
-final case class AttributeSpecification(position: Position, identifier: Identifier, entityList: Either[Seq[(Identifier, Option[Signature])], Identifier], entityClass: EntityClass.Value, expression: Expression, symbol: ConstantSymbol = null) extends DeclarativeItem
-
-/**
- * Represents a attribute declaration
- *
- * grammar: <pre> '''ATTRIBUTE''' identifier : type_mark; </pre>
- *
- * example: {{{ attribute myAttribute : string; }}}
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.attribute_declaration]]
- * @param identifier the name of the attribute
- * @param typeName the type of the attribute
- */
-final case class AttributeDeclaration(position: Position, identifier: Identifier, typeName: SelectedName) extends DeclarativeItem
-
-/**
- * Base class for all object declarations
- *
- * An object declaration declares an object of a specified type. Such an object is called an explicitly declared object.
- *
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- */
-abstract sealed class ObjectDeclaration extends DeclarativeItem {
-  /**
-   * the names of the new objects
-   */
-  val identifiers: Seq[Identifier]
-  /**
-   * the type of the new objects
-   */
-  val subType: SubTypeIndication
-  /**
-   * the new created symbols for this declaration
-   */
-  val symbols: Seq[RuntimeSymbol]
-}
-
-/**
- * Represents a variable declaration
- *
- * grammar: <pre> ['''SHARED'''] '''VARIABLE''' identifier_list : subtype_indication [:= expression]; </pre>
- *
- * example: {{{ variable i : INTEGER range 0 to 99 := 0; }}}
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.variable_declaration]]
- * @param isShared true if this is a shared variable declaration
- * @param initialValue the optional initial value of the variables
- */
-final case class VariableDeclaration(position: Position, isShared: Boolean, identifiers: Seq[Identifier], subType: SubTypeIndication, initialValue: Option[Expression], symbols: Seq[RuntimeSymbol] = Seq())
-  extends ObjectDeclaration
-
-/**
- * Represents a constant declaration
- *
- * grammar: <pre> '''CONSTANT''' identifier_list : subtype_indication [:= expression];  </pre>
- *
- * example: {{{ constant pi : real := 3.141592; }}}
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.constant_declaration]]
- * @param value if None this are deferred constants else it specifies the value of the constants
- */
-final case class ConstantDeclaration(position: Position, identifiers: Seq[Identifier], subType: SubTypeIndication, value: Option[Expression], symbols: Seq[RuntimeSymbol] = Seq())
-  extends ObjectDeclaration
-
-/**
- * Represents a file declaration
- *
- * grammar: <pre> '''FILE''' identifier_list : subtype_indication [ ['''OPEN''' ''file_open_kind_''expression ] '''IS''' ''file_logical_name_''expression ]; </pre>
- *
- * example: {{{ file f : myFileType open write_mode is "test.dat"; }}}
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.file_declaration]]
- * @param openKind the kind of the file (read_mode,write_mode or append_mode)
- * @param logicalName the name of the file
- */
-final case class FileDeclaration(position: Position, identifiers: Seq[Identifier], subType: SubTypeIndication, openKind: Option[Expression], logicalName: Option[Expression], symbols: Seq[RuntimeSymbol] = Seq())
-  extends ObjectDeclaration
-
-object SignalDeclaration {
-  type Type = Type.Value
-
-  object Type extends Enumeration {
-    val REGISTER, BUS = Value
-  }
+final case class ConcurrentBreakStatement(position: Position, label: Option[Identifier], breakElements: Option[Seq[BreakElement]], onNameList: Option[Seq[Name]], whenExpression: Option[Expression]) extends ConcurrentStatement
 
 }
 
-final case class SignalDeclaration(position: Position, identifiers: Seq[Identifier], subType: SubTypeIndication, signalType: Option[SignalDeclaration.Type], defaultExpression: Option[Expression], symbols: Seq[RuntimeSymbol] = Seq())
-  extends ObjectDeclaration
+package simultaneousStatements {
 
-/**
- * Represents a component declaration
- *
- * grammar: <pre>
- * '''COMPONENT''' identifier '''IS'''
- *
- *    [generic_clause]
- *
- *    [port_clause]
- *
- * '''END''' '''COMPONENT''' [identifier];
- * </pre>
- *
- * example:
- * {{{
- * component myComponent is
- *    generic (a : integer; b : integer);
- *    port(c : std_ulogic; d : std_ulogic);
- * end component myComponent;
- * }}}
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.component_declaration]]
- * @param identifier the name of the component
- * @param genericInterfaceList the generics of the component
- * @param portInterfaceList the ports of the component
- * @param endIdentifier the optional repeated name of the component
- * @param symbol the symbol of the new declared component
- */
-final case class ComponentDeclaration(position: Position, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], portInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], endIdentifier: Option[Identifier], symbol: ComponentSymbol = null)
-  extends DeclarativeItem
-
-/**
- * Represents a subtype declaration
- *
- * grammar: <pre> '''SUBTYPE''' identifier '''IS''' subtype_indication; </pre>
- *
- * example: {{{ subtype myType is integer range 5 to 10; }}}
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.subtype_declaration]]
- * @param identifier the name of the new subtype
- * @param subType the the type of the new subtype
- */
-final case class SubTypeDeclaration(position: Position, identifier: Identifier, subType: SubTypeIndication) extends DeclarativeItem
-
-abstract sealed class SubProgramDeclaration extends DeclarativeItem {
-  val identifier: Identifier
-  val parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]]
-  val genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]]
-  val genericAssociationList: Option[AssociationList]
-}
-
-final case class FunctionDeclaration(position: Position, isPure: Boolean, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], genericAssociationList: Option[AssociationList], parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], returnType: SelectedName, symbol: FunctionSymbol = null)
-  extends SubProgramDeclaration
-
-final case class ProcedureDeclaration(position: Position, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], genericAssociationList: Option[AssociationList], parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], symbol: ProcedureSymbol = null)
-  extends SubProgramDeclaration
-
-sealed trait ContextItem extends ASTNode
-
-/**
- * Represents a use clause
- *
- * grammar: <pre> '''USE''' selected_name_list; </pre>
- *
- * example: {{{ use ieee.std_logic_1164.all; std.standard.all; ieee.math_complex."+"; }}}
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.use_clause]]
- * @param names the names of the symbols to import in the current scope of the symbol table
- */
-final case class UseClause(position: Position, names: Seq[SelectedName]) extends DeclarativeItem with ContextItem
-
-final case class LibraryClause(position: Position, libraries: Seq[Identifier]) extends ContextItem
-
-final case class ContextReference(position: Position, contexts: Seq[SelectedName]) extends ContextItem
-
-/**
- * Represents a design file, a design file is the ast of the complete source file
- *
- * grammar: <pre> (design_unit)+ EOF </pre>
- *
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.design_file]]
- * @param designUnits the design units in this design file
- */
-final case class DesignFile(designUnits: Seq[DesignUnit]) extends ASTNode {
-  lazy val position = designUnits.head.position
-}
-
-final case class DesignUnit(contextItems: Seq[ContextItem], libraryUnit: Option[LibraryUnit]) extends ASTNode {
-  lazy val position = contextItems.head.position
-}
-
-/**
- * Base class for all library units
- *
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.library_unit]]
- */
-abstract sealed class LibraryUnit extends ASTNode {
-  val symbol: Symbol
-  val identifier: Identifier
-  val endIdentifier: Option[Identifier]
-}
-
-final case class ConfigurationDeclaration(position: Position, identifier: Identifier, declarativeItems: Seq[DeclarativeItem], entityName: SelectedName, blockConfiguration: BlockConfiguration,
-                                          endIdentifier: Option[Identifier], symbol: ConfigurationSymbol = null) extends LibraryUnit
-
-/**
- * Represents a architecture body
- *
- * grammar: <pre>
- * '''ARCHITECTURE''' identifier '''OF''' selected_name '''IS'''
- *
- * {block_declarative_item}
- *
- * '''BEGIN'''
- *
- * {concurrent_statement}
- *
- * '''END''' ['''ARCHITECTURE'''] [identifier];
- *
- * example: {{{
- * architecture rtl of alu is
- * begin
- *  a<='0';
- *  b<='1';
- * end architecture rtl;
- * }}}
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.architecture_body]]
- * @param entityName the name of the entity to which this architecture body is associated
- * @param concurrentStatements the concurrent statments in this architecture body
- */
-final case class ArchitectureDeclaration(position: Position, identifier: Identifier, declarativeItems: Seq[DeclarativeItem], entityName: SelectedName,
-                                         concurrentStatements: Seq[ConcurrentStatement], endIdentifier: Option[Identifier],
-                                         symbol: ArchitectureSymbol = null) extends LibraryUnit
-
-final case class EntityDeclaration(position: Position, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], portInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]],
-                                   declarativeItems: Seq[DeclarativeItem], concurrentStatements: Seq[ConcurrentStatement], endIdentifier: Option[Identifier], symbol: EntitySymbol = null) extends LibraryUnit
-
-/**
- * Represents a package declaration
- *
- * grammar: <pre>
- * '''PACKAGE''' identifier '''IS'''
- *
- * 	[{vhdl2008}?=> generic_clause ;
- *
- *  [(generic_map_aspect ;)]]
- *
- * {package_body_declarative_item}
- *
- * '''END''' ['''PACKAGE'''] [identifier];
- * </pre>
- *
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.package_declaration]]
- * @param genericInterfaceList TODO
- * @param genericAssociationList TODO
- */
-final case class PackageDeclaration(position: Position, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], genericAssociationList: Option[AssociationList], declarativeItems: Seq[DeclarativeItem], endIdentifier: Option[Identifier], symbol: PackageSymbol = null) extends LibraryUnit with DeclarativeItem
-
-/**
- * Represents a package body declaration
- *
- * grammar: <pre>
- * '''PACKAGE''' '''BODY''' identifier '''IS'''
- *
- * {package_body_declarative_item}
- *
- * '''END''' ['''PACKAGE''' '''BODY'''] [identifier];
- * </pre>
- *
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.package_body]]
- */
-final case class PackageBodyDeclaration(position: Position, identifier: Identifier, declarativeItems: Seq[DeclarativeItem], endIdentifier: Option[Identifier], symbol: PackageSymbol = null) extends LibraryUnit with DeclarativeItem
-
-final case class PackageInstantiationDeclaration(position: Position, identifier: Identifier, packageName: SelectedName, genericAssociationList: Option[AssociationList], symbol: Symbol = NoSymbol) extends LibraryUnit with DeclarativeItem {
-  val endIdentifier: Option[Identifier] = None
-}
-
-final case class ContextDeclaration(position: Position, identifier: Identifier, contextItems: Seq[ContextItem], endIdentifier: Option[Identifier], symbol: ContextSymbol = null) extends LibraryUnit
-
-final case class SubprogramInstantiationDeclaration(position: Position, isProcedure: Boolean, identifier: Identifier, subprogramName: SelectedName, signature: Signature, genericAssociationList: Option[AssociationList]) extends DeclarativeItem
-
-abstract sealed class SubProgramDefinition extends DeclarativeItem {
-  val identifier: Identifier
-  val genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]]
-  val genericAssociationList: Option[AssociationList]
-  val parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]]
-  val symbol: SubprogramSymbol
-}
-
-final case class FunctionDefinition(position: Position, isPure: Boolean, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], genericAssociationList: Option[AssociationList],
-                                    parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], returnType: SelectedName,
-                                    declarativeItems: Seq[DeclarativeItem], sequentialStatements: Seq[at.jku.ssw.openvc.ast.sequentialStatements.SequentialStatement], endIdentifier: Option[Identifier],
-                                    localSymbols: Seq[Symbol] = Seq(), symbol: FunctionSymbol = null) extends SubProgramDefinition
-
-final case class ProcedureDefinition(position: Position, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], genericAssociationList: Option[AssociationList],
-                                     parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], declarativeItems: Seq[DeclarativeItem],
-                                     sequentialStatements: Seq[at.jku.ssw.openvc.ast.sequentialStatements.SequentialStatement], endIdentifier: Option[Identifier],
-                                     localSymbols: Seq[Symbol] = Seq(), symbol: ProcedureSymbol = null) extends SubProgramDefinition
-
-final case class ConfigurationSpecification(position: Position, componentSpecification: ComponentSpecification, bindingIndication: BindingIndication) extends DeclarativeItem
-
-final case class GroupDeclaration(position: Position, identifier: Identifier, groupTemplateName: SelectedName, constituents: Seq[Either[Name, Identifier]]) extends DeclarativeItem
-
-object GroupTemplateDeclaration {
-
-  final class EntityClassEntry(val entityClass: EntityClass.Value, val isInfinite: Boolean)
-
-}
-
-/**
- * Represents a group template declaration
- *
- * grammar: <pre> '''GROUP''' identifier '''IS''' ( entity_class_entry {, entity_class_entry }  );
- *
- * entity_class_entry  : entity_class [BOX]
- *
- * </pre>
- *
- * example: {{{ group PIN2PIN is (signal, signal); }}}
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.group_template_declaration]]
- * @param entries the entity class entires for this template
- */
-final case class GroupTemplateDeclaration(position: Position, identifier: Identifier, entries: Seq[GroupTemplateDeclaration.EntityClassEntry]) extends DeclarativeItem
-
-final case class DisconnectionSpecification(position: Position, signalListOrIdentifier: Either[Seq[SelectedName], Identifier], typeName: SelectedName, timeExpression: Expression) extends DeclarativeItem
-
-/**
- * Base class for all type declarations
- *
- * grammar: <pre> '''TYPE''' identifier ['''IS''' type_definition]
- *
- * where type_definition is :
- *
-enumeration_type_definition
-
-	| physical_type_definition
-
-	| integer_or_floating_point_type_definition
-
-	| array_type_definition
-
-	| record_type_definition
-
-	| access_type_definition
-
-	| file_type_definition
-
-	| protected_type_body
-
-	| protected_type_declaration
- *  </pre>
- *
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.type_declaration]]
- */
-abstract sealed class AbstractTypeDeclaration extends DeclarativeItem {
-  /**
-   * the name of the new type
-   */
-  val identifier: Identifier
-  /**
-   * dataType is the new created type
-   */
-  val dataType: DataType
-}
-
-/**
- * Represents a incomplete type declaration
- *
- * example: {{{ type myType; }}}
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- */
-final case class IncompleteTypeDeclaration(position: Position, identifier: Identifier, dataType: DataType = NoType) extends AbstractTypeDeclaration
-
-/**
- * Represents a integer or real type definition
- *
- * grammar: <pre> '''TYPE''' identifier '''IS''' '''RANGE''' range </pre>
- *
- * example: {{{ type myInteger is range 0 to 10; }}} {{{ type myInteger is range a'range }}}
- *
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.integer_or_floating_point_type_definition]]
- * @param range the range of the new integer or real type
- */
-final case class IntegerOrFloatingPointTypeDefinition(position: Position, identifier: Identifier, range: Range, dataType: DataType = NoType) extends AbstractTypeDeclaration
-
-/**
- * Represents a file type definition
- *
- * grammar: <pre> '''TYPE''' identifier '''IS''' '''ACCESS''' subtype_indication </pre>
- *
- * example: {{{ type myAcces is integer; }}}
- *
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.access_type_definition]]
- * @param subType the type of the access type
- */
-final case class AccessTypeDefinition(position: Position, identifier: Identifier, subType: SubTypeIndication, dataType: DataType = NoType) extends AbstractTypeDeclaration
-
-object RecordTypeDefinition {
-
-  final class Element(val identifiers: Seq[Identifier], val subType: SubTypeIndication)
-
-}
-
-final case class RecordTypeDefinition(position: Position, identifier: Identifier, elements: Seq[RecordTypeDefinition.Element], endIdentifier: Option[Identifier], dataType: DataType = NoType) extends AbstractTypeDeclaration
-
-object PhysicalTypeDefinition {
-
-  final class Element(val identifier: Identifier, val literal: expressions.PhysicalLiteral)
-
-}
-
-final case class PhysicalTypeDefinition(position: Position, identifier: Identifier, range: Range, baseIdentifier: Identifier, elements: Seq[PhysicalTypeDefinition.Element], endIdentifier: Option[Identifier], dataType: DataType = NoType) extends AbstractTypeDeclaration
-
-/**
- * Represents a file type definition
- *
- * grammar: <pre> '''TYPE''' identifier '''IS''' '''FILE''' '''OF''' type_mark </pre>
- *
- * example: {{{ type myFile is file of integer; }}}
- *
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.file_type_definition]]
- * @param typeName the type of the file
- */
-final case class FileTypeDefinition(position: Position, identifier: Identifier, typeName: SelectedName, dataType: DataType = NoType) extends AbstractTypeDeclaration
-
-/**
- * Represents a array type definition
- *
- * grammar: <pre> '''TYPE''' identifier '''IS''' '''ARRAY''' (
- *
- * ( index_subtype_definition {, index_subtype_definition} )
- *
- * | index_constraint
- *
- * ) '''OF''' subtype_indication
- *
- * index_subtype_definition : type_mark '''RANGE''' <>
- *
- * </pre>
- *
- * example: {{{ type myArray is array (integer RANGE <>, integer RANGE <> ) of integer; }}} {{{ type myArray is array (0 to 10, 20 to 30) of real; }}}
- *
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.array_type_definition]]
- * @param dimensions the information about the dimension of the array type
- */
-final case class ArrayTypeDefinition(position: Position, identifier: Identifier, dimensions: Either[Seq[SelectedName], Seq[DiscreteRange]], subType: SubTypeIndication, dataType: DataType = NoType) extends AbstractTypeDeclaration
-
-/**
- * Represents a enumeration type definition
- *
- * grammar: <pre> '''TYPE''' identifier '''IS''' ( enumeration_literal {, enumeration_literal} ) </pre>
- *
- * example: {{{ type myEnum is ('0', '1', 'H', 'L'); }}}
- *
- * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.enumeration_type_definition]]
- * @param elements the different enumeration values
- */
-final case class EnumerationTypeDefinition(position: Position, identifier: Identifier, elements: Seq[Identifier], dataType: DataType = NoType) extends AbstractTypeDeclaration
-
-final case class ProtectedTypeBodyDeclaration(position: Position, identifier: Identifier, declarativeItems: Seq[DeclarativeItem], endIdentifier: Option[Identifier], dataType: DataType = NoType, header: ProtectedType = null) extends AbstractTypeDeclaration
-
-final case class ProtectedTypeDeclaration(position: Position, identifier: Identifier, declarativeItems: Seq[DeclarativeItem], endIdentifier: Option[Identifier], dataType: DataType = NoType) extends AbstractTypeDeclaration
-
-}
-
-package ams {
+import at.jku.ssw.openvc.ast.declarativeItems.DeclarativeItem
+import at.jku.ssw.openvc.ast.sequentialStatements.SequentialStatement
 
 abstract sealed class SimultaneousStatement extends concurrentStatements.ConcurrentStatement
 
@@ -1449,7 +1497,7 @@ final case class SimpleSimultaneousStatement(label: Option[Identifier], firstExp
   val position = firstExpression.position
 }
 
-final case class SimultaneousProceduralStatement(position: Position, label: Option[Identifier], declarativeItems: Seq[declarations.DeclarativeItem], sequentialStatements: Seq[at.jku.ssw.openvc.ast.sequentialStatements.SequentialStatement], endLabel: Option[Identifier]) extends SimultaneousStatement
+final case class SimultaneousProceduralStatement(position: Position, label: Option[Identifier], declarativeItems: Seq[DeclarativeItem], sequentialStatements: Seq[SequentialStatement], endLabel: Option[Identifier]) extends SimultaneousStatement
 
 object SimultaneousCaseStatement {
 
@@ -1467,37 +1515,6 @@ object SimultaneousIfStatement {
 
 final case class SimultaneousIfStatement(position: Position, label: Option[Identifier], ifUseList: Seq[SimultaneousIfStatement.IfUsePart],
                                          elseSimultaneousStatements: Option[Seq[SimultaneousStatement]], endLabel: Option[Identifier]) extends SimultaneousStatement
-
-final case class TerminalDeclaration(position: Position, identifiers: Seq[Identifier], subNature: SubNatureIndication) extends declarations.DeclarativeItem
-
-final case class SubNatureIndication(natureMark: SelectedName, ranges: Option[Seq[DiscreteRange]], toleranceExpression: Option[Expression], acrossExpression: Option[Expression])
-
-final case class SubNatureDeclaration(position: Position, identifier: Identifier, subNature: SubNatureIndication) extends declarations.DeclarativeItem
-
-final case class ScalarNatureDefinition(position: Position, identifier: Identifier, typeName: SelectedName, acrossType: SelectedName, throughIdentifier: Identifier, dataType: DataType = NoType) extends declarations.AbstractTypeDeclaration
-
-final case class ArrayNatureTypeDefinition(position: Position, identifier: Identifier, dimensions: Either[Seq[SelectedName], Seq[DiscreteRange]], subNature: SubNatureIndication, dataType: DataType = NoType) extends declarations.AbstractTypeDeclaration
-
-object RecordNatureDefinition {
-
-  final class Element(val identifiers: Seq[Identifier], val subNature: SubNatureIndication)
-
-}
-
-final case class RecordNatureDefinition(position: Position, identifier: Identifier, elements: Seq[RecordNatureDefinition.Element], endIdentifier: Option[Identifier], dataType: DataType = NoType) extends declarations.AbstractTypeDeclaration
-
-final class BreakElement(val forQuantityName: Option[Name], val name: Name, val expression: Expression)
-
-final case class StepLimitSpecification(position: Position, signalListOrIdentifier: Either[Seq[SelectedName], Identifier], typeName: SelectedName, withExpression: Expression) extends declarations.DeclarativeItem
-
-abstract sealed class AbstractQuantityDeclaration extends declarations.DeclarativeItem
-
-final case class FreeQuantityDeclaration(position: Position, identifiers: Seq[Identifier], subType: SubTypeIndication, expression: Option[Expression]) extends AbstractQuantityDeclaration
-
-final case class BranchQuantityDeclaration(position: Position, acrossAspect: Option[(Seq[Identifier], Option[Expression], Option[Expression])], throughAspect: Option[(Seq[Identifier], Option[Expression], Option[Expression])],
-                                           terminalAspect: Option[(Name, Option[Name])]) extends AbstractQuantityDeclaration
-
-final case class SourceQuantityDeclaration(position: Position, identifiers: Seq[Identifier], subType: SubTypeIndication, sourceAspect: Either[(Expression, Expression), Expression]) extends AbstractQuantityDeclaration
 
 }
 

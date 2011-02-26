@@ -145,7 +145,7 @@ abstract sealed class ScalarType extends DataType {
 
 @SerialVersionUID(-5746211454960179435L)
 //marker trait
-trait DiscreteType {
+sealed trait DiscreteType {
   val left: Int
   val right: Int
 }

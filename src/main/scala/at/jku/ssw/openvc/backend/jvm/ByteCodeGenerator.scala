@@ -25,7 +25,8 @@ import util._
 import ast._
 import ast.concurrentStatements._
 import ast.sequentialStatements._
-import ast.declarations._
+import ast.designUnits._
+import ast.declarativeItems._
 import ast.expressions._
 import symbolTable._
 import symbols._

@@ -22,11 +22,12 @@ import java.io.Serializable
 
 import collection.mutable
 
-import at.jku.ssw.openvc.ast.{Locatable, Identifier}
-import at.jku.ssw.openvc.ast.expressions.Expression
-import at.jku.ssw.openvc.ast.declarations.SignalDeclaration
-import at.jku.ssw.openvc.ast.InterfaceList.{InterfaceMode, Mode}
-import at.jku.ssw.openvc.ast.declarations.EntityClass.{Value => EntityClass}
+import at.jku.ssw.openvc.ast
+import ast.{Identifier,Locatable}
+import ast.InterfaceList.{InterfaceMode, Mode}
+import ast.expressions.Expression
+import ast.declarativeItems.SignalDeclaration
+import ast.declarativeItems.EntityClass.{Value => EntityClass}
 import at.jku.ssw.openvc.symbolTable.dataTypes.{PhysicalType, DataType, ScalarType, EnumerationType}
 import at.jku.ssw.openvc.symbolTable.{AbstractLibraryArchive, SymbolTable}
 

@@ -22,15 +22,17 @@ import scala.collection.{SortedMap, immutable}
 import math.Numeric.{LongIsIntegral, DoubleAsIfIntegral}
 import annotation.tailrec
 
-import at.jku.ssw.openvc.util._
-import at.jku.ssw.openvc.ast._
-import at.jku.ssw.openvc.ast.concurrentStatements._
-import at.jku.ssw.openvc.ast.sequentialStatements._
-import at.jku.ssw.openvc.ast.declarations._
-import at.jku.ssw.openvc.ast.expressions._
-import at.jku.ssw.openvc.symbolTable._
-import at.jku.ssw.openvc.symbolTable.dataTypes._
-import at.jku.ssw.openvc.symbolTable.symbols._
+import at.jku.ssw.openvc._
+import util._
+import ast._
+import ast.concurrentStatements._
+import ast.sequentialStatements._
+import ast.designUnits._
+import ast.declarativeItems._
+import ast.expressions._
+import symbolTable._
+import symbols._
+import dataTypes._
 
 import at.jku.ssw.openvc.VHDLCompiler.Configuration
 import at.jku.ssw.openvc.backend.jvm.ByteCodeGenerator.getNextIndex
@@ -1866,6 +1868,7 @@ object SemanticAnalyzer {
       case Seq() => context
       case Seq(contextItem, xs@_*) =>
         val newContext = contextItem match {
+          case NoNode => context
           case useClause: UseClause => visitUseClause(useClause, context)._2
           case LibraryClause(_, libraries) =>
             val librarySymbols = libraries.distinct.flatMap {

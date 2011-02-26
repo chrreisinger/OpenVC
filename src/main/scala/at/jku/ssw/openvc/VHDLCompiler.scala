@@ -18,7 +18,7 @@
 
 package at.jku.ssw.openvc
 
-import ast.declarations.DesignFile
+import ast.designUnits.DesignFile
 import util.{Position, NoPosition}
 
 final class CompilerMessage(val position: Position, val message: String) extends Ordered[CompilerMessage] {
