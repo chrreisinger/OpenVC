@@ -18,17 +18,17 @@
 
 package at.jku.ssw.openvc.parser
 
-import org.antlr.runtime._
+import org.antlr.runtime.{Parser => ANTLRParser, _}
 import at.jku.ssw.openvc.CompilerMessage
 import at.jku.ssw.openvc.ast.Identifier
 import at.jku.ssw.openvc.util.{OffsetPosition, RangePosition}
-import VHDLParser._
+import Parser._
 
-abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) extends Parser(input, state) {
+abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) extends ANTLRParser(input, state) {
   var ams = false
   var vhdl2008 = false
 
-  type Buffer[A] = scala.collection.immutable.VectorBuilder[A]//scala.collection.mutable.ListBuffer[A]
+  type Buffer[A] = scala.collection.immutable.VectorBuilder[A] //scala.collection.mutable.ListBuffer[A]
 
   protected val syntaxErrorList = new Buffer[CompilerMessage]()
 
@@ -234,7 +234,7 @@ abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) 
           (if (mte.token.getType() == Token.EOF) "hit the end of the file."
           else "saw " + getTokenErrorDisplay(e.token) + (getTokenType(tokenClass)))
         mb append
-          (if (tokenClass == TokenType.KeyWord && mte.expecting == VHDLParser.BASIC_IDENTIFIER) ".\n Perhaps you tried to use a keyword as the name of an object (use \\\\keyword if you need to do this)"
+          (if (tokenClass == TokenType.KeyWord && mte.expecting == Parser.BASIC_IDENTIFIER) ".\n Perhaps you tried to use a keyword as the name of an object (use \\\\keyword if you need to do this)"
           else if (mte.expecting != Token.EOF) ".\n Perhaps you are missing a '" + vhdlTokenNames(mte.expecting) + "'"
           else ".\n I was looking for the end of the file here")
 

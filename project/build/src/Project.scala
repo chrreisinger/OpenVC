@@ -23,16 +23,12 @@ final class Project(info: ProjectInfo) extends DefaultProject(info) with Eclipsi
   //http://code.google.com/p/sbt-rats/source/browse/src/RatsProject.scala
   //http://code.google.com/p/simple-build-tool/wiki/ProjectDefinitionExamples#Conditional_Task
 
-  lazy val grammarPath = mainScalaSourcePath / "at" / "jku" / "ssw" / "openvc" / "parser" / "VHDL.g"
-
-  lazy val grammarName = grammarPath.base
-
   //The directory in which the main module is stored.
-  lazy val dir = Path.fromFile(grammarPath.asFile.getParent)
+  lazy val grammarPath = mainScalaSourcePath / "at" / "jku" / "ssw" / "openvc" / "parser"
 
   //A task to delete the generated Antlr parser.
   lazy val cleanAntlr =
-    cleanTask((dir / (grammarName + "Lexer.scala")) +++ (dir / (grammarName + "Parser.scala"))) describedAs ("delete the generated Antlr parser and lexer")
+    cleanTask((grammarPath / ("Lexer.scala")) +++ (grammarPath / ("Parser.scala"))) describedAs ("delete the generated Antlr parser and lexer")
 
   /**
    * A task to run Antlr on the main parser module.  The generated parser and lexer
@@ -43,14 +39,13 @@ final class Project(info: ProjectInfo) extends DefaultProject(info) with Eclipsi
    */
   lazy val antlr = {
     val srcs = descendents(mainSourceRoots, "*.g")
-    val fmt = "java -cp %s org.antlr.Tool %s"
-    //Path of the generated parser
-    val parserPath = dir / (grammarName + "Parser.scala")
+    val fmt = "java -cp %s org.antlr.Tool %s %s"
     val classpath = Path.makeString(compileClasspath.get)
-    val cmd = fmt.format(classpath, grammarPath)
-    fileTask("Generate parser from " + grammarPath, parserPath from srcs) {
+    val cmd = fmt.format(classpath, grammarPath / ("Lexer.g"), grammarPath / ("Parser.g"))
+    fileTask("Generate parser from " + grammarPath, grammarPath / ("Parser.scala") from srcs) {
       if (cmd ! log == 0) {
-        FileUtilities.clean(dir / (grammarName + ".tokens"), log)
+        FileUtilities.clean(grammarPath / ("Parser.tokens"), log)
+        FileUtilities.clean(grammarPath / ("Lexer.tokens"), log)
       } else
         Some("Antlr! failed")
     } describedAs ("Generate Antlr parser and lexer")

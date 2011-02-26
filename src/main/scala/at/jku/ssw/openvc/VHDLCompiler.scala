@@ -30,7 +30,7 @@ final class CompilerMessage(val position: Position, val message: String) extends
 object ASTBuilder {
 
   import org.antlr.runtime.{CommonTokenStream, CharStream, ANTLRStringStream, ANTLRFileStream}
-  import at.jku.ssw.openvc.parser.{VHDLParser, VHDLLexer}
+  import at.jku.ssw.openvc.parser.{Parser, Lexer}
 
   type ASTResult = (SourceFile, DesignFile, Seq[CompilerMessage])
 
@@ -83,11 +83,11 @@ object ASTBuilder {
   }
 
   private def fromCharStream(stream: ANTLRStream, configuration: VHDLCompiler.Configuration): ASTResult = {
-    val lexer = new VHDLLexer(stream)
+    val lexer = new Lexer(stream)
     lexer.ams = configuration.amsEnabled
     lexer.vhdl2008 = configuration.vhdl2008
     val tokens = new CommonTokenStream(lexer)
-    val parser = new VHDLParser(tokens)
+    val parser = new Parser(tokens)
     parser.ams = configuration.amsEnabled
     parser.vhdl2008 = configuration.vhdl2008
     val designFile = parser.design_file()
