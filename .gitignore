@@ -14,3 +14,4 @@ vhdlSrc/*
 *.iws
 *~
 ! .gitkeep
+*.vhd
