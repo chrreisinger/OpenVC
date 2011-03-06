@@ -54,7 +54,7 @@ case object NoExpression extends Expression {
    */
   val dataType = NoType
   /**
-   * is always NoType
+   * is always NoPosition
    */
   val position = NoPosition
 }

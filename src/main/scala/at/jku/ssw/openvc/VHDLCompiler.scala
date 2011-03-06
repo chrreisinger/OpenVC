@@ -41,12 +41,28 @@ object ASTBuilder {
 
   final class ANTLRStream(val stringStream: ANTLRStringStream) extends SourceFile with CharStream {
 
-    //TODO change me to stringStream.getData when possible, to remove 2 Arrays.copyOf calls
-    lazy val content = stringStream.toString.toCharArray
+    val content = {
+      //data is protected, ANTLR should add a method to get the data field => use reflection
+      val data = try {
+        stringStream.getClass.getDeclaredField("data")
+      } catch {
+        case _: NoSuchFieldException => stringStream.getClass.getSuperclass.getDeclaredField("data")
+      }
+      data.setAccessible(true)
+      data.get(stringStream).asInstanceOf[Array[Char]]
+    }
+
+    lazy val contentAsString = {
+      //create a string and set the value,offset and count fields, so we avoid all array copy calls
+      //content and contentAsString share the same array
+      val constructor = classOf[String].getDeclaredConstructor(java.lang.Integer.TYPE, java.lang.Integer.TYPE, classOf[Array[Char]])
+      constructor.setAccessible(true)
+      constructor.newInstance(new java.lang.Integer(0), new java.lang.Integer(content.length), content)
+    }
+
+    def substring(start: Int, stop: Int): String = contentAsString.substring(start, stop + 1) //also no array copy
 
     //just forward all calls to the ANTLRStringStream
-    def substring(start: Int, stop: Int): String = stringStream.substring(start, stop)
-
     def LT(i: Int): Int = stringStream.LT(i)
 
     def getLine: Int = stringStream.getLine
@@ -59,11 +75,7 @@ object ASTBuilder {
 
     def consume: Unit = stringStream.consume
 
-    def LA(i: Int): Int = {
-      val laToken = stringStream.LA(i)
-      if (laToken == 0 || laToken == CharStream.EOF) laToken
-      else Character.toLowerCase(laToken)
-    }
+    def LA(i: Int): Int = Character.toLowerCase(stringStream.LA(i))
 
     def mark: Int = stringStream.mark
 
@@ -121,7 +133,7 @@ object VHDLCompiler {
         for (msg <- messages) {
           writer.println(prefix + sourceFile + ": line:" + msg.position.line + " col:" + msg.position.column + " " + msg.message)
           if (msg.position != NoPosition) {
-            writer.println(sourceLines(math.min(msg.position.line - 1, sourceLines.size - 1)).toLowerCase)
+            writer.println(sourceLines(math.min(msg.position.line - 1, sourceLines.size - 1)))
             writer.println((" " * msg.position.column) + "^")
           }
         }
