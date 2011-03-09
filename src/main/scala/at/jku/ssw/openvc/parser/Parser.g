@@ -19,7 +19,7 @@
 parser grammar Parser;
 
 options{
-	language=Java;
+	language=Scala;
 	memoize=true;
 	superClass=AbstractParser;
 	tokenVocab=Lexer;

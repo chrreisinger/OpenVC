@@ -1,4 +1,4 @@
-// $ANTLR 3.3 Nov 30, 2010 12:45:30 C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g 2011-02-26 19:18:16
+// $ANTLR 3.3 Nov 30, 2010 12:46:29 .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g 2011-03-09 22:29:28
 
 /*
  *     OpenVC, an open source VHDL compiler/simulator
@@ -220,7 +220,7 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
 
 
 
-    override val getGrammarFileName = "C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g"
+    override val getGrammarFileName = ".\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g"
 
     // $ANTLR start "ABS"
     @throws(classOf[RecognitionException])
@@ -228,8 +228,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = ABS
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:48:4: ( 'abs' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:48:5: 'abs'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:49:4: ( 'abs' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:49:5: 'abs'
             	`match`("abs")
 
 
@@ -250,8 +250,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = ACCESS
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:49:7: ( 'access' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:49:8: 'access'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:50:7: ( 'access' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:50:8: 'access'
             	`match`("access")
 
 
@@ -272,8 +272,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = AFTER
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:50:6: ( 'after' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:50:7: 'after'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:51:6: ( 'after' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:51:7: 'after'
             	`match`("after")
 
 
@@ -294,8 +294,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = ALIAS
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:51:6: ( 'alias' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:51:7: 'alias'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:52:6: ( 'alias' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:52:7: 'alias'
             	`match`("alias")
 
 
@@ -316,8 +316,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = ALL
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:52:4: ( 'all' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:52:5: 'all'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:53:4: ( 'all' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:53:5: 'all'
             	`match`("all")
 
 
@@ -338,8 +338,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = AND
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:53:4: ( 'and' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:53:5: 'and'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:54:4: ( 'and' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:54:5: 'and'
             	`match`("and")
 
 
@@ -360,8 +360,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = ARCHITECTURE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:54:13: ( 'architecture' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:54:14: 'architecture'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:55:13: ( 'architecture' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:55:14: 'architecture'
             	`match`("architecture")
 
 
@@ -382,8 +382,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = ARRAY
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:55:6: ( 'array' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:55:7: 'array'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:56:6: ( 'array' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:56:7: 'array'
             	`match`("array")
 
 
@@ -404,8 +404,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = ASSERT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:56:7: ( 'assert' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:56:8: 'assert'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:57:7: ( 'assert' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:57:8: 'assert'
             	`match`("assert")
 
 
@@ -426,8 +426,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = ATTRIBUTE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:57:10: ( 'attribute' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:57:11: 'attribute'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:58:10: ( 'attribute' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:58:11: 'attribute'
             	`match`("attribute")
 
 
@@ -448,8 +448,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = BEGIN
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:58:6: ( 'begin' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:58:7: 'begin'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:59:6: ( 'begin' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:59:7: 'begin'
             	`match`("begin")
 
 
@@ -470,8 +470,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = BLOCK
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:59:6: ( 'block' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:59:7: 'block'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:60:6: ( 'block' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:60:7: 'block'
             	`match`("block")
 
 
@@ -492,8 +492,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = BODY
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:60:5: ( 'body' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:60:6: 'body'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:61:5: ( 'body' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:61:6: 'body'
             	`match`("body")
 
 
@@ -514,8 +514,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = BUFFER
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:61:7: ( 'buffer' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:61:8: 'buffer'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:62:7: ( 'buffer' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:62:8: 'buffer'
             	`match`("buffer")
 
 
@@ -536,8 +536,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = BUS
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:62:4: ( 'bus' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:62:5: 'bus'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:63:4: ( 'bus' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:63:5: 'bus'
             	`match`("bus")
 
 
@@ -558,8 +558,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = CASE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:63:5: ( 'case' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:63:6: 'case'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:64:5: ( 'case' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:64:6: 'case'
             	`match`("case")
 
 
@@ -580,8 +580,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = COMPONENT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:64:10: ( 'component' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:64:11: 'component'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:65:10: ( 'component' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:65:11: 'component'
             	`match`("component")
 
 
@@ -602,8 +602,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = CONFIGURATION
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:65:14: ( 'configuration' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:65:15: 'configuration'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:66:14: ( 'configuration' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:66:15: 'configuration'
             	`match`("configuration")
 
 
@@ -624,8 +624,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = CONSTANT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:66:9: ( 'constant' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:66:10: 'constant'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:67:9: ( 'constant' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:67:10: 'constant'
             	`match`("constant")
 
 
@@ -646,8 +646,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = DISCONNECT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:67:11: ( 'disconnect' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:67:12: 'disconnect'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:68:11: ( 'disconnect' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:68:12: 'disconnect'
             	`match`("disconnect")
 
 
@@ -668,8 +668,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = DOWNTO
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:68:7: ( 'downto' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:68:8: 'downto'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:69:7: ( 'downto' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:69:8: 'downto'
             	`match`("downto")
 
 
@@ -690,8 +690,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = ELSE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:69:5: ( 'else' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:69:6: 'else'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:70:5: ( 'else' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:70:6: 'else'
             	`match`("else")
 
 
@@ -712,8 +712,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = ELSIF
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:70:6: ( 'elsif' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:70:7: 'elsif'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:71:6: ( 'elsif' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:71:7: 'elsif'
             	`match`("elsif")
 
 
@@ -734,8 +734,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = END
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:71:4: ( 'end' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:71:5: 'end'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:72:4: ( 'end' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:72:5: 'end'
             	`match`("end")
 
 
@@ -756,8 +756,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = ENTITY
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:72:7: ( 'entity' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:72:8: 'entity'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:73:7: ( 'entity' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:73:8: 'entity'
             	`match`("entity")
 
 
@@ -778,8 +778,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = EXIT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:73:5: ( 'exit' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:73:6: 'exit'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:74:5: ( 'exit' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:74:6: 'exit'
             	`match`("exit")
 
 
@@ -800,8 +800,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = FILE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:74:5: ( 'file' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:74:6: 'file'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:75:5: ( 'file' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:75:6: 'file'
             	`match`("file")
 
 
@@ -822,8 +822,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = FOR
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:75:4: ( 'for' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:75:5: 'for'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:76:4: ( 'for' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:76:5: 'for'
             	`match`("for")
 
 
@@ -844,8 +844,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = FUNCTION
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:76:9: ( 'function' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:76:10: 'function'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:77:9: ( 'function' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:77:10: 'function'
             	`match`("function")
 
 
@@ -866,8 +866,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = GENERATE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:77:9: ( 'generate' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:77:10: 'generate'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:78:9: ( 'generate' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:78:10: 'generate'
             	`match`("generate")
 
 
@@ -888,8 +888,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = GENERIC
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:78:8: ( 'generic' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:78:9: 'generic'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:79:8: ( 'generic' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:79:9: 'generic'
             	`match`("generic")
 
 
@@ -910,8 +910,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = GROUP
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:79:6: ( 'group' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:79:7: 'group'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:80:6: ( 'group' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:80:7: 'group'
             	`match`("group")
 
 
@@ -932,8 +932,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = GUARDED
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:80:8: ( 'guarded' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:80:9: 'guarded'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:81:8: ( 'guarded' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:81:9: 'guarded'
             	`match`("guarded")
 
 
@@ -954,8 +954,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = IF
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:81:3: ( 'if' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:81:4: 'if'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:82:3: ( 'if' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:82:4: 'if'
             	`match`("if")
 
 
@@ -976,8 +976,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = IMPURE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:82:7: ( 'impure' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:82:8: 'impure'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:83:7: ( 'impure' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:83:8: 'impure'
             	`match`("impure")
 
 
@@ -998,8 +998,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = IN
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:83:3: ( 'in' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:83:4: 'in'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:84:3: ( 'in' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:84:4: 'in'
             	`match`("in")
 
 
@@ -1020,8 +1020,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = INERTIAL
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:84:9: ( 'inertial' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:84:10: 'inertial'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:85:9: ( 'inertial' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:85:10: 'inertial'
             	`match`("inertial")
 
 
@@ -1042,8 +1042,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = INOUT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:85:6: ( 'inout' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:85:7: 'inout'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:86:6: ( 'inout' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:86:7: 'inout'
             	`match`("inout")
 
 
@@ -1064,8 +1064,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = IS
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:86:3: ( 'is' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:86:4: 'is'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:87:3: ( 'is' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:87:4: 'is'
             	`match`("is")
 
 
@@ -1086,8 +1086,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = LABEL
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:87:6: ( 'label' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:87:7: 'label'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:88:6: ( 'label' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:88:7: 'label'
             	`match`("label")
 
 
@@ -1108,8 +1108,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = LIBRARY
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:88:8: ( 'library' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:88:9: 'library'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:89:8: ( 'library' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:89:9: 'library'
             	`match`("library")
 
 
@@ -1130,8 +1130,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = LINKAGE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:89:8: ( 'linkage' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:89:9: 'linkage'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:90:8: ( 'linkage' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:90:9: 'linkage'
             	`match`("linkage")
 
 
@@ -1152,8 +1152,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = LITERAL
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:90:8: ( 'literal' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:90:9: 'literal'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:91:8: ( 'literal' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:91:9: 'literal'
             	`match`("literal")
 
 
@@ -1174,8 +1174,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = LOOP
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:91:5: ( 'loop' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:91:6: 'loop'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:92:5: ( 'loop' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:92:6: 'loop'
             	`match`("loop")
 
 
@@ -1196,8 +1196,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = MAP
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:92:4: ( 'map' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:92:5: 'map'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:93:4: ( 'map' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:93:5: 'map'
             	`match`("map")
 
 
@@ -1218,8 +1218,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = MOD
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:93:4: ( 'mod' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:93:5: 'mod'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:94:4: ( 'mod' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:94:5: 'mod'
             	`match`("mod")
 
 
@@ -1240,8 +1240,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = NAND
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:94:5: ( 'nand' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:94:6: 'nand'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:95:5: ( 'nand' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:95:6: 'nand'
             	`match`("nand")
 
 
@@ -1262,8 +1262,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = NEW
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:95:4: ( 'new' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:95:5: 'new'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:96:4: ( 'new' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:96:5: 'new'
             	`match`("new")
 
 
@@ -1284,8 +1284,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = NEXT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:96:5: ( 'next' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:96:6: 'next'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:97:5: ( 'next' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:97:6: 'next'
             	`match`("next")
 
 
@@ -1306,8 +1306,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = NOR
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:97:4: ( 'nor' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:97:5: 'nor'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:98:4: ( 'nor' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:98:5: 'nor'
             	`match`("nor")
 
 
@@ -1328,8 +1328,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = NOT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:98:4: ( 'not' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:98:5: 'not'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:99:4: ( 'not' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:99:5: 'not'
             	`match`("not")
 
 
@@ -1350,8 +1350,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = NULL
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:99:5: ( 'null' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:99:6: 'null'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:100:5: ( 'null' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:100:6: 'null'
             	`match`("null")
 
 
@@ -1372,8 +1372,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = OF
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:100:3: ( 'of' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:100:4: 'of'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:101:3: ( 'of' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:101:4: 'of'
             	`match`("of")
 
 
@@ -1394,8 +1394,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = ON
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:101:3: ( 'on' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:101:4: 'on'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:102:3: ( 'on' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:102:4: 'on'
             	`match`("on")
 
 
@@ -1416,8 +1416,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = OPEN
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:102:5: ( 'open' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:102:6: 'open'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:103:5: ( 'open' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:103:6: 'open'
             	`match`("open")
 
 
@@ -1438,8 +1438,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = OR
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:103:3: ( 'or' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:103:4: 'or'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:104:3: ( 'or' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:104:4: 'or'
             	`match`("or")
 
 
@@ -1460,8 +1460,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = OTHERS
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:104:7: ( 'others' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:104:8: 'others'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:105:7: ( 'others' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:105:8: 'others'
             	`match`("others")
 
 
@@ -1482,8 +1482,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = OUT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:105:4: ( 'out' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:105:5: 'out'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:106:4: ( 'out' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:106:5: 'out'
             	`match`("out")
 
 
@@ -1504,8 +1504,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = PACKAGE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:106:8: ( 'package' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:106:9: 'package'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:107:8: ( 'package' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:107:9: 'package'
             	`match`("package")
 
 
@@ -1526,8 +1526,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = PORT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:107:5: ( 'port' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:107:6: 'port'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:108:5: ( 'port' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:108:6: 'port'
             	`match`("port")
 
 
@@ -1548,8 +1548,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = POSTPONED
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:108:10: ( 'postponed' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:108:11: 'postponed'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:109:10: ( 'postponed' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:109:11: 'postponed'
             	`match`("postponed")
 
 
@@ -1570,8 +1570,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = PROCEDURE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:109:10: ( 'procedure' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:109:11: 'procedure'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:110:10: ( 'procedure' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:110:11: 'procedure'
             	`match`("procedure")
 
 
@@ -1592,8 +1592,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = PROCESS
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:110:8: ( 'process' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:110:9: 'process'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:111:8: ( 'process' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:111:9: 'process'
             	`match`("process")
 
 
@@ -1614,8 +1614,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = PROTECTED
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:111:10: ( 'protected' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:111:11: 'protected'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:112:10: ( 'protected' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:112:11: 'protected'
             	`match`("protected")
 
 
@@ -1636,8 +1636,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = PURE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:112:5: ( 'pure' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:112:6: 'pure'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:113:5: ( 'pure' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:113:6: 'pure'
             	`match`("pure")
 
 
@@ -1658,8 +1658,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = RANGE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:113:6: ( 'range' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:113:7: 'range'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:114:6: ( 'range' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:114:7: 'range'
             	`match`("range")
 
 
@@ -1680,8 +1680,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = RECORD
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:114:7: ( 'record' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:114:8: 'record'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:115:7: ( 'record' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:115:8: 'record'
             	`match`("record")
 
 
@@ -1702,8 +1702,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = REGISTER
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:115:9: ( 'register' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:115:10: 'register'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:116:9: ( 'register' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:116:10: 'register'
             	`match`("register")
 
 
@@ -1724,8 +1724,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = REJECT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:116:7: ( 'reject' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:116:8: 'reject'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:117:7: ( 'reject' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:117:8: 'reject'
             	`match`("reject")
 
 
@@ -1746,8 +1746,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = REM
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:117:4: ( 'rem' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:117:5: 'rem'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:118:4: ( 'rem' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:118:5: 'rem'
             	`match`("rem")
 
 
@@ -1768,8 +1768,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = REPORT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:118:7: ( 'report' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:118:8: 'report'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:119:7: ( 'report' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:119:8: 'report'
             	`match`("report")
 
 
@@ -1790,8 +1790,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = RETURN
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:119:7: ( 'return' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:119:8: 'return'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:120:7: ( 'return' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:120:8: 'return'
             	`match`("return")
 
 
@@ -1812,8 +1812,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = ROL
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:120:4: ( 'rol' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:120:5: 'rol'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:121:4: ( 'rol' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:121:5: 'rol'
             	`match`("rol")
 
 
@@ -1834,8 +1834,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = ROR
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:121:4: ( 'ror' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:121:5: 'ror'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:122:4: ( 'ror' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:122:5: 'ror'
             	`match`("ror")
 
 
@@ -1856,8 +1856,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = SELECT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:122:7: ( 'select' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:122:8: 'select'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:123:7: ( 'select' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:123:8: 'select'
             	`match`("select")
 
 
@@ -1878,8 +1878,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = SEVERITY
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:123:9: ( 'severity' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:123:10: 'severity'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:124:9: ( 'severity' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:124:10: 'severity'
             	`match`("severity")
 
 
@@ -1900,8 +1900,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = SHARED
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:124:7: ( 'shared' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:124:8: 'shared'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:125:7: ( 'shared' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:125:8: 'shared'
             	`match`("shared")
 
 
@@ -1922,8 +1922,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = SIGNAL
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:125:7: ( 'signal' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:125:8: 'signal'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:126:7: ( 'signal' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:126:8: 'signal'
             	`match`("signal")
 
 
@@ -1944,8 +1944,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = SLA
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:126:4: ( 'sla' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:126:5: 'sla'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:127:4: ( 'sla' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:127:5: 'sla'
             	`match`("sla")
 
 
@@ -1966,8 +1966,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = SLL
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:127:4: ( 'sll' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:127:5: 'sll'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:128:4: ( 'sll' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:128:5: 'sll'
             	`match`("sll")
 
 
@@ -1988,8 +1988,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = SRA
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:128:4: ( 'sra' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:128:5: 'sra'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:129:4: ( 'sra' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:129:5: 'sra'
             	`match`("sra")
 
 
@@ -2010,8 +2010,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = SRL
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:129:4: ( 'srl' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:129:5: 'srl'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:130:4: ( 'srl' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:130:5: 'srl'
             	`match`("srl")
 
 
@@ -2032,8 +2032,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = SUBTYPE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:130:8: ( 'subtype' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:130:9: 'subtype'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:131:8: ( 'subtype' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:131:9: 'subtype'
             	`match`("subtype")
 
 
@@ -2054,8 +2054,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = THEN
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:131:5: ( 'then' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:131:6: 'then'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:132:5: ( 'then' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:132:6: 'then'
             	`match`("then")
 
 
@@ -2076,8 +2076,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = TO
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:132:3: ( 'to' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:132:4: 'to'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:133:3: ( 'to' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:133:4: 'to'
             	`match`("to")
 
 
@@ -2098,8 +2098,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = TRANSPORT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:133:10: ( 'transport' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:133:11: 'transport'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:134:10: ( 'transport' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:134:11: 'transport'
             	`match`("transport")
 
 
@@ -2120,8 +2120,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = TYPE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:134:5: ( 'type' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:134:6: 'type'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:135:5: ( 'type' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:135:6: 'type'
             	`match`("type")
 
 
@@ -2142,8 +2142,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = UNAFFECTED
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:135:11: ( 'unaffected' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:135:12: 'unaffected'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:136:11: ( 'unaffected' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:136:12: 'unaffected'
             	`match`("unaffected")
 
 
@@ -2164,8 +2164,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = UNITS
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:136:6: ( 'units' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:136:7: 'units'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:137:6: ( 'units' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:137:7: 'units'
             	`match`("units")
 
 
@@ -2186,8 +2186,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = UNTIL
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:137:6: ( 'until' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:137:7: 'until'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:138:6: ( 'until' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:138:7: 'until'
             	`match`("until")
 
 
@@ -2208,8 +2208,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = USE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:138:4: ( 'use' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:138:5: 'use'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:139:4: ( 'use' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:139:5: 'use'
             	`match`("use")
 
 
@@ -2230,8 +2230,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = VARIABLE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:139:9: ( 'variable' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:139:10: 'variable'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:140:9: ( 'variable' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:140:10: 'variable'
             	`match`("variable")
 
 
@@ -2252,8 +2252,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = WAIT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:140:5: ( 'wait' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:140:6: 'wait'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:141:5: ( 'wait' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:141:6: 'wait'
             	`match`("wait")
 
 
@@ -2274,8 +2274,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = WHEN
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:141:5: ( 'when' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:141:6: 'when'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:142:5: ( 'when' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:142:6: 'when'
             	`match`("when")
 
 
@@ -2296,8 +2296,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = WHILE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:142:6: ( 'while' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:142:7: 'while'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:143:6: ( 'while' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:143:7: 'while'
             	`match`("while")
 
 
@@ -2318,8 +2318,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = WITH
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:143:5: ( 'with' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:143:6: 'with'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:144:5: ( 'with' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:144:6: 'with'
             	`match`("with")
 
 
@@ -2340,8 +2340,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = XNOR
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:144:5: ( 'xnor' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:144:6: 'xnor'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:145:5: ( 'xnor' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:145:6: 'xnor'
             	`match`("xnor")
 
 
@@ -2362,8 +2362,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = XOR
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:145:4: ( 'xor' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:145:5: 'xor'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:146:4: ( 'xor' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:146:5: 'xor'
             	`match`("xor")
 
 
@@ -2384,8 +2384,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = AMS_ASSIGN
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:161:15: ( '==' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:161:17: '=='
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:162:15: ( '==' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:162:17: '=='
             	`match`("==")
 
 
@@ -2406,8 +2406,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = VAR_ASSIGN
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:162:15: ( ':=' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:162:17: ':='
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:163:15: ( ':=' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:163:17: ':='
             	`match`(":=")
 
 
@@ -2428,8 +2428,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = BOX
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:163:15: ( '<>' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:163:17: '<>'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:164:15: ( '<>' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:164:17: '<>'
             	`match`("<>")
 
 
@@ -2450,8 +2450,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = DBLQUOTE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:164:15: ( '\\\"' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:164:17: '\\\"'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:165:15: ( '\\\"' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:165:17: '\\\"'
             	`match`('\"')
 
 
@@ -2471,8 +2471,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = COMMA
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:165:15: ( ',' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:165:17: ','
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:166:15: ( ',' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:166:17: ','
             	`match`(',')
 
 
@@ -2492,8 +2492,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = SEMICOLON
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:166:15: ( ';' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:166:17: ';'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:167:15: ( ';' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:167:17: ';'
             	`match`(';')
 
 
@@ -2513,8 +2513,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = LPAREN
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:167:15: ( '(' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:167:17: '('
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:168:15: ( '(' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:168:17: '('
             	`match`('(')
 
 
@@ -2534,8 +2534,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = RPAREN
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:168:15: ( ')' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:168:17: ')'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:169:15: ( ')' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:169:17: ')'
             	`match`(')')
 
 
@@ -2555,8 +2555,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = LBRACKET
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:169:15: ( '[' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:169:17: '['
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:170:15: ( '[' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:170:17: '['
             	`match`('[')
 
 
@@ -2576,8 +2576,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = RBRACKET
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:170:15: ( ']' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:170:17: ']'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:171:15: ( ']' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:171:17: ']'
             	`match`(']')
 
 
@@ -2597,8 +2597,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = COLON
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:171:15: ( ':' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:171:17: ':'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:172:15: ( ':' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:172:17: ':'
             	`match`(':')
 
 
@@ -2618,8 +2618,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = DOT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:172:15: ( '.' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:172:17: '.'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:173:15: ( '.' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:173:17: '.'
             	`match`('.')
 
 
@@ -2639,8 +2639,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = AMPERSAND
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:173:15: ( '&' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:173:17: '&'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:174:15: ( '&' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:174:17: '&'
             	`match`('&')
 
 
@@ -2660,8 +2660,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = BAR
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:174:15: ( '|' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:174:17: '|'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:175:15: ( '|' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:175:17: '|'
             	`match`('|')
 
 
@@ -2681,8 +2681,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = ARROW
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:175:15: ( '=>' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:175:17: '=>'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:176:15: ( '=>' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:176:17: '=>'
             	`match`("=>")
 
 
@@ -2703,8 +2703,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = AT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:177:15: ( '@' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:177:17: '@'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:178:15: ( '@' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:178:17: '@'
             	`match`('@')
 
 
@@ -2724,8 +2724,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = QMARK
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:178:14: ( '?' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:178:16: '?'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:179:14: ( '?' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:179:16: '?'
             	`match`('?')
 
 
@@ -2745,8 +2745,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = DLT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:179:12: ( '<<' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:179:14: '<<'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:180:12: ( '<<' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:180:14: '<<'
             	`match`("<<")
 
 
@@ -2767,8 +2767,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = DGT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:180:12: ( '>>' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:180:14: '>>'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:181:12: ( '>>' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:181:14: '>>'
             	`match`(">>")
 
 
@@ -2789,8 +2789,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = CIRCUMFLEX
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:181:15: ( '^' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:181:17: '^'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:182:15: ( '^' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:182:17: '^'
             	`match`('^')
 
 
@@ -2810,8 +2810,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = DOUBLESTAR
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:183:15: ( '**' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:183:17: '**'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:184:15: ( '**' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:184:17: '**'
             	`match`("**")
 
 
@@ -2832,8 +2832,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = MUL
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:184:15: ( '*' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:184:17: '*'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:185:15: ( '*' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:185:17: '*'
             	`match`('*')
 
 
@@ -2853,8 +2853,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = DIV
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:185:15: ( '/' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:185:17: '/'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:186:15: ( '/' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:186:17: '/'
             	`match`('/')
 
 
@@ -2874,8 +2874,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = PLUS
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:186:15: ( '+' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:186:17: '+'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:187:15: ( '+' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:187:17: '+'
             	`match`('+')
 
 
@@ -2895,8 +2895,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = MINUS
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:187:15: ( '-' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:187:17: '-'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:188:15: ( '-' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:188:17: '-'
             	`match`('-')
 
 
@@ -2916,8 +2916,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = EQ
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:188:15: ( '=' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:188:17: '='
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:189:15: ( '=' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:189:17: '='
             	`match`('=')
 
 
@@ -2937,8 +2937,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = NEQ
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:189:15: ( '/=' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:189:17: '/='
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:190:15: ( '/=' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:190:17: '/='
             	`match`("/=")
 
 
@@ -2959,8 +2959,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = LT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:190:15: ( '<' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:190:17: '<'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:191:15: ( '<' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:191:17: '<'
             	`match`('<')
 
 
@@ -2980,8 +2980,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = GT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:191:15: ( '>' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:191:17: '>'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:192:15: ( '>' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:192:17: '>'
             	`match`('>')
 
 
@@ -3001,8 +3001,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = LEQ
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:192:15: ( '<=' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:192:17: '<='
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:193:15: ( '<=' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:193:17: '<='
             	`match`("<=")
 
 
@@ -3023,8 +3023,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = GEQ
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:193:15: ( '>=' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:193:17: '>='
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:194:15: ( '>=' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:194:17: '>='
             	`match`(">=")
 
 
@@ -3045,8 +3045,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = MEQ
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:194:15: ( '?=' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:194:17: '?='
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:195:15: ( '?=' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:195:17: '?='
             	`match`("?=")
 
 
@@ -3067,8 +3067,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = MNEQ
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:195:12: ( '?/=' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:195:14: '?/='
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:196:12: ( '?/=' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:196:14: '?/='
             	`match`("?/=")
 
 
@@ -3089,8 +3089,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = MLT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:196:15: ( '?<' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:196:17: '?<'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:197:15: ( '?<' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:197:17: '?<'
             	`match`("?<")
 
 
@@ -3111,8 +3111,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = MGT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:197:15: ( '?>' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:197:17: '?>'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:198:15: ( '?>' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:198:17: '?>'
             	`match`("?>")
 
 
@@ -3133,8 +3133,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = MLEQ
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:198:12: ( '?<=' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:198:14: '?<='
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:199:12: ( '?<=' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:199:14: '?<='
             	`match`("?<=")
 
 
@@ -3155,8 +3155,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = MGEQ
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:199:12: ( '?>=' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:199:14: '?>='
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:200:12: ( '?>=' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:200:14: '?>='
             	`match`("?>=")
 
 
@@ -3177,8 +3177,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = CONDITION_OPERATOR
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:200:20: ( '??' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:200:22: '??'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:201:20: ( '??' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:201:22: '??'
             	`match`("??")
 
 
@@ -3199,8 +3199,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = CONTEXT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:203:9: ({...}? => 'context' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:203:11: {...}? => 'context'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:204:9: ({...}? => 'context' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:204:11: {...}? => 'context'
             	if ( !((vhdl2008)) ) {
             	    throw new FailedPredicateException(input, "CONTEXT", "vhdl2008")
             	}
@@ -3224,8 +3224,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = FORCE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:205:7: ({...}? => 'force' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:205:9: {...}? => 'force'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:206:7: ({...}? => 'force' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:206:9: {...}? => 'force'
             	if ( !((vhdl2008)) ) {
             	    throw new FailedPredicateException(input, "FORCE", "vhdl2008")
             	}
@@ -3249,8 +3249,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = PARAMETER
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:207:11: ({...}? => 'parameter' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:207:13: {...}? => 'parameter'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:208:11: ({...}? => 'parameter' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:208:13: {...}? => 'parameter'
             	if ( !((vhdl2008)) ) {
             	    throw new FailedPredicateException(input, "PARAMETER", "vhdl2008")
             	}
@@ -3274,8 +3274,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = RELEASE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:209:9: ({...}? => 'release' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:209:11: {...}? => 'release'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:210:9: ({...}? => 'release' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:210:11: {...}? => 'release'
             	if ( !((vhdl2008)) ) {
             	    throw new FailedPredicateException(input, "RELEASE", "vhdl2008")
             	}
@@ -3299,8 +3299,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = DEFAULT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:211:9: ({...}? => 'default' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:211:11: {...}? => 'default'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:212:9: ({...}? => 'default' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:212:11: {...}? => 'default'
             	if ( !((vhdl2008)) ) {
             	    throw new FailedPredicateException(input, "DEFAULT", "vhdl2008")
             	}
@@ -3324,8 +3324,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = NATURE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:214:8: ({...}? => 'nature' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:214:10: {...}? => 'nature'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:215:8: ({...}? => 'nature' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:215:10: {...}? => 'nature'
             	if ( !((ams)) ) {
             	    throw new FailedPredicateException(input, "NATURE", "ams")
             	}
@@ -3349,8 +3349,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = TERMINAL
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:216:10: ({...}? => 'terminal' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:216:12: {...}? => 'terminal'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:217:10: ({...}? => 'terminal' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:217:12: {...}? => 'terminal'
             	if ( !((ams)) ) {
             	    throw new FailedPredicateException(input, "TERMINAL", "ams")
             	}
@@ -3374,8 +3374,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = QUANTITY
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:218:10: ({...}? => 'quantity' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:218:12: {...}? => 'quantity'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:219:10: ({...}? => 'quantity' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:219:12: {...}? => 'quantity'
             	if ( !((ams)) ) {
             	    throw new FailedPredicateException(input, "QUANTITY", "ams")
             	}
@@ -3399,8 +3399,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = TOLERANCE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:220:11: ({...}? => 'tolerance' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:220:13: {...}? => 'tolerance'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:221:11: ({...}? => 'tolerance' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:221:13: {...}? => 'tolerance'
             	if ( !((ams)) ) {
             	    throw new FailedPredicateException(input, "TOLERANCE", "ams")
             	}
@@ -3424,8 +3424,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = ACROSS
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:222:8: ({...}? => 'across' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:222:10: {...}? => 'across'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:223:8: ({...}? => 'across' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:223:10: {...}? => 'across'
             	if ( !((ams)) ) {
             	    throw new FailedPredicateException(input, "ACROSS", "ams")
             	}
@@ -3449,8 +3449,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = THROUGH
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:224:9: ({...}? => 'through' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:224:11: {...}? => 'through'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:225:9: ({...}? => 'through' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:225:11: {...}? => 'through'
             	if ( !((ams)) ) {
             	    throw new FailedPredicateException(input, "THROUGH", "ams")
             	}
@@ -3474,8 +3474,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = SPECTRUM
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:226:10: ({...}? => 'spectrum' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:226:12: {...}? => 'spectrum'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:227:10: ({...}? => 'spectrum' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:227:12: {...}? => 'spectrum'
             	if ( !((ams)) ) {
             	    throw new FailedPredicateException(input, "SPECTRUM", "ams")
             	}
@@ -3499,8 +3499,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = NOISE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:228:7: ({...}? => 'noise' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:228:9: {...}? => 'noise'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:229:7: ({...}? => 'noise' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:229:9: {...}? => 'noise'
             	if ( !((ams)) ) {
             	    throw new FailedPredicateException(input, "NOISE", "ams")
             	}
@@ -3524,8 +3524,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = SUBNATURE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:230:11: ({...}? => 'subnature' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:230:13: {...}? => 'subnature'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:231:11: ({...}? => 'subnature' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:231:13: {...}? => 'subnature'
             	if ( !((ams)) ) {
             	    throw new FailedPredicateException(input, "SUBNATURE", "ams")
             	}
@@ -3549,8 +3549,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = LIMIT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:232:7: ({...}? => 'limit' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:232:9: {...}? => 'limit'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:233:7: ({...}? => 'limit' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:233:9: {...}? => 'limit'
             	if ( !((ams)) ) {
             	    throw new FailedPredicateException(input, "LIMIT", "ams")
             	}
@@ -3574,8 +3574,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = REFERENCE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:234:11: ({...}? => 'reference' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:234:13: {...}? => 'reference'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:235:11: ({...}? => 'reference' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:235:13: {...}? => 'reference'
             	if ( !((ams)) ) {
             	    throw new FailedPredicateException(input, "REFERENCE", "ams")
             	}
@@ -3599,8 +3599,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = BREAK
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:236:7: ({...}? => 'break' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:236:9: {...}? => 'break'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:237:7: ({...}? => 'break' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:237:9: {...}? => 'break'
             	if ( !((ams)) ) {
             	    throw new FailedPredicateException(input, "BREAK", "ams")
             	}
@@ -3624,8 +3624,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = PROCEDURAL
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:238:12: ({...}? => 'procedural' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:238:14: {...}? => 'procedural'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:239:12: ({...}? => 'procedural' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:239:14: {...}? => 'procedural'
             	if ( !((ams)) ) {
             	    throw new FailedPredicateException(input, "PROCEDURAL", "ams")
             	}
@@ -3649,9 +3649,9 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = WS
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:241:4: ( ( '\\t' | ' ' | '\\r' | '\\n' )+ )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:241:6: ( '\\t' | ' ' | '\\r' | '\\n' )+
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:241:6: ( '\\t' | ' ' | '\\r' | '\\n' )+
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:242:4: ( ( '\\t' | ' ' | '\\r' | '\\n' )+ )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:242:6: ( '\\t' | ' ' | '\\r' | '\\n' )+
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:242:6: ( '\\t' | ' ' | '\\r' | '\\n' )+
             	var cnt1 = 0
             	var loop1_quitflag = false
             	while (!loop1_quitflag) {
@@ -3664,7 +3664,7 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             	}
             	    alt1 match {
             		case 1 =>
-            		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
+            		    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
             		    	if ( (input.LA(1)>='\t' && input.LA(1)<='\n')||input.LA(1)=='\r'||input.LA(1)==' ' ) {
             		    	    input.consume()
 
@@ -3704,12 +3704,12 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = NESTED_ML_COMMENT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:244:19: ( '/*' ( options {greedy=false; } : NESTED_ML_COMMENT | . )* '*/' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:245:2: '/*' ( options {greedy=false; } : NESTED_ML_COMMENT | . )* '*/'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:245:19: ( '/*' ( options {greedy=false; } : NESTED_ML_COMMENT | . )* '*/' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:246:2: '/*' ( options {greedy=false; } : NESTED_ML_COMMENT | . )* '*/'
             	`match`("/*")
 
 
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:245:7: ( options {greedy=false; } : NESTED_ML_COMMENT | . )*
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:246:7: ( options {greedy=false; } : NESTED_ML_COMMENT | . )*
             	var loop2_quitflag = false
             	while (!loop2_quitflag) {
             	    val alt2 = {
@@ -3737,12 +3737,12 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             	}
             	    alt2 match {
             		case 1 =>
-            		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:245:34: NESTED_ML_COMMENT
+            		    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:246:34: NESTED_ML_COMMENT
             		    	mNESTED_ML_COMMENT()
 
 
             		case 2 =>
-            		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:245:54: .
+            		    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:246:54: .
             		    	matchAny()
 
 
@@ -3772,12 +3772,12 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = LINECOMMENT
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:248:13: ( '--' (~ ( '\\r' | '\\n' | '\\u000C' ) )* )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:248:15: '--' (~ ( '\\r' | '\\n' | '\\u000C' ) )*
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:249:13: ( '--' (~ ( '\\r' | '\\n' | '\\u000C' ) )* )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:249:15: '--' (~ ( '\\r' | '\\n' | '\\u000C' ) )*
             	`match`("--")
 
 
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:248:20: (~ ( '\\r' | '\\n' | '\\u000C' ) )*
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:249:20: (~ ( '\\r' | '\\n' | '\\u000C' ) )*
             	var loop3_quitflag = false
             	while (!loop3_quitflag) {
             	    val alt3 = {
@@ -3789,7 +3789,7 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             	}
             	    alt3 match {
             		case 1 =>
-            		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:248:20: ~ ( '\\r' | '\\n' | '\\u000C' )
+            		    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:249:20: ~ ( '\\r' | '\\n' | '\\u000C' )
             		    	if ( (input.LA(1)>='\u0000' && input.LA(1)<='\t')||input.LA(1)=='\u000B'||(input.LA(1)>='\u000E' && input.LA(1)<='\uFFFF') ) {
             		    	    input.consume()
 
@@ -3823,11 +3823,11 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = BASIC_IDENTIFIER
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:250:18: ( LETTER ( LETTER_OR_DIGIT | '_' )* )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:250:20: LETTER ( LETTER_OR_DIGIT | '_' )*
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:251:18: ( LETTER ( LETTER_OR_DIGIT | '_' )* )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:251:20: LETTER ( LETTER_OR_DIGIT | '_' )*
             	mLETTER()
 
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:250:27: ( LETTER_OR_DIGIT | '_' )*
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:251:27: ( LETTER_OR_DIGIT | '_' )*
             	var loop4_quitflag = false
             	while (!loop4_quitflag) {
             	    val alt4 = {
@@ -3839,7 +3839,7 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             	}
             	    alt4 match {
             		case 1 =>
-            		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
+            		    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
             		    	if ( (input.LA(1)>='0' && input.LA(1)<='9')||(input.LA(1)>='A' && input.LA(1)<='Z')||input.LA(1)=='_'||(input.LA(1)>='a' && input.LA(1)<='z')||(input.LA(1)>='\u00C0' && input.LA(1)<='\u00D6')||(input.LA(1)>='\u00D8' && input.LA(1)<='\u00F6')||(input.LA(1)>='\u00F8' && input.LA(1)<='\u00FF') ) {
             		    	    input.consume()
 
@@ -3872,11 +3872,11 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = EXTENDED_IDENTIFIER
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:253:21: ( '\\\\' ( '\\\"' | '\\\\\\\\' | GRAPHIC_CHARACTER )+ '\\\\' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:253:23: '\\\\' ( '\\\"' | '\\\\\\\\' | GRAPHIC_CHARACTER )+ '\\\\'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:254:21: ( '\\\\' ( '\\\"' | '\\\\\\\\' | GRAPHIC_CHARACTER )+ '\\\\' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:254:23: '\\\\' ( '\\\"' | '\\\\\\\\' | GRAPHIC_CHARACTER )+ '\\\\'
             	`match`('\\')
 
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:253:28: ( '\\\"' | '\\\\\\\\' | GRAPHIC_CHARACTER )+
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:254:28: ( '\\\"' | '\\\\\\\\' | GRAPHIC_CHARACTER )+
             	var cnt5 = 0
             	var loop5_quitflag = false
             	while (!loop5_quitflag) {
@@ -3895,18 +3895,18 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
 
             	    alt5 match {
             		case 1 =>
-            		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:253:30: '\\\"'
+            		    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:254:30: '\\\"'
             		    	`match`('\"')
 
 
             		case 2 =>
-            		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:253:37: '\\\\\\\\'
+            		    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:254:37: '\\\\\\\\'
             		    	`match`("\\\\")
 
 
 
             		case 3 =>
-            		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:253:46: GRAPHIC_CHARACTER
+            		    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:254:46: GRAPHIC_CHARACTER
             		    	mGRAPHIC_CHARACTER()
 
 
@@ -3940,15 +3940,15 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = BASED_LITERAL
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:255:15: ( INTEGER '#' BASED_INTEGER ( DOT BASED_INTEGER )? '#' ( EXPONENT )? )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:255:17: INTEGER '#' BASED_INTEGER ( DOT BASED_INTEGER )? '#' ( EXPONENT )?
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:256:15: ( INTEGER '#' BASED_INTEGER ( DOT BASED_INTEGER )? '#' ( EXPONENT )? )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:256:17: INTEGER '#' BASED_INTEGER ( DOT BASED_INTEGER )? '#' ( EXPONENT )?
             	mINTEGER()
 
             	`match`('#')
 
             	mBASED_INTEGER()
 
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:255:43: ( DOT BASED_INTEGER )?
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:256:43: ( DOT BASED_INTEGER )?
             	val alt6 = {
             	val LA6_0 = input.LA(1)
 
@@ -3957,7 +3957,7 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             	}
             	alt6 match {
             	    case 1 =>
-            	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:255:45: DOT BASED_INTEGER
+            	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:256:45: DOT BASED_INTEGER
             	        	mDOT()
 
             	        	mBASED_INTEGER()
@@ -3969,7 +3969,7 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
 
             	`match`('#')
 
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:255:70: ( EXPONENT )?
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:256:70: ( EXPONENT )?
             	val alt7 = {
             	val LA7_0 = input.LA(1)
 
@@ -3978,7 +3978,7 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             	}
             	alt7 match {
             	    case 1 =>
-            	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:255:70: EXPONENT
+            	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:256:70: EXPONENT
             	        	mEXPONENT()
 
 
@@ -4003,11 +4003,11 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = INTEGER_LITERAL
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:257:17: ( INTEGER ( EXPONENT )? )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:257:19: INTEGER ( EXPONENT )?
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:258:17: ( INTEGER ( EXPONENT )? )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:258:19: INTEGER ( EXPONENT )?
             	mINTEGER()
 
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:257:27: ( EXPONENT )?
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:258:27: ( EXPONENT )?
             	val alt8 = {
             	val LA8_0 = input.LA(1)
 
@@ -4016,7 +4016,7 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             	}
             	alt8 match {
             	    case 1 =>
-            	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:257:27: EXPONENT
+            	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:258:27: EXPONENT
             	        	mEXPONENT()
 
 
@@ -4041,15 +4041,15 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = REAL_LITERAL
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:259:14: ( INTEGER DOT INTEGER ( EXPONENT )? )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:259:16: INTEGER DOT INTEGER ( EXPONENT )?
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:260:14: ( INTEGER DOT INTEGER ( EXPONENT )? )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:260:16: INTEGER DOT INTEGER ( EXPONENT )?
             	mINTEGER()
 
             	mDOT()
 
             	mINTEGER()
 
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:259:38: ( EXPONENT )?
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:260:38: ( EXPONENT )?
             	val alt9 = {
             	val LA9_0 = input.LA(1)
 
@@ -4058,7 +4058,7 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             	}
             	alt9 match {
             	    case 1 =>
-            	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:259:38: EXPONENT
+            	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:260:38: EXPONENT
             	        	mEXPONENT()
 
 
@@ -4083,11 +4083,11 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = APOSTROPHE
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:264:12: ( '\\'' ({...}? => ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )? )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:265:2: '\\'' ({...}? => ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )?
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:265:12: ( '\\'' ({...}? => ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )? )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:266:2: '\\'' ({...}? => ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )?
             	`match`('\'')
 
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:265:7: ({...}? => ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )?
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:266:7: ({...}? => ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\'' )?
             	val alt10 = {
             	val LA10_0 = input.LA(1)
 
@@ -4096,7 +4096,7 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             	}
             	alt10 match {
             	    case 1 =>
-            	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:265:8: {...}? => ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\''
+            	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:266:8: {...}? => ( '\\\"' | '\\\\' | GRAPHIC_CHARACTER ) '\\''
             	        	if ( !((input.LA(2)=='\'' && (input.LA(4)!='\'' || input.LA(3)==',' || input.LA(3)=='|'))) ) {
             	        	    throw new FailedPredicateException(input, "APOSTROPHE", "input.LA(2)=='\\'' && (input.LA(4)!='\\'' || input.LA(3)==',' || input.LA(3)=='|')")
             	        	}
@@ -4134,11 +4134,11 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = STRING_LITERAL
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:268:16: ( '\\\"' ( '\\\"\\\"' | '\\\\' | GRAPHIC_CHARACTER )* '\\\"' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:268:18: '\\\"' ( '\\\"\\\"' | '\\\\' | GRAPHIC_CHARACTER )* '\\\"'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:269:16: ( '\\\"' ( '\\\"\\\"' | '\\\\' | GRAPHIC_CHARACTER )* '\\\"' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:269:18: '\\\"' ( '\\\"\\\"' | '\\\\' | GRAPHIC_CHARACTER )* '\\\"'
             	`match`('\"')
 
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:268:23: ( '\\\"\\\"' | '\\\\' | GRAPHIC_CHARACTER )*
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:269:23: ( '\\\"\\\"' | '\\\\' | GRAPHIC_CHARACTER )*
             	var loop11_quitflag = false
             	while (!loop11_quitflag) {
             	    val alt11 = input.LA(1) match {
@@ -4156,18 +4156,18 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
 
             	    alt11 match {
             		case 1 =>
-            		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:268:25: '\\\"\\\"'
+            		    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:269:25: '\\\"\\\"'
             		    	`match`("\"\"")
 
 
 
             		case 2 =>
-            		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:268:34: '\\\\'
+            		    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:269:34: '\\\\'
             		    	`match`('\\')
 
 
             		case 3 =>
-            		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:268:41: GRAPHIC_CHARACTER
+            		    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:269:41: GRAPHIC_CHARACTER
             		    	mGRAPHIC_CHARACTER()
 
 
@@ -4195,9 +4195,9 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
         try {
             var _type = BIT_STRING_LITERAL
             var _channel = BaseRecognizer.DEFAULT_TOKEN_CHANNEL
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:270:20: ( ({...}? => INTEGER )? BASE_SPECIFIER '\\\"' ( ( BASED_INTEGER )? | {...}? => ( GRAPHIC_CHARACTER )* ) '\\\"' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:270:22: ({...}? => INTEGER )? BASE_SPECIFIER '\\\"' ( ( BASED_INTEGER )? | {...}? => ( GRAPHIC_CHARACTER )* ) '\\\"'
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:270:22: ({...}? => INTEGER )?
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:271:20: ( ({...}? => INTEGER )? BASE_SPECIFIER '\\\"' ( ( BASED_INTEGER )? | {...}? => ( GRAPHIC_CHARACTER )* ) '\\\"' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:271:22: ({...}? => INTEGER )? BASE_SPECIFIER '\\\"' ( ( BASED_INTEGER )? | {...}? => ( GRAPHIC_CHARACTER )* ) '\\\"'
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:271:22: ({...}? => INTEGER )?
             	val alt12 = {
             	val LA12_0 = input.LA(1)
 
@@ -4206,7 +4206,7 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             	}
             	alt12 match {
             	    case 1 =>
-            	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:270:23: {...}? => INTEGER
+            	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:271:23: {...}? => INTEGER
             	        	if ( !((vhdl2008)) ) {
             	        	    throw new FailedPredicateException(input, "BIT_STRING_LITERAL", "vhdl2008")
             	        	}
@@ -4221,7 +4221,7 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
 
             	`match`('\"')
 
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:270:66: ( ( BASED_INTEGER )? | {...}? => ( GRAPHIC_CHARACTER )* )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:271:66: ( ( BASED_INTEGER )? | {...}? => ( GRAPHIC_CHARACTER )* )
             	val alt15 = {
             	val LA15_0 = input.LA(1)
 
@@ -4256,8 +4256,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             	}
             	alt15 match {
             	    case 1 =>
-            	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:270:67: ( BASED_INTEGER )?
-            	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:270:67: ( BASED_INTEGER )?
+            	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:271:67: ( BASED_INTEGER )?
+            	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:271:67: ( BASED_INTEGER )?
             	        	val alt13 = {
             	        	val LA13_0 = input.LA(1)
 
@@ -4266,7 +4266,7 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             	        	}
             	        	alt13 match {
             	        	    case 1 =>
-            	        	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:270:67: BASED_INTEGER
+            	        	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:271:67: BASED_INTEGER
             	        	        	mBASED_INTEGER()
 
 
@@ -4276,11 +4276,11 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
 
 
             	    case 2 =>
-            	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:270:84: {...}? => ( GRAPHIC_CHARACTER )*
+            	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:271:84: {...}? => ( GRAPHIC_CHARACTER )*
             	        	if ( !((vhdl2008)) ) {
             	        	    throw new FailedPredicateException(input, "BIT_STRING_LITERAL", "vhdl2008")
             	        	}
-            	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:270:98: ( GRAPHIC_CHARACTER )*
+            	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:271:98: ( GRAPHIC_CHARACTER )*
             	        	var loop14_quitflag = false
             	        	while (!loop14_quitflag) {
             	        	    val alt14 = {
@@ -4292,7 +4292,7 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             	        	}
             	        	    alt14 match {
             	        		case 1 =>
-            	        		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:270:98: GRAPHIC_CHARACTER
+            	        		    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:271:98: GRAPHIC_CHARACTER
             	        		    	mGRAPHIC_CHARACTER()
 
 
@@ -4323,7 +4323,7 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
     @throws(classOf[RecognitionException])
     final def mBASE_SPECIFIER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:273:16: ( 'b' | 'o' | 'x' | {...}? => ( 'ub' | 'uo' | 'ux' | 'sb' | 'so' | 'sx' | 'd' ) )
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:274:16: ( 'b' | 'o' | 'x' | {...}? => ( 'ub' | 'uo' | 'ux' | 'sb' | 'so' | 'sx' | 'd' ) )
             val alt17 = {
             val LA17_0 = input.LA(1)
 
@@ -4339,66 +4339,66 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             }
             alt17 match {
                 case 1 =>
-                    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:273:18: 'b'
+                    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:274:18: 'b'
                     	`match`('b')
 
 
                 case 2 =>
-                    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:273:24: 'o'
+                    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:274:24: 'o'
                     	`match`('o')
 
 
                 case 3 =>
-                    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:273:30: 'x'
+                    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:274:30: 'x'
                     	`match`('x')
 
 
                 case 4 =>
-                    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:273:36: {...}? => ( 'ub' | 'uo' | 'ux' | 'sb' | 'so' | 'sx' | 'd' )
+                    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:274:36: {...}? => ( 'ub' | 'uo' | 'ux' | 'sb' | 'so' | 'sx' | 'd' )
                     	if ( !((vhdl2008)) ) {
                     	    throw new FailedPredicateException(input, "BASE_SPECIFIER", "vhdl2008")
                     	}
-                    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:273:49: ( 'ub' | 'uo' | 'ux' | 'sb' | 'so' | 'sx' | 'd' )
+                    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:274:49: ( 'ub' | 'uo' | 'ux' | 'sb' | 'so' | 'sx' | 'd' )
                     	val alt16 = dfa16.predict(input)
                     	alt16 match {
                     	    case 1 =>
-                    	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:273:50: 'ub'
+                    	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:274:50: 'ub'
                     	        	`match`("ub")
 
 
 
                     	    case 2 =>
-                    	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:273:57: 'uo'
+                    	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:274:57: 'uo'
                     	        	`match`("uo")
 
 
 
                     	    case 3 =>
-                    	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:273:64: 'ux'
+                    	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:274:64: 'ux'
                     	        	`match`("ux")
 
 
 
                     	    case 4 =>
-                    	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:273:71: 'sb'
+                    	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:274:71: 'sb'
                     	        	`match`("sb")
 
 
 
                     	    case 5 =>
-                    	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:273:78: 'so'
+                    	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:274:78: 'so'
                     	        	`match`("so")
 
 
 
                     	    case 6 =>
-                    	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:273:85: 'sx'
+                    	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:274:85: 'sx'
                     	        	`match`("sx")
 
 
 
                     	    case 7 =>
-                    	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:273:92: 'd'
+                    	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:274:92: 'd'
                     	        	`match`('d')
 
 
@@ -4420,11 +4420,11 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
     @throws(classOf[RecognitionException])
     final def mBASED_INTEGER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:276:15: ( EXTENDED_DIGIT ( ( '_' )? EXTENDED_DIGIT )* )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:276:17: EXTENDED_DIGIT ( ( '_' )? EXTENDED_DIGIT )*
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:277:15: ( EXTENDED_DIGIT ( ( '_' )? EXTENDED_DIGIT )* )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:277:17: EXTENDED_DIGIT ( ( '_' )? EXTENDED_DIGIT )*
             	mEXTENDED_DIGIT()
 
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:276:32: ( ( '_' )? EXTENDED_DIGIT )*
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:277:32: ( ( '_' )? EXTENDED_DIGIT )*
             	var loop19_quitflag = false
             	while (!loop19_quitflag) {
             	    val alt19 = {
@@ -4436,8 +4436,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             	}
             	    alt19 match {
             		case 1 =>
-            		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:276:34: ( '_' )? EXTENDED_DIGIT
-            		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:276:34: ( '_' )?
+            		    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:277:34: ( '_' )? EXTENDED_DIGIT
+            		    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:277:34: ( '_' )?
             		    	val alt18 = {
             		    	val LA18_0 = input.LA(1)
 
@@ -4446,7 +4446,7 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             		    	}
             		    	alt18 match {
             		    	    case 1 =>
-            		    	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:276:34: '_'
+            		    	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:277:34: '_'
             		    	        	`match`('_')
 
 
@@ -4475,8 +4475,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
     @throws(classOf[RecognitionException])
     final def mEXTENDED_DIGIT():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:279:16: ( DIGIT | LETTER )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:280:16: ( DIGIT | LETTER )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
             	if ( (input.LA(1)>='0' && input.LA(1)<='9')||(input.LA(1)>='A' && input.LA(1)<='Z')||(input.LA(1)>='a' && input.LA(1)<='z')||(input.LA(1)>='\u00C0' && input.LA(1)<='\u00D6')||(input.LA(1)>='\u00D8' && input.LA(1)<='\u00F6')||(input.LA(1)>='\u00F8' && input.LA(1)<='\u00FF') ) {
             	    input.consume()
 
@@ -4499,11 +4499,11 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
     @throws(classOf[RecognitionException])
     final def mINTEGER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:282:9: ( DIGIT ( ( '_' )? DIGIT )* )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:282:11: DIGIT ( ( '_' )? DIGIT )*
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:283:9: ( DIGIT ( ( '_' )? DIGIT )* )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:283:11: DIGIT ( ( '_' )? DIGIT )*
             	mDIGIT()
 
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:282:17: ( ( '_' )? DIGIT )*
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:283:17: ( ( '_' )? DIGIT )*
             	var loop21_quitflag = false
             	while (!loop21_quitflag) {
             	    val alt21 = {
@@ -4515,8 +4515,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             	}
             	    alt21 match {
             		case 1 =>
-            		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:282:19: ( '_' )? DIGIT
-            		    	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:282:19: ( '_' )?
+            		    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:283:19: ( '_' )? DIGIT
+            		    	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:283:19: ( '_' )?
             		    	val alt20 = {
             		    	val LA20_0 = input.LA(1)
 
@@ -4525,7 +4525,7 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             		    	}
             		    	alt20 match {
             		    	    case 1 =>
-            		    	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:282:19: '_'
+            		    	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:283:19: '_'
             		    	        	`match`('_')
 
 
@@ -4554,11 +4554,11 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
     @throws(classOf[RecognitionException])
     final def mEXPONENT():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:285:10: ( 'e' ( '+' | '-' )? INTEGER )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:285:12: 'e' ( '+' | '-' )? INTEGER
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:286:10: ( 'e' ( '+' | '-' )? INTEGER )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:286:12: 'e' ( '+' | '-' )? INTEGER
             	`match`('e')
 
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:285:16: ( '+' | '-' )?
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:286:16: ( '+' | '-' )?
             	val alt22 = {
             	val LA22_0 = input.LA(1)
 
@@ -4567,7 +4567,7 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             	}
             	alt22 match {
             	    case 1 =>
-            	        	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
+            	        	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
             	        	if ( input.LA(1)=='+'||input.LA(1)=='-' ) {
             	        	    input.consume()
 
@@ -4597,8 +4597,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
     @throws(classOf[RecognitionException])
     final def mLETTER_OR_DIGIT():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:288:17: ( LETTER | DIGIT )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:289:17: ( LETTER | DIGIT )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
             	if ( (input.LA(1)>='0' && input.LA(1)<='9')||(input.LA(1)>='A' && input.LA(1)<='Z')||(input.LA(1)>='a' && input.LA(1)<='z')||(input.LA(1)>='\u00C0' && input.LA(1)<='\u00D6')||(input.LA(1)>='\u00D8' && input.LA(1)<='\u00F6')||(input.LA(1)>='\u00F8' && input.LA(1)<='\u00FF') ) {
             	    input.consume()
 
@@ -4621,8 +4621,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
     @throws(classOf[RecognitionException])
     final def mLETTER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:291:8: ( UPPER_CASE_LETTER | LOWER_CASE_LETTER )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:292:8: ( UPPER_CASE_LETTER | LOWER_CASE_LETTER )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
             	if ( (input.LA(1)>='A' && input.LA(1)<='Z')||(input.LA(1)>='a' && input.LA(1)<='z')||(input.LA(1)>='\u00C0' && input.LA(1)<='\u00D6')||(input.LA(1)>='\u00D8' && input.LA(1)<='\u00F6')||(input.LA(1)>='\u00F8' && input.LA(1)<='\u00FF') ) {
             	    input.consume()
 
@@ -4645,8 +4645,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
     @throws(classOf[RecognitionException])
     final def mGRAPHIC_CHARACTER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:294:19: ( UPPER_CASE_LETTER | DIGIT | SPECIAL_CHARACTER | SPACE_CHARACTER | LOWER_CASE_LETTER | OTHER_SPECIAL_CHARACTER )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:295:19: ( UPPER_CASE_LETTER | DIGIT | SPECIAL_CHARACTER | SPACE_CHARACTER | LOWER_CASE_LETTER | OTHER_SPECIAL_CHARACTER )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
             	if ( (input.LA(1)>=' ' && input.LA(1)<='!')||(input.LA(1)>='#' && input.LA(1)<='[')||(input.LA(1)>=']' && input.LA(1)<='~')||(input.LA(1)>='\u00A0' && input.LA(1)<='\u00FF') ) {
             	    input.consume()
 
@@ -4669,8 +4669,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
     @throws(classOf[RecognitionException])
     final def mUPPER_CASE_LETTER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:304:19: ( 'A' .. 'Z' | '\\u00c0' .. '\\u00d6' | '\\u00d8' .. '\\u00de' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:305:19: ( 'A' .. 'Z' | '\\u00c0' .. '\\u00d6' | '\\u00d8' .. '\\u00de' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
             	if ( (input.LA(1)>='A' && input.LA(1)<='Z')||(input.LA(1)>='\u00C0' && input.LA(1)<='\u00D6')||(input.LA(1)>='\u00D8' && input.LA(1)<='\u00DE') ) {
             	    input.consume()
 
@@ -4693,8 +4693,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
     @throws(classOf[RecognitionException])
     final def mLOWER_CASE_LETTER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:308:19: ( 'a' .. 'z' | '\\u00df' .. '\\u00f6' | '\\u00f8' .. '\\u00ff' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:309:19: ( 'a' .. 'z' | '\\u00df' .. '\\u00f6' | '\\u00f8' .. '\\u00ff' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
             	if ( (input.LA(1)>='a' && input.LA(1)<='z')||(input.LA(1)>='\u00DF' && input.LA(1)<='\u00F6')||(input.LA(1)>='\u00F8' && input.LA(1)<='\u00FF') ) {
             	    input.consume()
 
@@ -4717,8 +4717,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
     @throws(classOf[RecognitionException])
     final def mDIGIT():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:311:7: ( '0' .. '9' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:311:9: '0' .. '9'
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:312:7: ( '0' .. '9' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:312:9: '0' .. '9'
             	matchRange('0','9'); 
 
 
@@ -4733,8 +4733,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
     @throws(classOf[RecognitionException])
     final def mSPECIAL_CHARACTER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:314:19: ( '#' | '&' | '\\'' | '(' | ')' | '*' | '+' | ',' | '-' | '.' | '/' | ':' | ';' | '<' | '=' | '>' | '[' | ']' | '_' | '|' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:315:19: ( '#' | '&' | '\\'' | '(' | ')' | '*' | '+' | ',' | '-' | '.' | '/' | ':' | ';' | '<' | '=' | '>' | '[' | ']' | '_' | '|' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
             	if ( input.LA(1)=='#'||(input.LA(1)>='&' && input.LA(1)<='/')||(input.LA(1)>=':' && input.LA(1)<='>')||input.LA(1)=='['||input.LA(1)==']'||input.LA(1)=='_'||input.LA(1)=='|' ) {
             	    input.consume()
 
@@ -4757,8 +4757,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
     @throws(classOf[RecognitionException])
     final def mSPACE_CHARACTER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:319:17: ( ' ' | '\\u00a0' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:320:17: ( ' ' | '\\u00a0' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
             	if ( input.LA(1)==' '||input.LA(1)=='\u00A0' ) {
             	    input.consume()
 
@@ -4781,8 +4781,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
     @throws(classOf[RecognitionException])
     final def mOTHER_SPECIAL_CHARACTER():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:322:25: ( '!' | '$' | '%' | '@' | '?' | '^' | '`' | '{' | '}' | '~' | '\\u00a1' .. '\\u00bf' | '\\u00d7' | '\\u00f7' )
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:323:25: ( '!' | '$' | '%' | '@' | '?' | '^' | '`' | '{' | '}' | '~' | '\\u00a1' .. '\\u00bf' | '\\u00d7' | '\\u00f7' )
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:
             	if ( input.LA(1)=='!'||(input.LA(1)>='$' && input.LA(1)<='%')||(input.LA(1)>='?' && input.LA(1)<='@')||input.LA(1)=='^'||input.LA(1)=='`'||input.LA(1)=='{'||(input.LA(1)>='}' && input.LA(1)<='~')||(input.LA(1)>='\u00A1' && input.LA(1)<='\u00BF')||input.LA(1)=='\u00D7'||input.LA(1)=='\u00F7' ) {
             	    input.consume()
 
@@ -4805,8 +4805,8 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
     @throws(classOf[RecognitionException])
     final def mCHARACTER_LITERAL():Unit = {
         try {
-            // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:327:19: ()
-            	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:327:21: 
+            // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:328:19: ()
+            	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:328:21: 
 
 
         }
@@ -4817,831 +4817,831 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
 
     @throws(classOf[RecognitionException])
     final def mTokens():Unit = {
-        // C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:8: ( ABS | ACCESS | AFTER | ALIAS | ALL | AND | ARCHITECTURE | ARRAY | ASSERT | ATTRIBUTE | BEGIN | BLOCK | BODY | BUFFER | BUS | CASE | COMPONENT | CONFIGURATION | CONSTANT | DISCONNECT | DOWNTO | ELSE | ELSIF | END | ENTITY | EXIT | FILE | FOR | FUNCTION | GENERATE | GENERIC | GROUP | GUARDED | IF | IMPURE | IN | INERTIAL | INOUT | IS | LABEL | LIBRARY | LINKAGE | LITERAL | LOOP | MAP | MOD | NAND | NEW | NEXT | NOR | NOT | NULL | OF | ON | OPEN | OR | OTHERS | OUT | PACKAGE | PORT | POSTPONED | PROCEDURE | PROCESS | PROTECTED | PURE | RANGE | RECORD | REGISTER | REJECT | REM | REPORT | RETURN | ROL | ROR | SELECT | SEVERITY | SHARED | SIGNAL | SLA | SLL | SRA | SRL | SUBTYPE | THEN | TO | TRANSPORT | TYPE | UNAFFECTED | UNITS | UNTIL | USE | VARIABLE | WAIT | WHEN | WHILE | WITH | XNOR | XOR | AMS_ASSIGN | VAR_ASSIGN | BOX | DBLQUOTE | COMMA | SEMICOLON | LPAREN | RPAREN | LBRACKET | RBRACKET | COLON | DOT | AMPERSAND | BAR | ARROW | AT | QMARK | DLT | DGT | CIRCUMFLEX | DOUBLESTAR | MUL | DIV | PLUS | MINUS | EQ | NEQ | LT | GT | LEQ | GEQ | MEQ | MNEQ | MLT | MGT | MLEQ | MGEQ | CONDITION_OPERATOR | CONTEXT | FORCE | PARAMETER | RELEASE | DEFAULT | NATURE | TERMINAL | QUANTITY | TOLERANCE | ACROSS | THROUGH | SPECTRUM | NOISE | SUBNATURE | LIMIT | REFERENCE | BREAK | PROCEDURAL | WS | NESTED_ML_COMMENT | LINECOMMENT | BASIC_IDENTIFIER | EXTENDED_IDENTIFIER | BASED_LITERAL | INTEGER_LITERAL | REAL_LITERAL | APOSTROPHE | STRING_LITERAL | BIT_STRING_LITERAL )
+        // .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:8: ( ABS | ACCESS | AFTER | ALIAS | ALL | AND | ARCHITECTURE | ARRAY | ASSERT | ATTRIBUTE | BEGIN | BLOCK | BODY | BUFFER | BUS | CASE | COMPONENT | CONFIGURATION | CONSTANT | DISCONNECT | DOWNTO | ELSE | ELSIF | END | ENTITY | EXIT | FILE | FOR | FUNCTION | GENERATE | GENERIC | GROUP | GUARDED | IF | IMPURE | IN | INERTIAL | INOUT | IS | LABEL | LIBRARY | LINKAGE | LITERAL | LOOP | MAP | MOD | NAND | NEW | NEXT | NOR | NOT | NULL | OF | ON | OPEN | OR | OTHERS | OUT | PACKAGE | PORT | POSTPONED | PROCEDURE | PROCESS | PROTECTED | PURE | RANGE | RECORD | REGISTER | REJECT | REM | REPORT | RETURN | ROL | ROR | SELECT | SEVERITY | SHARED | SIGNAL | SLA | SLL | SRA | SRL | SUBTYPE | THEN | TO | TRANSPORT | TYPE | UNAFFECTED | UNITS | UNTIL | USE | VARIABLE | WAIT | WHEN | WHILE | WITH | XNOR | XOR | AMS_ASSIGN | VAR_ASSIGN | BOX | DBLQUOTE | COMMA | SEMICOLON | LPAREN | RPAREN | LBRACKET | RBRACKET | COLON | DOT | AMPERSAND | BAR | ARROW | AT | QMARK | DLT | DGT | CIRCUMFLEX | DOUBLESTAR | MUL | DIV | PLUS | MINUS | EQ | NEQ | LT | GT | LEQ | GEQ | MEQ | MNEQ | MLT | MGT | MLEQ | MGEQ | CONDITION_OPERATOR | CONTEXT | FORCE | PARAMETER | RELEASE | DEFAULT | NATURE | TERMINAL | QUANTITY | TOLERANCE | ACROSS | THROUGH | SPECTRUM | NOISE | SUBNATURE | LIMIT | REFERENCE | BREAK | PROCEDURAL | WS | NESTED_ML_COMMENT | LINECOMMENT | BASIC_IDENTIFIER | EXTENDED_IDENTIFIER | BASED_LITERAL | INTEGER_LITERAL | REAL_LITERAL | APOSTROPHE | STRING_LITERAL | BIT_STRING_LITERAL )
         val alt23 = dfa23.predict(input)
         alt23 match {
             case 1 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:10: ABS
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:10: ABS
                 	mABS()
 
 
             case 2 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:14: ACCESS
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:14: ACCESS
                 	mACCESS()
 
 
             case 3 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:21: AFTER
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:21: AFTER
                 	mAFTER()
 
 
             case 4 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:27: ALIAS
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:27: ALIAS
                 	mALIAS()
 
 
             case 5 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:33: ALL
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:33: ALL
                 	mALL()
 
 
             case 6 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:37: AND
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:37: AND
                 	mAND()
 
 
             case 7 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:41: ARCHITECTURE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:41: ARCHITECTURE
                 	mARCHITECTURE()
 
 
             case 8 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:54: ARRAY
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:54: ARRAY
                 	mARRAY()
 
 
             case 9 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:60: ASSERT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:60: ASSERT
                 	mASSERT()
 
 
             case 10 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:67: ATTRIBUTE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:67: ATTRIBUTE
                 	mATTRIBUTE()
 
 
             case 11 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:77: BEGIN
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:77: BEGIN
                 	mBEGIN()
 
 
             case 12 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:83: BLOCK
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:83: BLOCK
                 	mBLOCK()
 
 
             case 13 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:89: BODY
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:89: BODY
                 	mBODY()
 
 
             case 14 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:94: BUFFER
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:94: BUFFER
                 	mBUFFER()
 
 
             case 15 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:101: BUS
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:101: BUS
                 	mBUS()
 
 
             case 16 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:105: CASE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:105: CASE
                 	mCASE()
 
 
             case 17 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:110: COMPONENT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:110: COMPONENT
                 	mCOMPONENT()
 
 
             case 18 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:120: CONFIGURATION
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:120: CONFIGURATION
                 	mCONFIGURATION()
 
 
             case 19 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:134: CONSTANT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:134: CONSTANT
                 	mCONSTANT()
 
 
             case 20 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:143: DISCONNECT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:143: DISCONNECT
                 	mDISCONNECT()
 
 
             case 21 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:154: DOWNTO
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:154: DOWNTO
                 	mDOWNTO()
 
 
             case 22 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:161: ELSE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:161: ELSE
                 	mELSE()
 
 
             case 23 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:166: ELSIF
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:166: ELSIF
                 	mELSIF()
 
 
             case 24 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:172: END
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:172: END
                 	mEND()
 
 
             case 25 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:176: ENTITY
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:176: ENTITY
                 	mENTITY()
 
 
             case 26 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:183: EXIT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:183: EXIT
                 	mEXIT()
 
 
             case 27 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:188: FILE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:188: FILE
                 	mFILE()
 
 
             case 28 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:193: FOR
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:193: FOR
                 	mFOR()
 
 
             case 29 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:197: FUNCTION
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:197: FUNCTION
                 	mFUNCTION()
 
 
             case 30 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:206: GENERATE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:206: GENERATE
                 	mGENERATE()
 
 
             case 31 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:215: GENERIC
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:215: GENERIC
                 	mGENERIC()
 
 
             case 32 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:223: GROUP
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:223: GROUP
                 	mGROUP()
 
 
             case 33 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:229: GUARDED
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:229: GUARDED
                 	mGUARDED()
 
 
             case 34 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:237: IF
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:237: IF
                 	mIF()
 
 
             case 35 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:240: IMPURE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:240: IMPURE
                 	mIMPURE()
 
 
             case 36 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:247: IN
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:247: IN
                 	mIN()
 
 
             case 37 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:250: INERTIAL
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:250: INERTIAL
                 	mINERTIAL()
 
 
             case 38 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:259: INOUT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:259: INOUT
                 	mINOUT()
 
 
             case 39 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:265: IS
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:265: IS
                 	mIS()
 
 
             case 40 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:268: LABEL
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:268: LABEL
                 	mLABEL()
 
 
             case 41 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:274: LIBRARY
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:274: LIBRARY
                 	mLIBRARY()
 
 
             case 42 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:282: LINKAGE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:282: LINKAGE
                 	mLINKAGE()
 
 
             case 43 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:290: LITERAL
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:290: LITERAL
                 	mLITERAL()
 
 
             case 44 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:298: LOOP
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:298: LOOP
                 	mLOOP()
 
 
             case 45 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:303: MAP
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:303: MAP
                 	mMAP()
 
 
             case 46 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:307: MOD
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:307: MOD
                 	mMOD()
 
 
             case 47 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:311: NAND
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:311: NAND
                 	mNAND()
 
 
             case 48 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:316: NEW
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:316: NEW
                 	mNEW()
 
 
             case 49 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:320: NEXT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:320: NEXT
                 	mNEXT()
 
 
             case 50 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:325: NOR
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:325: NOR
                 	mNOR()
 
 
             case 51 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:329: NOT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:329: NOT
                 	mNOT()
 
 
             case 52 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:333: NULL
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:333: NULL
                 	mNULL()
 
 
             case 53 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:338: OF
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:338: OF
                 	mOF()
 
 
             case 54 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:341: ON
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:341: ON
                 	mON()
 
 
             case 55 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:344: OPEN
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:344: OPEN
                 	mOPEN()
 
 
             case 56 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:349: OR
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:349: OR
                 	mOR()
 
 
             case 57 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:352: OTHERS
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:352: OTHERS
                 	mOTHERS()
 
 
             case 58 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:359: OUT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:359: OUT
                 	mOUT()
 
 
             case 59 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:363: PACKAGE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:363: PACKAGE
                 	mPACKAGE()
 
 
             case 60 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:371: PORT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:371: PORT
                 	mPORT()
 
 
             case 61 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:376: POSTPONED
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:376: POSTPONED
                 	mPOSTPONED()
 
 
             case 62 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:386: PROCEDURE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:386: PROCEDURE
                 	mPROCEDURE()
 
 
             case 63 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:396: PROCESS
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:396: PROCESS
                 	mPROCESS()
 
 
             case 64 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:404: PROTECTED
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:404: PROTECTED
                 	mPROTECTED()
 
 
             case 65 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:414: PURE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:414: PURE
                 	mPURE()
 
 
             case 66 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:419: RANGE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:419: RANGE
                 	mRANGE()
 
 
             case 67 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:425: RECORD
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:425: RECORD
                 	mRECORD()
 
 
             case 68 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:432: REGISTER
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:432: REGISTER
                 	mREGISTER()
 
 
             case 69 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:441: REJECT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:441: REJECT
                 	mREJECT()
 
 
             case 70 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:448: REM
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:448: REM
                 	mREM()
 
 
             case 71 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:452: REPORT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:452: REPORT
                 	mREPORT()
 
 
             case 72 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:459: RETURN
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:459: RETURN
                 	mRETURN()
 
 
             case 73 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:466: ROL
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:466: ROL
                 	mROL()
 
 
             case 74 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:470: ROR
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:470: ROR
                 	mROR()
 
 
             case 75 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:474: SELECT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:474: SELECT
                 	mSELECT()
 
 
             case 76 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:481: SEVERITY
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:481: SEVERITY
                 	mSEVERITY()
 
 
             case 77 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:490: SHARED
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:490: SHARED
                 	mSHARED()
 
 
             case 78 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:497: SIGNAL
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:497: SIGNAL
                 	mSIGNAL()
 
 
             case 79 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:504: SLA
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:504: SLA
                 	mSLA()
 
 
             case 80 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:508: SLL
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:508: SLL
                 	mSLL()
 
 
             case 81 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:512: SRA
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:512: SRA
                 	mSRA()
 
 
             case 82 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:516: SRL
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:516: SRL
                 	mSRL()
 
 
             case 83 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:520: SUBTYPE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:520: SUBTYPE
                 	mSUBTYPE()
 
 
             case 84 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:528: THEN
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:528: THEN
                 	mTHEN()
 
 
             case 85 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:533: TO
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:533: TO
                 	mTO()
 
 
             case 86 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:536: TRANSPORT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:536: TRANSPORT
                 	mTRANSPORT()
 
 
             case 87 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:546: TYPE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:546: TYPE
                 	mTYPE()
 
 
             case 88 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:551: UNAFFECTED
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:551: UNAFFECTED
                 	mUNAFFECTED()
 
 
             case 89 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:562: UNITS
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:562: UNITS
                 	mUNITS()
 
 
             case 90 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:568: UNTIL
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:568: UNTIL
                 	mUNTIL()
 
 
             case 91 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:574: USE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:574: USE
                 	mUSE()
 
 
             case 92 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:578: VARIABLE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:578: VARIABLE
                 	mVARIABLE()
 
 
             case 93 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:587: WAIT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:587: WAIT
                 	mWAIT()
 
 
             case 94 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:592: WHEN
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:592: WHEN
                 	mWHEN()
 
 
             case 95 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:597: WHILE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:597: WHILE
                 	mWHILE()
 
 
             case 96 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:603: WITH
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:603: WITH
                 	mWITH()
 
 
             case 97 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:608: XNOR
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:608: XNOR
                 	mXNOR()
 
 
             case 98 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:613: XOR
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:613: XOR
                 	mXOR()
 
 
             case 99 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:617: AMS_ASSIGN
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:617: AMS_ASSIGN
                 	mAMS_ASSIGN()
 
 
             case 100 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:628: VAR_ASSIGN
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:628: VAR_ASSIGN
                 	mVAR_ASSIGN()
 
 
             case 101 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:639: BOX
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:639: BOX
                 	mBOX()
 
 
             case 102 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:643: DBLQUOTE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:643: DBLQUOTE
                 	mDBLQUOTE()
 
 
             case 103 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:652: COMMA
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:652: COMMA
                 	mCOMMA()
 
 
             case 104 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:658: SEMICOLON
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:658: SEMICOLON
                 	mSEMICOLON()
 
 
             case 105 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:668: LPAREN
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:668: LPAREN
                 	mLPAREN()
 
 
             case 106 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:675: RPAREN
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:675: RPAREN
                 	mRPAREN()
 
 
             case 107 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:682: LBRACKET
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:682: LBRACKET
                 	mLBRACKET()
 
 
             case 108 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:691: RBRACKET
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:691: RBRACKET
                 	mRBRACKET()
 
 
             case 109 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:700: COLON
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:700: COLON
                 	mCOLON()
 
 
             case 110 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:706: DOT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:706: DOT
                 	mDOT()
 
 
             case 111 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:710: AMPERSAND
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:710: AMPERSAND
                 	mAMPERSAND()
 
 
             case 112 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:720: BAR
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:720: BAR
                 	mBAR()
 
 
             case 113 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:724: ARROW
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:724: ARROW
                 	mARROW()
 
 
             case 114 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:730: AT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:730: AT
                 	mAT()
 
 
             case 115 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:733: QMARK
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:733: QMARK
                 	mQMARK()
 
 
             case 116 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:739: DLT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:739: DLT
                 	mDLT()
 
 
             case 117 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:743: DGT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:743: DGT
                 	mDGT()
 
 
             case 118 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:747: CIRCUMFLEX
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:747: CIRCUMFLEX
                 	mCIRCUMFLEX()
 
 
             case 119 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:758: DOUBLESTAR
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:758: DOUBLESTAR
                 	mDOUBLESTAR()
 
 
             case 120 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:769: MUL
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:769: MUL
                 	mMUL()
 
 
             case 121 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:773: DIV
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:773: DIV
                 	mDIV()
 
 
             case 122 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:777: PLUS
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:777: PLUS
                 	mPLUS()
 
 
             case 123 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:782: MINUS
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:782: MINUS
                 	mMINUS()
 
 
             case 124 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:788: EQ
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:788: EQ
                 	mEQ()
 
 
             case 125 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:791: NEQ
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:791: NEQ
                 	mNEQ()
 
 
             case 126 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:795: LT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:795: LT
                 	mLT()
 
 
             case 127 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:798: GT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:798: GT
                 	mGT()
 
 
             case 128 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:801: LEQ
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:801: LEQ
                 	mLEQ()
 
 
             case 129 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:805: GEQ
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:805: GEQ
                 	mGEQ()
 
 
             case 130 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:809: MEQ
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:809: MEQ
                 	mMEQ()
 
 
             case 131 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:813: MNEQ
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:813: MNEQ
                 	mMNEQ()
 
 
             case 132 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:818: MLT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:818: MLT
                 	mMLT()
 
 
             case 133 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:822: MGT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:822: MGT
                 	mMGT()
 
 
             case 134 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:826: MLEQ
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:826: MLEQ
                 	mMLEQ()
 
 
             case 135 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:831: MGEQ
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:831: MGEQ
                 	mMGEQ()
 
 
             case 136 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:836: CONDITION_OPERATOR
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:836: CONDITION_OPERATOR
                 	mCONDITION_OPERATOR()
 
 
             case 137 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:855: CONTEXT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:855: CONTEXT
                 	mCONTEXT()
 
 
             case 138 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:863: FORCE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:863: FORCE
                 	mFORCE()
 
 
             case 139 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:869: PARAMETER
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:869: PARAMETER
                 	mPARAMETER()
 
 
             case 140 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:879: RELEASE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:879: RELEASE
                 	mRELEASE()
 
 
             case 141 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:887: DEFAULT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:887: DEFAULT
                 	mDEFAULT()
 
 
             case 142 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:895: NATURE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:895: NATURE
                 	mNATURE()
 
 
             case 143 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:902: TERMINAL
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:902: TERMINAL
                 	mTERMINAL()
 
 
             case 144 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:911: QUANTITY
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:911: QUANTITY
                 	mQUANTITY()
 
 
             case 145 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:920: TOLERANCE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:920: TOLERANCE
                 	mTOLERANCE()
 
 
             case 146 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:930: ACROSS
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:930: ACROSS
                 	mACROSS()
 
 
             case 147 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:937: THROUGH
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:937: THROUGH
                 	mTHROUGH()
 
 
             case 148 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:945: SPECTRUM
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:945: SPECTRUM
                 	mSPECTRUM()
 
 
             case 149 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:954: NOISE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:954: NOISE
                 	mNOISE()
 
 
             case 150 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:960: SUBNATURE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:960: SUBNATURE
                 	mSUBNATURE()
 
 
             case 151 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:970: LIMIT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:970: LIMIT
                 	mLIMIT()
 
 
             case 152 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:976: REFERENCE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:976: REFERENCE
                 	mREFERENCE()
 
 
             case 153 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:986: BREAK
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:986: BREAK
                 	mBREAK()
 
 
             case 154 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:992: PROCEDURAL
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:992: PROCEDURAL
                 	mPROCEDURAL()
 
 
             case 155 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1003: WS
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1003: WS
                 	mWS()
 
 
             case 156 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1006: NESTED_ML_COMMENT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1006: NESTED_ML_COMMENT
                 	mNESTED_ML_COMMENT()
 
 
             case 157 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1024: LINECOMMENT
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1024: LINECOMMENT
                 	mLINECOMMENT()
 
 
             case 158 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1036: BASIC_IDENTIFIER
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1036: BASIC_IDENTIFIER
                 	mBASIC_IDENTIFIER()
 
 
             case 159 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1053: EXTENDED_IDENTIFIER
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1053: EXTENDED_IDENTIFIER
                 	mEXTENDED_IDENTIFIER()
 
 
             case 160 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1073: BASED_LITERAL
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1073: BASED_LITERAL
                 	mBASED_LITERAL()
 
 
             case 161 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1087: INTEGER_LITERAL
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1087: INTEGER_LITERAL
                 	mINTEGER_LITERAL()
 
 
             case 162 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1103: REAL_LITERAL
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1103: REAL_LITERAL
                 	mREAL_LITERAL()
 
 
             case 163 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1116: APOSTROPHE
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1116: APOSTROPHE
                 	mAPOSTROPHE()
 
 
             case 164 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1127: STRING_LITERAL
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1127: STRING_LITERAL
                 	mSTRING_LITERAL()
 
 
             case 165 =>
-                	// C:\\Users\\christian\\Desktop\\OpenVC\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1142: BIT_STRING_LITERAL
+                	// .\\src\\main\\scala\\at\\jku\\ssw\\openvc\\parser\\Lexer.g:1:1142: BIT_STRING_LITERAL
                 	mBIT_STRING_LITERAL()
 
 
@@ -5685,7 +5685,7 @@ class Lexer(input: CharStream, state: RecognizerSharedState) extends AbstractLex
             this.transition(i) = DFA.unpackEncodedString(transitionS(i))
         }
 
-        override val getDescription = "273:49: ( 'ub' | 'uo' | 'ux' | 'sb' | 'so' | 'sx' | 'd' )"
+        override val getDescription = "274:49: ( 'ub' | 'uo' | 'ux' | 'sb' | 'so' | 'sx' | 'd' )"
     }
     final private class DFA23(baseRecognizer: BaseRecognizer) extends DFA {
         val eotS = "\1\uffff\24\54\1\u0083\1\u0085\1\u0089\1\u008a\12\uffff"+

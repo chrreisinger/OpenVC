@@ -19,7 +19,7 @@
 lexer grammar Lexer;
 
 options {
-    language=Java;
+    language = Scala;
     superClass = AbstractLexer;
 }
 

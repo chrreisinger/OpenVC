@@ -3,7 +3,8 @@ import sbt.Process._
 import de.element34.sbteclipsify._
 
 final class Project(info: ProjectInfo) extends DefaultProject(info) with Eclipsify with IdeaProject with ProguardProject {
-  val antlrComplete = "org.antlr" % "antlr" % "3.3"
+  //download antlr from github with my scala target changes, switch back to a maven version when the scala target is good enough
+  val antlrComplete = "org.antlr" % "antlr" % "3.3" from "http://cloud.github.com/downloads/chrreisinger/OpenVC/antlr-3.3.jar"
   val antlrRuntimeJar = "org.antlr" % "antlr-runtime" % "3.3" withSources()
   val asmJar = "asm" % "asm-all" % "3.3.1" withSources()
   val scalaTestJar = "org.scalatest" % "scalatest" % "1.3" withSources() withJavadoc()
@@ -23,7 +24,7 @@ final class Project(info: ProjectInfo) extends DefaultProject(info) with Eclipsi
   //http://code.google.com/p/sbt-rats/source/browse/src/RatsProject.scala
   //http://code.google.com/p/simple-build-tool/wiki/ProjectDefinitionExamples#Conditional_Task
 
-  //The directory in which the main module is stored.
+  //The directory in which the grammars are stored.
   lazy val grammarPath = mainScalaSourcePath / "at" / "jku" / "ssw" / "openvc" / "parser"
 
   //A task to delete the generated Antlr parser.
@@ -39,9 +40,9 @@ final class Project(info: ProjectInfo) extends DefaultProject(info) with Eclipsi
    */
   lazy val antlr = {
     val srcs = descendents(mainSourceRoots, "*.g")
-    val fmt = "java -cp %s org.antlr.Tool %s %s"
+    val fmt = "java -cp %s org.antlr.Tool -fo %s %s %s"
     val classpath = Path.makeString(compileClasspath.get)
-    val cmd = fmt.format(classpath, grammarPath / ("Lexer.g"), grammarPath / ("Parser.g"))
+    val cmd = fmt.format(classpath, grammarPath, grammarPath / ("Lexer.g"), grammarPath / ("Parser.g"))
     fileTask("Generate parser from " + grammarPath, grammarPath / ("Parser.scala") from srcs) {
       if (cmd ! log == 0) {
         FileUtilities.clean(grammarPath / ("Parser.tokens"), log)
@@ -51,12 +52,11 @@ final class Project(info: ProjectInfo) extends DefaultProject(info) with Eclipsi
     } describedAs ("Generate Antlr parser and lexer")
   }
 
-  //TODO enable actions when antlr supports scala
   //Make the antlr clean task run on project clean.
-  //override def cleanAction = super.cleanAction dependsOn (cleanAntlr)
+  override def cleanAction = super.cleanAction dependsOn (cleanAntlr)
 
   //Run the antlr task before compilation.
-  //override def compileAction = super.compileAction dependsOn (antlr)
+  override def compileAction = super.compileAction dependsOn (antlr)
 
   override val proguardInJars = super.proguardInJars.filter {
     pathFinder =>

@@ -15,3 +15,5 @@ vhdlSrc/*
 *~
 ! .gitkeep
 *.vhd
+Parser.scala
+Lexer.scala
