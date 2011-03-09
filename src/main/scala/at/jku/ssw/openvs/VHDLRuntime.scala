@@ -362,7 +362,7 @@ object VHDLRuntime {
       1 / math.pow(base, math.abs(exponent))
     else math.pow(base, exponent)
 
-  def stringAppend(s1: String, s2: String): String = s1.concat(s2)
+  def concatenate(s1: String, s2: String): String = s1.concat(s2)
 
   def mod(x: Int, y: Int): Int = {
     val mod = x % y

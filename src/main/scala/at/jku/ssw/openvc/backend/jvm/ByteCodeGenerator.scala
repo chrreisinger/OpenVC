@@ -744,10 +744,7 @@ object ByteCodeGenerator {
                 case _: RealType => DSUB
                 case _: PhysicalType => LSUB
               }
-            case AddOperator.CONCATENATION =>
-              if (simpleExpr.dataType == SymbolTable.stringType) {
-                INVOKESTATIC(RUNTIME, "stringAppend", "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;")
-              } else error("not implemented")
+            case AddOperator.CONCATENATION => INVOKESTATIC(RUNTIME, "concatenate", "(" + getJVMDataType(simpleExpr.left.dataType) + getJVMDataType(simpleExpr.rightOption.get.dataType) + ")" + getJVMDataType(simpleExpr.dataType))
           }
         }
         for (signOperator <- simpleExpr.signOperator) {
