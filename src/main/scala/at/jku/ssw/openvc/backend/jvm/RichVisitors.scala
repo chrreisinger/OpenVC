@@ -511,12 +511,14 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
   def createDebugLineNumberInformation(node: Locatable): Unit = createDebugLineNumberInformation(node.position)
 
   def createDebugLineNumberInformation(position: Position) {
-    val line = position.line
-    if (lastLine != line && position != NoPosition) {
-      lastLine = line
-      val label = createLabel
-      label()
-      visitLineNumber(line, label)
+    if (position != NoPosition) {
+      val line = position.line
+      if (lastLine != line) {
+        lastLine = line
+        val label = createLabel
+        label()
+        visitLineNumber(line, label)
+      }
     }
   }
 

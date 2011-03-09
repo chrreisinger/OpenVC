@@ -358,7 +358,8 @@ object SemanticAnalyzer {
         visitTerm(term.copy(left = acceptExpressionInner(term.left), right = acceptExpressionInner(term.right)))
       case aggregate: Aggregate => visitAggregate(aggregate)
       case relation: Relation =>
-        visitRelation(relation.copy(left = acceptExpressionInner(relation.left), right = acceptExpressionInner(relation.right)))
+        val left = acceptExpressionInner(relation.left)
+        visitRelation(relation.copy(left = left, right = acceptExpression(relation.right, left.dataType, context)))
       case qualifiedExpr: QualifiedExpression => visitQualifiedExpression(qualifiedExpr)
       case name: Name => visitName(name)
       case shiftExpr: ShiftExpression =>
@@ -677,7 +678,7 @@ object SemanticAnalyzer {
         case ListOfEnumerations(_, enumerations) => enumerations.find(enumSymbol => isCompatible(enumSymbol.dataType, expectedType)) match {
           case Some(enumSymbol) => Literal(identifier.position, identifier.text, Literal.Type.INTEGER_LITERAL, enumSymbol.dataType, value = enumSymbol.dataType.intValue(enumSymbol.name.replace("'", "")))
           case _ =>
-            addError(identifier, "enumerations %s not found in type %s", identifier.text, expectedType.name)
+            addError(identifier, "enumeration %s not found in type %s", identifier.text, expectedType.name)
             NoExpression
         }
         case r: RuntimeSymbol => ItemExpression(identifier.position, r)
@@ -882,9 +883,13 @@ object SemanticAnalyzer {
       }
       case None =>
         val right = simpleExpr.rightOption.get
-        (simpleExpr.left.dataType, right.dataType) match {
-          case (left: NumericType, right) if (isCompatible(left, right)) => simpleExpr.copy(dataType = left)
-          case _ => findOverloadedOperator(simpleExpr.addOperator.get.toString, simpleExpr, simpleExpr.left, right).getOrElse(simpleExpr)
+        simpleExpr.addOperator.get match {
+          case SimpleExpression.AddOperator.CONCATENATION => simpleExpr.copy(dataType = simpleExpr.left.dataType) //TODO hack
+          case _ =>
+            (simpleExpr.left.dataType, right.dataType) match {
+              case (left: NumericType, right) if (isCompatible(left, right)) => simpleExpr.copy(dataType = left)
+              case _ => findOverloadedOperator(simpleExpr.addOperator.get.toString, simpleExpr, simpleExpr.left, right).getOrElse(simpleExpr)
+            }
         }
     }
 
@@ -1175,7 +1180,7 @@ object SemanticAnalyzer {
         case Seq() => addError(node, "the %s statement must be inside a loop", stmtName)
         case Seq((_, position), _*) => Some(position)
       }
-      case Some(loopLabel) => context.loopLabels.find(_._1 == loopLabel) match {
+      case Some(loopLabel) => context.loopLabels.find(_._1 == loopLabelOption) match {
         case None => addError(loopLabel, "loop label %s not found", loopLabel)
         case Some((_, position)) => Some(position)
       }

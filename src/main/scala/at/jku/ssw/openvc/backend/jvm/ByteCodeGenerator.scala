@@ -1027,11 +1027,12 @@ object ByteCodeGenerator {
           }
         case Right(subTypeIndication) =>
           import mv._
+          val scalarType = subTypeIndication.dataType.asInstanceOf[ScalarType]
           NEW(getJVMName(discreteRange.dataType))
           DUP
-          pushAnyVal(subTypeIndication.dataType.asInstanceOf[ScalarType].left)
-          pushAnyVal(subTypeIndication.dataType.asInstanceOf[ScalarType].right)
-          ICONST_M1
+          pushAnyVal(scalarType.left)
+          pushAnyVal(scalarType.right)
+          if (scalarType.isAscending) ICONST_1 else ICONST_M1
           INVOKESPECIAL("scala/collection/immutable/Range$Inclusive", "<init>", "(III)V")
       }
 
@@ -1520,7 +1521,8 @@ object ByteCodeGenerator {
       val defaultLabel = new Label()
       val labelList = caseStmt.alternatives.flatMap {
         alternative =>
-          alternative.choices.map(choice => if (choice.isOthers) defaultLabel else new Label())
+          val label = new Label()
+          alternative.choices.map(choice => if (choice.isOthers) defaultLabel else label)
       }
 
       createDebugLineNumberInformation(caseStmt)

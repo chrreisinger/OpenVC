@@ -63,7 +63,7 @@ object StaticExpressionCalculator {
         case REAL_LITERAL => literal.toDouble.asInstanceOf[A]
         case CHARACTER_LITERAL =>
           literal.dataType match {
-            case enumType: EnumerationType => enumType.intValue(literal.text).asInstanceOf[A]
+            case enumType: EnumerationType => enumType.intValue(literal.text.replace("'", "")).asInstanceOf[A]
             case _ => None
           }
       }
