@@ -23,7 +23,7 @@ import java.io.Serializable
 import collection.mutable
 
 import at.jku.ssw.openvc.ast
-import ast.{Identifier,Locatable}
+import ast.{Identifier, Locatable}
 import ast.InterfaceList.{InterfaceMode, Mode}
 import ast.expressions.Expression
 import ast.declarativeItems.SignalDeclaration
@@ -39,6 +39,10 @@ abstract sealed class Symbol extends Serializable with Locatable {
 
   @transient lazy val position = identifier.position
   val name = identifier.text
+
+  lazy val fullName: String =
+    if (owner == NoSymbol) name
+    else owner.fullName + '.' + name
 
   lazy val attributes = mutable.Map[String, AttributeSymbol]()
 
