@@ -49,10 +49,11 @@ object Main {
       val (configurationOption, files) = parseCommandLineArguments(arguments)
       configurationOption.foreach {
         configuration =>
+          import util.SourceFile
           val classFilter = new FilenameFilter() {
             override def accept(dir: File, name: String): Boolean = name.endsWith(".class")
           }
-          files.map(file => VHDLCompiler.compileFile(file, configuration)).foreach(result => result.printErrors(new PrintWriter(System.out)))
+          files.map(file => VHDLCompiler.compile(new CompilationUnit(SourceFile.fromFile(file), configuration))).foreach(unit => unit.printErrors(new PrintWriter(System.out)))
           Simulator.loadFiles(this.getClass.getClassLoader, configuration.outputDirectory, listFiles(new File(configuration.libraryOutputDirectory), classFilter, true).map(file => file.getPath.substring(file.getPath.indexOf('\\') + 1).split('.').head.replace('\\', '.')), List("std.jar", "ieee.jar"))
           Simulator.runClass(this.getClass.getClassLoader, configuration.outputDirectory, configuration.designLibrary + ".alu_tb_body", "main$1106182723", List("std.jar", "ieee.jar"))
       }

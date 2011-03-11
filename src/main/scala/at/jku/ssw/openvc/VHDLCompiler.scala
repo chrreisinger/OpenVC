@@ -18,8 +18,10 @@
 
 package at.jku.ssw.openvc
 
-import ast.designUnits.DesignFile
-import util.{Position, NoPosition}
+import ast.{NoNode, ASTNode}
+import util.{SourceFile, Position, NoPosition}
+import at.jku.ssw.openvc.VHDLCompiler.Configuration
+import collection.mutable.ListBuffer
 
 final class CompilerMessage(val position: Position, val message: String) extends Ordered[CompilerMessage] {
   override def toString = position + " " + message
@@ -27,155 +29,81 @@ final class CompilerMessage(val position: Position, val message: String) extends
   override def compare(that: CompilerMessage): Int = this.position.compare(that.position)
 }
 
-object ASTBuilder {
+final case class CompilationUnit(source: SourceFile,
+                                 configuration: Configuration,
+                                 astNode: ASTNode = NoNode,
+                                 private val errorBuffer: ListBuffer[CompilerMessage] = new ListBuffer[CompilerMessage],
+                                 private val warningBuffer: ListBuffer[CompilerMessage] = new ListBuffer[CompilerMessage]) {
 
-  import org.antlr.runtime.{CommonTokenStream, CharStream, ANTLRStringStream, ANTLRFileStream}
-  import at.jku.ssw.openvc.parser.{Parser, Lexer}
+  import java.io.PrintWriter
 
-  type ASTResult = (SourceFile, DesignFile, Seq[CompilerMessage])
+  def errors = errorBuffer.result()
 
-  sealed abstract class SourceFile extends scala.io.Source {
-    val content: Array[Char]
-    lazy val iter = content.iterator
-  }
+  def warnings = warningBuffer.result()
 
-  final class ANTLRStream(val stringStream: ANTLRStringStream) extends SourceFile with CharStream {
+  def addErrors(errors: Seq[CompilerMessage]) {errorBuffer ++= errors}
 
-    val content = {
-      //data is protected, ANTLR should add a method to get the data field => use reflection
-      val data = try {
-        stringStream.getClass.getDeclaredField("data")
-      } catch {
-        case _: NoSuchFieldException => stringStream.getClass.getSuperclass.getDeclaredField("data")
+  def addWarnings(warnings: Seq[CompilerMessage]) {warningBuffer ++= warnings}
+
+  def printErrors(writer: PrintWriter) {
+    if (errors.nonEmpty || warnings.nonEmpty) {
+      writer.println("errors:" + errors.size + " warnings:" + warnings.size)
+    }
+    def printMessages(prefix: String, messages: Seq[CompilerMessage]) {
+      val sourceLines = source.getLines().toIndexedSeq
+      for (msg <- messages) {
+        writer.println(prefix + source.fileName + ": line:" + msg.position.line + " col:" + msg.position.column + " " + msg.message)
+        if (msg.position != NoPosition) {
+          writer.println(sourceLines(math.min(msg.position.line - 1, sourceLines.size - 1)))
+          writer.println((" " * msg.position.column) + "^")
+        }
       }
-      data.setAccessible(true)
-      data.get(stringStream).asInstanceOf[Array[Char]]
     }
-
-    lazy val contentAsString = {
-      //create a string and set the value,offset and count fields, so we avoid all array copy calls
-      //content and contentAsString share the same array
-      val constructor = classOf[String].getDeclaredConstructor(java.lang.Integer.TYPE, java.lang.Integer.TYPE, classOf[Array[Char]])
-      constructor.setAccessible(true)
-      constructor.newInstance(new java.lang.Integer(0), new java.lang.Integer(content.length), content)
-    }
-
-    def substring(start: Int, stop: Int): String = contentAsString.substring(start, stop + 1) //also no array copy
-
-    //just forward all calls to the ANTLRStringStream
-    def LT(i: Int): Int = stringStream.LT(i)
-
-    def getLine: Int = stringStream.getLine
-
-    def setLine(line: Int): Unit = stringStream.setLine(line)
-
-    def setCharPositionInLine(pos: Int): Unit = stringStream.setCharPositionInLine(pos)
-
-    def getCharPositionInLine: Int = stringStream.getCharPositionInLine
-
-    def consume: Unit = stringStream.consume
-
-    def LA(i: Int): Int = Character.toLowerCase(stringStream.LA(i))
-
-    def mark: Int = stringStream.mark
-
-    def index: Int = stringStream.index
-
-    def rewind(marker: Int): Unit = stringStream.rewind(marker)
-
-    def rewind: Unit = stringStream.rewind
-
-    def release(marker: Int): Unit = stringStream.release(marker)
-
-    def seek(index: Int): Unit = stringStream.seek(index)
-
-    override def size: Int = stringStream.size
-
-    def getSourceName: String = stringStream.getSourceName
+    printMessages("[err] ", errors.sorted)
+    printMessages("[warn] ", warnings)
+    writer.flush()
   }
-
-  private def fromCharStream(stream: ANTLRStream, configuration: VHDLCompiler.Configuration): ASTResult = {
-    val lexer = new Lexer(stream)
-    lexer.ams = configuration.amsEnabled
-    lexer.vhdl2008 = configuration.vhdl2008
-    val tokens = new CommonTokenStream(lexer)
-    val parser = new Parser(tokens)
-    parser.ams = configuration.amsEnabled
-    parser.vhdl2008 = configuration.vhdl2008
-    val designFile = parser.design_file()
-    (stream, designFile, parser.syntaxErrors ++ lexer.lexerErrors)
-  }
-
-  def fromFile(fileName: String, configuration: VHDLCompiler.Configuration): ASTResult =
-    fromCharStream(new ANTLRStream(new ANTLRFileStream(fileName)), configuration)
-
-  def fromText(code: String, configuration: VHDLCompiler.Configuration): ASTResult =
-    fromCharStream(new ANTLRStream(new ANTLRStringStream(code)), configuration)
 }
 
 object VHDLCompiler {
 
-  import backend.jvm.ByteCodeGenerator
-  import ASTBuilder.SourceFile
-  import java.io.PrintWriter
-
-  final class Configuration(val amsEnabled: Boolean, val vhdl2008: Boolean, val parseOnly: Boolean, val outputDirectory: String, val designLibrary: String, val libraryDirectory: String, val debugCompiler: Boolean, val debugCodeGenerator: Boolean) {
+  final class Configuration(val amsEnabled: Boolean,
+                            val vhdl2008: Boolean,
+                            val parseOnly: Boolean,
+                            val outputDirectory: String,
+                            val designLibrary: String,
+                            val libraryDirectory: String,
+                            val debugCompiler: Boolean,
+                            val debugCodeGenerator: Boolean) {
     val libraryOutputDirectory = outputDirectory + designLibrary + java.io.File.separator
   }
 
-  final class CompileResult(val source: SourceFile, val syntaxErrors: Seq[CompilerMessage], val semanticErrors: Seq[CompilerMessage], val semanticWarnings: Seq[CompilerMessage], val designFile: DesignFile, val sourceFile: String) {
-    def printErrors(writer: PrintWriter) {
-      if (syntaxErrors.nonEmpty || semanticErrors.nonEmpty || semanticWarnings.nonEmpty) {
-        writer.println("syntax errors:" + syntaxErrors.size + " semantic errors:" + semanticErrors.size + " semantic warnings:" + semanticWarnings.size)
-      }
-      def printMessages(prefix: String, messages: Seq[CompilerMessage]) {
-        val sourceLines = source.getLines.toIndexedSeq
-        for (msg <- messages) {
-          writer.println(prefix + sourceFile + ": line:" + msg.position.line + " col:" + msg.position.column + " " + msg.message)
-          if (msg.position != NoPosition) {
-            writer.println(sourceLines(math.min(msg.position.line - 1, sourceLines.size - 1)))
-            writer.println((" " * msg.position.column) + "^")
-          }
-        }
-      }
-      printMessages("[err] ", (semanticErrors ++ syntaxErrors).sorted)
-      printMessages("[warn] ", semanticWarnings)
-      writer.flush
-    }
-  }
-
-  private def compile(configuration: Configuration, astBuilder: (String, Configuration) => (SourceFile, DesignFile, Seq[CompilerMessage]), source: String, fileName: String): CompileResult = {
+  def compile(unit: CompilationUnit): CompilationUnit = {
     import java.io.File
+    import annotation.tailrec
+    import unit.configuration
+    import parser.SyntaxAnalyzer
     import semanticAnalyzer.SemanticAnalyzer
+    import backend.BackendPhase
+
+    @tailrec
+    def run(phases: Seq[Phase], unit: CompilationUnit): CompilationUnit = phases match {
+      case Seq() => unit
+      case Seq(phase, xs@_*) =>
+        val phaseStart = System.currentTimeMillis
+        val newUnit = phase(unit)
+        val phaseEnd = System.currentTimeMillis - phaseStart
+        if (configuration.debugCompiler) println(phase.name + " time:" + phaseEnd)
+        run(xs, newUnit)
+    }
+
     val directory = new File(configuration.libraryOutputDirectory)
     if (!directory.exists) directory.mkdirs
 
-    val parseStart = System.currentTimeMillis
-    val (sourceFile, designFile, syntaxErrors) = astBuilder(source, configuration)
-    val parseTime = System.currentTimeMillis - parseStart
+    val phases =
+      if (configuration.parseOnly) Seq(SyntaxAnalyzer)
+      else Seq(SyntaxAnalyzer, SemanticAnalyzer, BackendPhase)
 
-    if (configuration.parseOnly) new CompileResult(sourceFile, syntaxErrors, Seq(), Seq(), designFile, fileName)
-    else {
-      val semanticCheckStart = System.currentTimeMillis
-      val (checkedDesignFile, semanticErrors, semanticWarnings) = SemanticAnalyzer(designFile, configuration)
-      val semanticCheckTime = System.currentTimeMillis - semanticCheckStart
-
-      val codeGenStart = System.currentTimeMillis
-      if (semanticErrors.isEmpty && syntaxErrors.isEmpty) {
-        ByteCodeGenerator(configuration, fileName, checkedDesignFile)
-      }
-      val codeGenTime = System.currentTimeMillis - codeGenStart
-      if (configuration.debugCompiler) {
-        println("parse time:" + parseTime)
-        println("sema check time:" + semanticCheckTime)
-        println("code gen time:" + codeGenTime)
-        println("complete time:" + (System.currentTimeMillis - parseStart))
-      }
-      new CompileResult(sourceFile, syntaxErrors, semanticErrors, semanticWarnings, designFile, fileName)
-    }
+    run(phases, unit)
   }
-
-  def compileFile(file: String, configuration: Configuration): CompileResult = this.compile(configuration, ASTBuilder.fromFile, file, file)
-
-  def compileFileFromText(code: String, file: String, configuration: Configuration): CompileResult = this.compile(configuration, ASTBuilder.fromText, code, file)
 }

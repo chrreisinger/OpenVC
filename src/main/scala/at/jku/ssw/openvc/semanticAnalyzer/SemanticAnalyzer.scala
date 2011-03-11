@@ -38,7 +38,9 @@ import at.jku.ssw.openvc.VHDLCompiler.Configuration
 import at.jku.ssw.openvc.backend.jvm.ByteCodeGenerator.getNextIndex
 import at.jku.ssw.openvc.CompilerMessage
 
-object SemanticAnalyzer {
+object SemanticAnalyzer extends Phase {
+  val name = "semanticAnalyzer"
+  
   type SemanticCheckResult = (ASTNode, Seq[CompilerMessage], Seq[CompilerMessage])
   type Buffer[A] = immutable.VectorBuilder[A]
 
@@ -102,12 +104,14 @@ object SemanticAnalyzer {
   val semanticErrors = new Buffer[CompilerMessage]
   val semanticWarnings = new Buffer[CompilerMessage]
 
-  def apply(designFile: ASTNode, configuration: Configuration): SemanticCheckResult = {
-    this.configuration = configuration
+  def apply(unit: CompilationUnit): CompilationUnit = {
+    this.configuration = unit.configuration
     semanticErrors.clear
     semanticWarnings.clear
-    val (newDesignFile, context) = acceptNode(designFile, NoSymbol, Context(new SymbolTable(0, List()), collection.immutable.Stack()))
-    (newDesignFile, semanticErrors.result, semanticWarnings.result)
+    val (newNode, context) = acceptNode(unit.astNode, NoSymbol, Context(new SymbolTable(0, List()), collection.immutable.Stack()))
+    unit.addErrors(semanticErrors.result())
+    unit.addWarnings(semanticWarnings.result())
+    unit.copy(astNode = newNode)
   }
 
   def addError(stmt: Locatable, msg: String, messageParameters: AnyRef*): Option[Nothing] = addErrorPosition(stmt.position, msg, messageParameters: _*)
