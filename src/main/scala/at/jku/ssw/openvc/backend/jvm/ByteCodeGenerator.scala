@@ -492,7 +492,7 @@ object ByteCodeGenerator {
           case Some(attributeSymbol) if (attributeSymbol.isInstanceOf[ForeignAttributeSymbol]) =>
             loadParameters(functionCallExpr.parameterAssociation)
             attributeSymbol.asInstanceOf[ForeignAttributeSymbol].jvmSignature match {
-              case Left((className, methodName)) => mv.INVOKESTATIC(className, methodName, "(" + getJVMParameterList(functionSymbol.parameters) + ")V")
+              case Left((className, methodName)) => mv.INVOKESTATIC(className, methodName, "(" + getJVMParameterList(functionSymbol.parameters) + ")" + getJVMDataType(functionSymbol.returnType))
               case Right((className, methodName, parameterTypes)) => mv.INVOKESTATIC(className, methodName, parameterTypes)
             }
           case _ =>

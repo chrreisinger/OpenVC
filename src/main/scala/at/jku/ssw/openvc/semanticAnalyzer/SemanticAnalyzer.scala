@@ -1620,11 +1620,13 @@ object SemanticAnalyzer extends Phase {
               if (attributeSymbol == SymbolTable.foreignAttribute) {
                 expression match {
                   case Literal(_, text, Literal.Type.STRING_LITERAL, _, _) => text.split("\\s+") match {
+                    case Array(className) =>
+                      symbol.attributes += (attributeSpec.identifier.text -> new ForeignAttributeSymbol(attributeSpec.identifier, symbol, Left((className.replace('.', '/'), symbol.name))))
                     case Array(className, methodName) =>
                       symbol.attributes += (attributeSpec.identifier.text -> new ForeignAttributeSymbol(attributeSpec.identifier, symbol, Left((className.replace('.', '/'), methodName))))
                     case Array(className, methodName, parameterTypes) =>
                       symbol.attributes += (attributeSpec.identifier.text -> new ForeignAttributeSymbol(attributeSpec.identifier, symbol, Right((className.replace('.', '/'), methodName, parameterTypes))))
-                    case _ => addError(expression, """expected a string of type "className methodName [parameterTypes]" """)
+                    case _ => addError(expression, """expected a string of type "className [methodName] [parameterTypes]" """)
                   }
                   case _ => addError(expression, "string literal expected")
                 }
