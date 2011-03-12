@@ -32,7 +32,7 @@ abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) 
 
   protected val syntaxErrorList = new Buffer[CompilerMessage]()
 
-  def syntaxErrors: Seq[CompilerMessage] = this.syntaxErrorList.result
+  def syntaxErrors: Seq[CompilerMessage] = this.syntaxErrorList.result()
 
   protected implicit def toPosition(token: Token): OffsetPosition =
     new OffsetPosition(token.getLine, token.getCharPositionInLine, token.asInstanceOf[CommonToken].getStartIndex, token.asInstanceOf[CommonToken].getStopIndex)
@@ -40,9 +40,9 @@ abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) 
   protected implicit def anyToOption[A](value: A): Option[A] = Option(value)
 
   protected def toIdentifier(token: Token, toLowerCase: Boolean = true): Identifier =
-    if (token.getType() != STRING_LITERAL && token.getType() != CHARACTER_LITERAL)
-      new Identifier(toPosition(token), if (toLowerCase) token.getText().toLowerCase() else token.getText().replace("""\\""", "\\"))
-    else new Identifier(toPosition(token), token.getText())
+    if (token.getType != STRING_LITERAL && token.getType != CHARACTER_LITERAL)
+      new Identifier(toPosition(token), if (toLowerCase) token.getText.toLowerCase else token.getText.replace("""\\""", "\\"))
+    else new Identifier(toPosition(token), token.getText)
 
   private val tokenMap = Map(
     "DOUBLESTAR" -> "**",
@@ -187,7 +187,7 @@ abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) 
     else token.getStopIndex + 1
   }
 
-  override def displayRecognitionError(tokenNames: Array[String], e: RecognitionException) = {
+  override def displayRecognitionError(tokenNames: Array[String], e: RecognitionException) {
     val stack = BaseRecognizer.getRuleInvocationStack(e, parserName)
     val stackTop = stack.get(stack.size() - 1).toString()
     val posDescription = stackPositionDescription(stackTop)
@@ -205,15 +205,15 @@ abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) 
     // an erroneous node at the end of this method, defaulting it to the current position.
     val (startPoint, endPoint) = e match {
       case ute: UnwantedTokenException =>
-      //There was an extra token in the stream that we can see was extra because the next token after it is the one that would have matched correctly.
-      //We have discarded it for error recovery but still need to report it.
-        val uwt = ute.getUnexpectedToken().asInstanceOf[CommonToken]
+        //There was an extra token in the stream that we can see was extra because the next token after it is the one that would have matched correctly.
+        //We have discarded it for error recovery but still need to report it.
+        val uwt = ute.getUnexpectedToken.asInstanceOf[CommonToken]
         mb append " but I got confused when I found an extra " append getTokenErrorDisplay(uwt)
         mb append getTokenType(classifyToken(e.token)) append " that should not be there"
-        (uwt.getStartIndex(), uwt.getStopIndex() + 1)
+        (uwt.getStartIndex, uwt.getStopIndex + 1)
       case mte: MissingTokenException =>
-      // There was a missing token in the stream that we see was missing because the token we actually saw was one
-      // that is a member of the follow-set had the token been present.
+        // There was a missing token in the stream that we see was missing because the token we actually saw was one
+        // that is a member of the follow-set had the token been present.
         mb append " but I got confused because "
         val tokenClass = classifyToken(mte.expecting)
         if (posDescription.equalsIgnoreCase(tokenClass.toString)) mb append "you seem to have omitted this"
@@ -225,27 +225,27 @@ abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) 
         // actually at that position
         (semiPos, pos + 1)
       case mte: MismatchedTokenException =>
-      // The token we received was not one we were expecting, but we could neither identify a missing token that would have made it
-      // something we can deal with, nor that it was just an accidental extra token that we can throw away. Something like
-      // A B C D and we got to B but the token we got was neither C, D nor anything following.
+        // The token we received was not one we were expecting, but we could neither identify a missing token that would have made it
+        // something we can deal with, nor that it was just an accidental extra token that we can throw away. Something like
+        // A B C D and we got to B but the token we got was neither C, D nor anything following.
         val tokenClass = classifyToken(e.token)
         mb append " but I got confused when I "
         mb append
-          (if (mte.token.getType() == Token.EOF) "hit the end of the file."
+          (if (mte.token.getType == Token.EOF) "hit the end of the file."
           else "saw " + getTokenErrorDisplay(e.token) + (getTokenType(tokenClass)))
         mb append
           (if (tokenClass == TokenType.KeyWord && mte.expecting == Parser.BASIC_IDENTIFIER) ".\n Perhaps you tried to use a keyword as the name of an object (use \\\\keyword if you need to do this)"
           else if (mte.expecting != Token.EOF) ".\n Perhaps you are missing a '" + vhdlTokenNames(mte.expecting) + "'"
           else ".\n I was looking for the end of the file here")
 
-        if (mte.token.getType() == Token.EOF) (semiPos, pos + 1) // The start and end points come directly from the end of the prior token
-        else (mte.token.asInstanceOf[CommonToken].getStartIndex(), mte.token.asInstanceOf[CommonToken].getStopIndex() + 1) // The start and end points come directly from the mismatched token.
-      case nvae: NoViableAltException =>
-      // The token we saw isn't predicted by any alternative path available at this point in the current rule.
-      // something like:  ... (B|C|D|E) but we got Z which does not follow from anywhere.
+        if (mte.token.getType == Token.EOF) (semiPos, pos + 1) // The start and end points come directly from the end of the prior token
+        else (mte.token.asInstanceOf[CommonToken].getStartIndex, mte.token.asInstanceOf[CommonToken].getStopIndex + 1) // The start and end points come directly from the mismatched token.
+      case noViableAltException: NoViableAltException =>
+        // The token we saw isn't predicted by any alternative path available at this point in the current rule.
+        // something like:  ... (B|C|D|E) but we got Z which does not follow from anywhere.
         val tokenClass = classifyToken(e.token)
         mb append " but I got confused when I "
-        if (nvae.token.getType() == Token.EOF) {
+        if (noViableAltException.token.getType == Token.EOF) {
           mb append "hit the end of the file."
           // The start and end points come directly from the end of the prior token
           (semiPos, pos + 1)
@@ -255,26 +255,26 @@ abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) 
             mb append ".\n Perhaps you tried to use a keyword as the name of an object (use \\\\keyword if you need to do this)"
           }
           // The start and end points come directly from the mismatched token.
-          (nvae.token.asInstanceOf[CommonToken].getStartIndex(), nvae.token.asInstanceOf[CommonToken].getStopIndex() + 1)
+          (noViableAltException.token.asInstanceOf[CommonToken].getStartIndex, noViableAltException.token.asInstanceOf[CommonToken].getStopIndex + 1)
         }
       case mse: MismatchedSetException =>
-      // The parser would have accepted any one of two or more tokens, but the actual token was not in that set and
-      // was not a token that we could determine was spurious or from which we could determine that we just had a token missing.
+        // The parser would have accepted any one of two or more tokens, but the actual token was not in that set and
+        // was not a token that we could determine was spurious or from which we could determine that we just had a token missing.
         mb append " but I got confused when I saw " append getTokenErrorDisplay(e.token) append (getTokenType(classifyToken(e.token)))
         mb append ".\n I was looking for one of: " append mse.expecting
         // The start and end points come directly from the mismatched token.
-        (e.token.asInstanceOf[CommonToken].getStartIndex(), e.token.asInstanceOf[CommonToken].getStopIndex() + 1)
+        (e.token.asInstanceOf[CommonToken].getStartIndex, e.token.asInstanceOf[CommonToken].getStopIndex + 1)
       case _ =>
         mb append super.getErrorMessage(e, vhdlTokenNames)
         // The start and end points come directly from the mismatched token.
-        (e.token.asInstanceOf[CommonToken].getStartIndex(), e.token.asInstanceOf[CommonToken].getStopIndex() + 1)
+        (e.token.asInstanceOf[CommonToken].getStartIndex, e.token.asInstanceOf[CommonToken].getStopIndex + 1)
     }
-    syntaxErrorList += new CompilerMessage(position = new RangePosition(e.token, startPoint, endPoint), message = mb.toString)
+    syntaxErrorList += new CompilerMessage(position = new RangePosition(e.token, startPoint, endPoint), message = mb.toString())
   }
 
   //The following code was taken from http://www.antlr.org/wiki/display/ANTLR3/Custom+Syntax+Error+Recovery
   /**
-   * Use the current stacked followset to work out the valid tokens that
+   * Use the current stacked follow set to work out the valid tokens that
    * can follow on from the current point in the parse, then recover by
    * eating tokens that are not a member of the follow set we compute.
    *
@@ -289,11 +289,11 @@ abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) 
    * is too much like using a sledge hammer to crack a nut. We want finer
    * grained control of the recovery and error mechanisms.
    */
-  protected def syncToSet(): Unit = {
-    syncToSet(state.following(state._fsp)) // Compute the followset that is in context wherever we are in the rule chain/stack
+  protected def syncToSet() {
+    syncToSet(state.following(state._fsp)) // Compute the follow set that is in context wherever we are in the rule chain/stack
   }
 
-  protected def syncToSet(follow: BitSet): Unit = {
+  protected def syncToSet(follow: BitSet) {
     var mark = -1
     try {
       mark = input.mark()
@@ -333,7 +333,7 @@ abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) 
    * @param input The token stream where we are normally drawing tokens from
    * @param e The exception that was raised by the parser
    * @param expectedTokenType The type of the token that the parser was expecting to see next
-   * @param follow The followset of tokens that can follow on from here
+   * @param follow The follow set of tokens that can follow on from here
    * @return A newly manufactured token of the required type
    */
   override protected def getMissingSymbol(input: IntStream, e: RecognitionException, expectedTokenType: Int, follow: BitSet): AnyRef = {

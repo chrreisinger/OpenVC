@@ -35,7 +35,7 @@ import VHDLCompiler.Configuration
 
 import at.jku.ssw.openvs.RuntimeAnnotations._
 import at.jku.ssw.openvs.VHDLRuntime
-import at.jku.ssw.openvs.VHDLRuntime.{EnumerationType => EnumerationTypeInterface, RecordType => RecordTypeInterface, ArrayType => ArrayTypeInterface, _}
+import at.jku.ssw.openvs.VHDLRuntime.{EnumerationType => EnumerationTypeInterface, RecordType => RecordTypeInterface, ArrayType => _, _}
 
 //opcodes currently not used: jsr,monitorenter,monitorexit,pop2,ret,swap
 object ByteCodeGenerator {
@@ -74,7 +74,7 @@ object ByteCodeGenerator {
 
   private def getJVMParameterList(list: Seq[RuntimeSymbol]): String = list.map(getJVMDataType).mkString
 
-  private def p(n: Class[_]): String = n.getName().replace('.', '/')
+  private def p(n: Class[_]): String = n.getName.replace('.', '/')
 
   private def ci(n: Class[_]): String = "L" + p(n) + ";"
 
@@ -201,52 +201,54 @@ object ByteCodeGenerator {
   def apply(configuration: Configuration, sourceFileName: String, designFile: ASTNode) {
     acceptNode(designFile, null)
 
-    def acceptNodes(nodes: Seq[ASTNode], context: Context): Unit = for (node <- nodes) acceptNode(node, context)
+    def acceptNodes(nodes: Seq[ASTNode], context: Context) {for (node <- nodes) acceptNode(node, context)}
 
-    def acceptNode(node: ASTNode, context: Context): Unit = node match {
-      case DesignFile(designUnits) => acceptNodes(designUnits, context)
-      case designUnit: DesignUnit => designUnit.libraryUnit.foreach(acceptNode(_, context))
-      case packageBodyDeclaration: PackageBodyDeclaration => visitPackageBodyDeclaration(packageBodyDeclaration)
-      case packageDeclaration: PackageDeclaration => visitPackageDeclaration(packageDeclaration)
-      case entityDeclaration: EntityDeclaration => visitEntityDeclaration(entityDeclaration)
-      case architectureDeclaration: ArchitectureDeclaration => visitArchitectureDeclaration(architectureDeclaration)
-      case configurationDeclaration: ConfigurationDeclaration => visitConfigurationDeclaration(configurationDeclaration)
-      //concurrent Statements
-      case componentInstantiationStmt: ComponentInstantiationStatement => visitComponentInstantiationStatement(componentInstantiationStmt)
-      case processStmt: ProcessStatement => visitProcessStatement(processStmt, context)
-      case blockStmt: BlockStatement => visitBlockStatement(blockStmt, context)
-      //sequential Statements
-      case throwStatement: ThrowStatement =>
-        context.mv.createDebugLineNumberInformation(throwStatement)
-        context.mv.throwNewException(p(classOf[VHDLRuntimeException]), throwStatement.message)
-      case assertStmt: AssertionStatement => visitAssertionStatement(assertStmt, context)
-      case waitStmt: WaitStatement => visitWaitStatement(waitStmt, context)
-      case nextStmt: NextStatement => visitNextStatement(nextStmt, context)
-      case exitStmt: ExitStatement => visitExitStatement(exitStmt, context)
-      case nullStmt: NullStatement =>
-        context.mv.createDebugLineNumberInformation(nullStmt)
-        context.mv.NOP
-      case reportStmt: ReportStatement => visitReportStatement(reportStmt, context)
-      case returnStmt: ReturnStatement => visitReturnStatement(returnStmt, context)
-      case loopStmt: LoopStatement => visitLoopStatement(loopStmt, context)
-      case whileStmt: WhileStatement => visitWhileStatement(whileStmt, context)
-      case forStmt: ForStatement => visitForStatement(forStmt, context)
-      case signalAssignmentStmt: SignalAssignmentStatement => visitSignalAssignmentStatement(signalAssignmentStmt, context)
-      case variableAssignmentStmt: VariableAssignmentStatement => visitVariableAssignmentStatement(variableAssignmentStmt, context)
-      case procedureCallStmt: ProcedureCallStatement => visitProcedureCallStatement(procedureCallStmt, context)
-      case caseStmt: CaseStatement => visitCaseStatement(caseStmt, context)
-      case ifStmt: IfStatement => visitIfStatement(ifStmt, context)
-      //declarative Items
-      case variableDeclaration: VariableDeclaration => visitVariableDeclaration(variableDeclaration, context)
-      case constantDeclaration: ConstantDeclaration => visitConstantDeclaration(constantDeclaration, context)
-      case signalDeclaration: SignalDeclaration => visitSignalDeclaration(signalDeclaration, context)
-      case fileDeclaration: FileDeclaration => visitFileDeclaration(fileDeclaration, context)
-      case typeDeclaration: AbstractTypeDeclaration => visitTypeDeclaration(typeDeclaration, context)
-      case functionDefinition: FunctionDefinition => visitFunctionDefinition(functionDefinition, context)
-      case procedureDefinition: ProcedureDefinition => visitProcedureDefinition(procedureDefinition, context)
-      case componentDeclaration: ComponentDeclaration => visitComponentDeclaration(componentDeclaration, context)
-      case aliasDeclaration: AliasDeclaration => visitAliasDeclaration(aliasDeclaration, context)
-      case _: GenerateStatement | _: FunctionDeclaration | _: ProcedureDeclaration | _: SubTypeDeclaration | _: AttributeDeclaration | _: AttributeSpecification | _: GroupTemplateDeclaration | _: GroupDeclaration | _: UseClause | _: ContextDeclaration => //nothing
+    def acceptNode(node: ASTNode, context: Context) {
+      node match {
+        case DesignFile(designUnits) => acceptNodes(designUnits, context)
+        case designUnit: DesignUnit => designUnit.libraryUnit.foreach(acceptNode(_, context))
+        case packageBodyDeclaration: PackageBodyDeclaration => visitPackageBodyDeclaration(packageBodyDeclaration)
+        case packageDeclaration: PackageDeclaration => visitPackageDeclaration(packageDeclaration)
+        case entityDeclaration: EntityDeclaration => visitEntityDeclaration(entityDeclaration)
+        case architectureDeclaration: ArchitectureDeclaration => visitArchitectureDeclaration(architectureDeclaration)
+        case configurationDeclaration: ConfigurationDeclaration => visitConfigurationDeclaration(configurationDeclaration)
+        //concurrent Statements
+        case componentInstantiationStmt: ComponentInstantiationStatement => visitComponentInstantiationStatement(componentInstantiationStmt)
+        case processStmt: ProcessStatement => visitProcessStatement(processStmt, context)
+        case blockStmt: BlockStatement => visitBlockStatement(blockStmt, context)
+        //sequential Statements
+        case throwStatement: ThrowStatement =>
+          context.mv.createDebugLineNumberInformation(throwStatement)
+          context.mv.throwNewException(p(classOf[VHDLRuntimeException]), throwStatement.message)
+        case assertStmt: AssertionStatement => visitAssertionStatement(assertStmt, context)
+        case waitStmt: WaitStatement => visitWaitStatement(waitStmt, context)
+        case nextStmt: NextStatement => visitNextStatement(nextStmt, context)
+        case exitStmt: ExitStatement => visitExitStatement(exitStmt, context)
+        case nullStmt: NullStatement =>
+          context.mv.createDebugLineNumberInformation(nullStmt)
+          context.mv.NOP()
+        case reportStmt: ReportStatement => visitReportStatement(reportStmt, context)
+        case returnStmt: ReturnStatement => visitReturnStatement(returnStmt, context)
+        case loopStmt: LoopStatement => visitLoopStatement(loopStmt, context)
+        case whileStmt: WhileStatement => visitWhileStatement(whileStmt, context)
+        case forStmt: ForStatement => visitForStatement(forStmt, context)
+        case signalAssignmentStmt: SignalAssignmentStatement => visitSignalAssignmentStatement(signalAssignmentStmt, context)
+        case variableAssignmentStmt: VariableAssignmentStatement => visitVariableAssignmentStatement(variableAssignmentStmt, context)
+        case procedureCallStmt: ProcedureCallStatement => visitProcedureCallStatement(procedureCallStmt, context)
+        case caseStmt: CaseStatement => visitCaseStatement(caseStmt, context)
+        case ifStmt: IfStatement => visitIfStatement(ifStmt, context)
+        //declarative Items
+        case variableDeclaration: VariableDeclaration => visitVariableDeclaration(variableDeclaration, context)
+        case constantDeclaration: ConstantDeclaration => visitConstantDeclaration(constantDeclaration, context)
+        case signalDeclaration: SignalDeclaration => visitSignalDeclaration(signalDeclaration, context)
+        case fileDeclaration: FileDeclaration => visitFileDeclaration(fileDeclaration, context)
+        case typeDeclaration: AbstractTypeDeclaration => visitTypeDeclaration(typeDeclaration, context)
+        case functionDefinition: FunctionDefinition => visitFunctionDefinition(functionDefinition, context)
+        case procedureDefinition: ProcedureDefinition => visitProcedureDefinition(procedureDefinition, context)
+        case componentDeclaration: ComponentDeclaration => visitComponentDeclaration(componentDeclaration, context)
+        case aliasDeclaration: AliasDeclaration => visitAliasDeclaration(aliasDeclaration, context)
+        case _: GenerateStatement | _: FunctionDeclaration | _: ProcedureDeclaration | _: SubTypeDeclaration | _: AttributeDeclaration | _: AttributeSpecification | _: GroupTemplateDeclaration | _: GroupDeclaration | _: UseClause | _: ContextDeclaration => //nothing
+      }
     }
 
     def acceptExpressionOption(expr: Option[Expression], contextOption: Option[ExpressionContext] = None, createDebugLineNumberInformation: Boolean = true)(implicit mv: RichMethodVisitor) =
@@ -285,9 +287,9 @@ object ByteCodeGenerator {
           }
       }
 
-      def acceptExpressionInnerOption(expression: Option[Expression], innerContext: ExpressionContext = null) = expression.foreach(acceptExpressionInner(_, innerContext))
+      def acceptExpressionInnerOption(expression: Option[Expression], innerContext: ExpressionContext = null) {expression.foreach(acceptExpressionInner(_, innerContext))}
 
-      def acceptExpressionInner(expression: Expression, innerContext: ExpressionContext = null): Unit =
+      def acceptExpressionInner(expression: Expression, innerContext: ExpressionContext = null) {
         expression match {
           case NoExpression => //nothing
           case term: Term => visitTerm(term)
@@ -302,7 +304,7 @@ object ByteCodeGenerator {
             import mv._
             val parameters = shiftExpression.operator match {
               case SLA | SRA =>
-              //TODO is ascending? shiftExpression.dataType.asInstanceOf[ArrayType].dimensions
+                //TODO is ascending? shiftExpression.dataType.asInstanceOf[ArrayType].dimensions
                 ICONST_1
                 "(" + getJVMDataType(shiftExpression.left.dataType) + "IZ)"
               case _ => "(" + getJVMDataType(shiftExpression.left.dataType) + "I)"
@@ -339,7 +341,7 @@ object ByteCodeGenerator {
                   }
                   indexes.size - 1 - i match {
                     case 0 => arrayLoadInstruction(constrainedArrayType.elementType)
-                    case _ => AALOAD
+                    case _ => AALOAD()
                   }
                 }
               case unconstrainedArrayType: UnconstrainedArrayType =>
@@ -362,6 +364,7 @@ object ByteCodeGenerator {
             println(e.getClass.getName + " " + e.position)
             throw new IllegalArgumentException()
         }
+      }
 
       def visitAttributeAccessExpression(attributeAccess: AttributeExpression) {
         attributeAccess.attribute match {
@@ -398,11 +401,11 @@ object ByteCodeGenerator {
                       case "base" => //nothing
                       case "pos" | "val" | "succ" | "leftof" | "rightof" =>
                         error("not implemented")
-                    /*scalarType match {
-                      case _: IntegerType => mv.INVOKESTATIC(RUNTIME, attributeAccess.attribute.name, "(I)I")
-                      case _: RealType => mv.INVOKESTATIC(RUNTIME, attributeAccess.attribute.name, "(D)D")
-                      case enumType: EnumerationType => mv.INVOKESTATIC(enumType.implementationName(), attributeAccess.attribute.name, "(I)I")
-                    }*/
+                      /*scalarType match {
+                        case _: IntegerType => mv.INVOKESTATIC(RUNTIME, attributeAccess.attribute.name, "(I)I")
+                        case _: RealType => mv.INVOKESTATIC(RUNTIME, attributeAccess.attribute.name, "(D)D")
+                        case enumType: EnumerationType => mv.INVOKESTATIC(enumType.implementationName(), attributeAccess.attribute.name, "(I)I")
+                      }*/
                     }
                 }
               case signal: SignalSymbol if (signal.attributes.contains(attributeAccess.attribute.name)) =>
@@ -427,7 +430,7 @@ object ByteCodeGenerator {
         acceptExpressionOption(attributeAccess.expression)
       }
 
-      def visitAggregate(aggregate: Aggregate) = {
+      def visitAggregate(aggregate: Aggregate) {
         implicit val implicitMV = mv
         import mv._
         (aggregate.dataType: @unchecked) match {
@@ -537,7 +540,7 @@ object ByteCodeGenerator {
         }
       }
 
-      def visitNewExpression(newExpression: NewExpression) =
+      def visitNewExpression(newExpression: NewExpression) {
         newExpression.qualifiedExpressionOrSubTypeIndication match {
           case Left(qualifiedExpression) => acceptExpression(qualifiedExpression)
           case Right(subTypeIndication) =>
@@ -547,6 +550,7 @@ object ByteCodeGenerator {
             DUP
             INVOKESPECIAL(dataTypeName, "<init>", "()V")
         }
+      }
 
       def visitLogicalExpression(logicalExpr: LogicalExpression, context: ExpressionContext, lastXORStatement: Boolean = true) {
         import LogicalExpression.Operator._
@@ -558,9 +562,9 @@ object ByteCodeGenerator {
             acceptExpressionInner(logicalExpr.right, context)
             mv.INVOKESTATIC(RUNTIME, logicalExpr.operator.toString, "([Z[Z)[Z")
           case _ =>
-          //AND,NAND,OR,NOR are short-circuit operators
-          // AND,NAND left expr == false => jump
-          // OR, NOR left expr == true => jump
+            //AND,NAND,OR,NOR are short-circuit operators
+            // AND,NAND left expr == false => jump
+            // OR, NOR left expr == true => jump
             def acceptExprCreateBoolValue(expr: Expression) {
               import mv._
               val trueLabel = createLabel
@@ -613,7 +617,7 @@ object ByteCodeGenerator {
               case XOR =>
                 acceptExprCreateBoolValue(logicalExpr.left)
                 acceptExprCreateBoolValue(logicalExpr.right)
-                IXOR
+                IXOR()
                 if (lastXORStatement) {
                   context.kind match {
                     case TrueJump => IFNE(context.trueJumpLabel)
@@ -623,7 +627,7 @@ object ByteCodeGenerator {
               case XNOR =>
                 acceptExprCreateBoolValue(logicalExpr.left)
                 acceptExprCreateBoolValue(logicalExpr.right)
-                IXOR
+                IXOR()
                 if (lastXORStatement) {
                   context.kind match {
                     case TrueJump => IFEQ(context.trueJumpLabel)
@@ -674,8 +678,8 @@ object ByteCodeGenerator {
                       INVOKESTATIC(RUNTIME, relation.operator.toString, "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
                       if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)
                     case GT | GEQ =>
-                    //The relations > (greater than) and >= (greater than or equal) are defined to be the complements of the <= and < operators,
-                    //respectively, for the same two operands.
+                      //The relations > (greater than) and >= (greater than or equal) are defined to be the complements of the <= and < operators,
+                      //respectively, for the same two operands.
                       val operatorName = if (relation.operator == GT) "LEQ" else "LT"
                       INVOKESTATIC(RUNTIME, operatorName, "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
                       if (jumpInverted) IFNE(jumpLabel) else IFEQ(jumpLabel)
@@ -710,7 +714,7 @@ object ByteCodeGenerator {
                     case GEQ => DCMPL; if (jumpInverted) IFLT(jumpLabel) else IFGE(jumpLabel)
                   }
                 case _: PhysicalType =>
-                  LCMP
+                  LCMP()
                   relation.operator match {
                     case EQ => if (jumpInverted) IFNE(jumpLabel) else IFEQ(jumpLabel)
                     case NEQ => if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)
@@ -866,7 +870,7 @@ object ByteCodeGenerator {
       }
 
       assertStmt.condition match {
-      //do not generate condition code for assert statements like assert false ..., assert true ...
+        //do not generate condition code for assert statements like assert false ..., assert true ...
         case Literal(_, _, _, dataType, value) if ((value == 0 || value == 1) && dataType == SymbolTable.booleanType) =>
           if (value == 1) generateAssertCode() //only generate code for assert true ... because assert false can never be true, so the assert statement is dead code
         case _ =>
@@ -874,18 +878,20 @@ object ByteCodeGenerator {
           generateAssertCode()
       }
     }
-    def acceptGenerateStatements(nodes: Seq[ASTNode], context: Context): Unit =
+
+    def acceptGenerateStatements(nodes: Seq[ASTNode], context: Context) {
       nodes.collect(_ match {
         case x: GenerateStatement => x
       }).foreach(acceptGenerateStatement(_, context))
+    }
 
-    def acceptGenerateStatement(node: GenerateStatement, context: Context): Unit = {
+    def acceptGenerateStatement(node: GenerateStatement, context: Context) {
       import context._
       import mv._
       node match {
         case ifGenerateStmt: IfGenerateStatement =>
           val endLabel = createLabel
-          context.cw.visitField(Opcodes.ACC_PUBLIC, ifGenerateStmt.label.get.text, "Ljava/lang/Object;").visitAnnotation(ci(classOf[BlockAnnotation]), true).visitEnd
+          context.cw.visitField(Opcodes.ACC_PUBLIC, ifGenerateStmt.label.get.text, "Ljava/lang/Object;").visitAnnotation(ci(classOf[BlockAnnotation]), true).visitEnd()
           ifGenerateStmt.ifThenList.map {
             part =>
               val falseJumpLabel = createLabel
@@ -905,7 +911,7 @@ object ByteCodeGenerator {
             part =>
               part match {
                 case IfGenerateStatement.IfThenPart(None, NoExpression, Seq(), Seq(), None) =>
-                //this comes from a case generate statement that does not contain a others choice
+                  //this comes from a case generate statement that does not contain a others choice
                   context.mv.throwNewException(p(classOf[VHDLRuntimeException]), "case generate fall through")
                 case _ =>
                   val blockCW = visitBlockStatement(BlockStatement(NoPosition, part.label.orElse(Some(Identifier("else" + ifGenerateStmt.label.get.text))), None, None, None, None, None, part.declarativeItems, part.concurrentStatements, None), context)
@@ -918,7 +924,7 @@ object ByteCodeGenerator {
           }
           endLabel()
         case forGenerateStmt: ForGenerateStatement =>
-          context.cw.visitField(Opcodes.ACC_PUBLIC, forGenerateStmt.label.get.text, "[Ljava/lang/Object;").visitAnnotation(ci(classOf[BlockAnnotation]), true).visitEnd
+          context.cw.visitField(Opcodes.ACC_PUBLIC, forGenerateStmt.label.get.text, "[Ljava/lang/Object;").visitAnnotation(ci(classOf[BlockAnnotation]), true).visitEnd()
           val blockCW = visitBlockStatement(BlockStatement(forGenerateStmt.position, forGenerateStmt.label, None, None, None, None, None, forGenerateStmt.declarativeItems, forGenerateStmt.concurrentStatements, None), context)
           loadDiscreteRange(forGenerateStmt.discreteRange)
           INVOKEVIRTUAL("scala/collection/immutable/Range$Inclusive", "length", "()I")
@@ -1000,11 +1006,13 @@ object ByteCodeGenerator {
       falseJumpLabel()
     }
 
-    def visitNextStatement(nextStmt: NextStatement, context: Context) =
+    def visitNextStatement(nextStmt: NextStatement, context: Context) {
       createConditionalJump(nextStmt, nextStmt.condition, context.loopLabels(nextStmt.loopStatement).continueLabel, context)
+    }
 
-    def visitExitStatement(exitStmt: ExitStatement, context: Context) =
+    def visitExitStatement(exitStmt: ExitStatement, context: Context) {
       createConditionalJump(exitStmt, exitStmt.condition, context.loopLabels(exitStmt.loopStatement).breakLabel, context)
+    }
 
     def loadDiscreteRange(discreteRange: DiscreteRange)(implicit mv: RichMethodVisitor) =
       discreteRange.rangeOrSubTypeIndication match {
@@ -1016,10 +1024,8 @@ object ByteCodeGenerator {
               mv.DUP
               acceptExpression(from)
               acceptExpression(to)
-              direction match {
-                case Range.Direction.To => mv.ICONST_1
-                case _ => mv.ICONST_M1
-              }
+              if (direction == Range.Direction.To) mv.ICONST_1
+              else mv.ICONST_M1
               mv.INVOKESPECIAL("scala/collection/immutable/Range$Inclusive", "<init>", "(III)V")
           }
         case Right(subTypeIndication) =>
@@ -1044,7 +1050,6 @@ object ByteCodeGenerator {
     def genericForStatement(discreteRange: DiscreteRange, symbol: ConstantSymbol, stmt: ASTNode, context: Context)(body: (RichLabel, RichLabel) => Unit) {
       import context._
       import mv._
-      import Range.Direction._
 
       val varIndex = symbol.index
       val continueLabel = createLabel
@@ -1106,10 +1111,11 @@ object ByteCodeGenerator {
       }
     }
 
-    def visitForStatement(forStmt: ForStatement, context: Context) =
+    def visitForStatement(forStmt: ForStatement, context: Context) {
       genericForStatement(forStmt.discreteRange, forStmt.symbol, forStmt, context) {
         (continueLabel, breakLabel) => acceptNodes(forStmt.sequentialStatements, context.insertLoopLabels(forStmt.position, new LoopLabels(continueLabel, breakLabel)))
       }
+    }
 
     def visitLoopStatement(loopStmt: LoopStatement, context: Context) {
       import context.mv._
@@ -1123,21 +1129,22 @@ object ByteCodeGenerator {
       breakLabel()
     }
 
-    def createDefaultValuesMethods(interfaceListOption: Option[Seq[InterfaceList.AbstractInterfaceElement]], parentName: String, cw: RichClassWriter) =
+    def createDefaultValuesMethods(interfaceListOption: Option[Seq[InterfaceList.AbstractInterfaceElement]], parentName: String, cw: RichClassWriter) {
       for (interfaceList <- interfaceListOption) {
         for (element <- interfaceList) {
           element match {
-            case objectDecl: InterfaceList.InterfaceObjectDeclaration =>
-              for (expression <- objectDecl.expression) {
-                for (identifier <- objectDecl.identifiers) {
+            case objectDeclaration: InterfaceList.InterfaceObjectDeclaration =>
+              for (expression <- objectDeclaration.expression) {
+                for (identifier <- objectDeclaration.identifiers) {
                   val mv = cw.createMethod(Opcodes.ACC_STATIC, "$default$" + parentName + "_" + identifier.text, returnType = getJVMDataType(expression.dataType))
-                  visitReturnStatement(ReturnStatement(NoPosition, None, objectDecl.expression), Context(cw, mv))
-                  mv.endMethod
+                  visitReturnStatement(ReturnStatement(NoPosition, None, objectDeclaration.expression), Context(cw, mv))
+                  mv.endMethod()
                 }
               }
           }
         }
       }
+    }
 
     def acceptDeclarativeItems(declarativeItems: Seq[ASTNode], flags: Int, context: Context) {
       val (objectDeclarations, rest) = declarativeItems.partition(_.isInstanceOf[ObjectDeclaration])
@@ -1157,7 +1164,7 @@ object ByteCodeGenerator {
 
     def visitComponentInstantiationStatement(componentInstantiationStmt: ComponentInstantiationStatement) = error("not implemented")
 
-    def visitComponentDeclaration(componentDeclaration: ComponentDeclaration, context: Context) = {
+    def visitComponentDeclaration(componentDeclaration: ComponentDeclaration, context: Context) {
       val ports = componentDeclaration.symbol.ports
       val generics = componentDeclaration.symbol.generics
       val name = componentDeclaration.symbol.name
@@ -1190,7 +1197,7 @@ object ByteCodeGenerator {
       val mv = cw.createMethod(flags = Opcodes.ACC_STATIC + Opcodes.ACC_FINAL, name = "<clinit>", parameters = "", returnType = "V")
       acceptDeclarativeItems(declarativeItems, Opcodes.ACC_STATIC + Opcodes.ACC_FINAL, Context(cw, mv, Map(), designUnit))
       mv.RETURN
-      mv.endMethod
+      mv.endMethod()
     }
 
     def visitEntityDeclaration(entityDeclaration: EntityDeclaration) {
@@ -1233,7 +1240,7 @@ object ByteCodeGenerator {
 
       for (symbol <- processSymbols) {
         cw.visitField(Opcodes.ACC_PUBLIC, symbol.name, "L" + cw.className + "$" + symbol.name + ";").
-          visitAnnotation(if (symbol.isPostponed) ci(classOf[PostponedProcessAnnotation]) else ci(classOf[ProcessAnnotation]), true).visitEnd
+          visitAnnotation(if (symbol.isPostponed) ci(classOf[PostponedProcessAnnotation]) else ci(classOf[ProcessAnnotation]), true).visitEnd()
       }
       {
         val mv = cw.createMethod(name = "<init>", parameters = getJVMParameterList(generics) + getJVMParameterList(ports), returnType = "V")
@@ -1258,7 +1265,7 @@ object ByteCodeGenerator {
         acceptDeclarativeItems(architectureDeclaration.declarativeItems, Opcodes.ACC_FINAL, context)
         acceptGenerateStatements(architectureDeclaration.concurrentStatements, Context(cw, mv, Map(), architectureDeclaration.identifier.text))
         RETURN
-        endMethod
+        endMethod()
       }
       acceptNodes(architectureDeclaration.concurrentStatements, Context(cw, null, Map(), architectureDeclaration.identifier.text))
       cw.writeToFile()
@@ -1295,7 +1302,7 @@ object ByteCodeGenerator {
           procedureSymbol.copyBackSymbols match {
             case Seq() => RETURN
             case Seq(symbol) =>
-            //we have only one symbol
+              //we have only one symbol
               loadSymbol(symbol)
               symbol.dataType.asInstanceOf[ScalarType] match {
                 case _: IntegerType | _: EnumerationType => IRETURN
@@ -1303,7 +1310,7 @@ object ByteCodeGenerator {
                 case _: PhysicalType => LRETURN
               }
             case _ =>
-            //we need to return more than one symbol, so we create a scala TupleX
+              //we need to return more than one symbol, so we create a scala TupleX
               NEW("scala/Tuple" + procedureSymbol.copyBackSymbols.size)
               DUP
               for (symbol <- procedureSymbol.copyBackSymbols) {
@@ -1344,7 +1351,7 @@ object ByteCodeGenerator {
                 }
                 indexes.size - 1 - i match {
                   case 0 => arrayLoadInstruction(constraintArray.elementType)
-                  case _ => AALOAD
+                  case _ => AALOAD()
                 }
               }
             case unconstrainedArrayType: UnconstrainedArrayType =>
@@ -1443,7 +1450,7 @@ object ByteCodeGenerator {
       acceptNodes(functionDefinition.sequentialStatements, newContext)
       stopLabel()
       createDebugLocalVariableInformation(functionDefinition.localSymbols, startLabel, stopLabel)
-      endMethod
+      endMethod()
     }
 
     def visitProcedureDefinition(procedureDefinition: ProcedureDefinition, context: Context) {
@@ -1473,7 +1480,7 @@ object ByteCodeGenerator {
       visitReturnStatement(ReturnStatement(NoPosition, None, None, procedureSymbol), newContext)
       stopLabel()
       createDebugLocalVariableInformation(procedureDefinition.localSymbols, startLabel, stopLabel)
-      endMethod
+      endMethod()
     }
 
     def visitBlockStatement(blockStmt: BlockStatement, context: Context): RichClassWriter = {
@@ -1503,7 +1510,7 @@ object ByteCodeGenerator {
         endLabel()
         visitLocalVariable("this", "L" + cw.className + ";", null, startLabel, endLabel, 0)
         visitLocalVariable("owner", "L" + context.cw.className + ";", null, startLabel, endLabel, 1)
-        endMethod
+        endMethod()
       }
       acceptNodes(blockStmt.concurrentStatements, Context(cw = cw, mv = null, loopLabels = Map(), designUnit = context.designUnit))
       cw.writeToFile()
@@ -1564,17 +1571,17 @@ object ByteCodeGenerator {
 
           procedureSymbol.owner match {
             case Runtime =>
-            //implicitly declared procedures and functions
+              //implicitly declared procedures and functions
               val procedureName = procedureSymbol.name match {
                 case "deallocate" =>
-                //converts a call to deallocate to a assignment with null => variable=null;
+                  //converts a call to deallocate to a assignment with null => variable=null;
                   require(procedureCallStmt.parameterAssociation.get.parameters.size == 1)
                   val (target, targetType) = loadTarget(procedureCallStmt.parameterAssociation.get.parameters.head)
                   ACONST_NULL
                   storeSymbol(target, targetType)
                   None
                 case "read" =>
-                //mangle read procedure name so that it matches one of the readX names in the runtime
+                  //mangle read procedure name so that it matches one of the readX names in the runtime
                   Some("read" + getJVMDataType(procedureSymbol.parameters.head.dataType.asInstanceOf[FileType].elementType))
                 case "file_open" =>
                   if (procedureSymbol.parameters.head.dataType.name == "status") Some("file_open_status")
@@ -1589,11 +1596,11 @@ object ByteCodeGenerator {
               loadParameters(procedureCallStmt.parameterAssociation)
               visitMethodInsn(procedureCallType, procedureSymbol.owner.implementationName, procedureSymbol.mangledName, "(" + getJVMParameterList(procedureSymbol.parameters) + ")" + returnType)
           }
-      /*
-      //TODO copy back out values and call checkIsInRange
-      //it is similarly an error if, after applying any conversion function or type conversion present in the formal part of the applicable association element, the value of the formal parameter does not
-      //belong to the subtype denoted by the subtype indication of the actual.
-      */
+        /*
+        //TODO copy back out values and call checkIsInRange
+        //it is similarly an error if, after applying any conversion function or type conversion present in the formal part of the applicable association element, the value of the formal parameter does not
+        //belong to the subtype denoted by the subtype indication of the actual.
+        */
       }
     }
 
@@ -1623,7 +1630,7 @@ object ByteCodeGenerator {
         INVOKEVIRTUAL("scala/collection/immutable/List$", "apply", "(Lscala/collection/Seq;)Lscala/collection/immutable/List;")
       }
       ARETURN
-      endMethod
+      endMethod()
     }
 
     def visitProcessStatement(processStmt: ProcessStatement, context: Context) {
@@ -1648,13 +1655,13 @@ object ByteCodeGenerator {
         endLabel()
         visitLocalVariable("this", "L" + cw.className + ";", null, startLabel, endLabel, 0)
         visitLocalVariable("owner", "L" + context.cw.className + ";", null, startLabel, endLabel, 1)
-        endMethod
+        endMethod()
       }
       {
         val mv = cw.createMethod(name = "run")
         visitLoopStatement(LoopStatement(NoPosition, None, processStmt.sequentialStatements, None), Context(cw = cw, mv = mv, loopLabels = Map(), designUnit = context.designUnit)) //infinite loop
         mv.RETURN
-        mv.endMethod
+        mv.endMethod()
       }
       cw.writeToFile()
     }
@@ -1723,13 +1730,13 @@ object ByteCodeGenerator {
           arrayType.dimensions.foreach(dim => mv.pushInt(dim.size))
           arrayType.elementType match {
             case scalarType: ScalarType =>
-            //generates this code: int[] x = (int[])VHDLRuntime.fill(6, Integer.valueOf(Integer.MIN_VALUE), Manifest..MODULE$.Int());
+              //generates this code: int[] x = (int[])VHDLRuntime.fill(6, Integer.valueOf(Integer.MIN_VALUE), Manifest..MODULE$.Int());
               loadDefaultValue(arrayType.elementType)
               doBox(scalarType)
               loadScalaManifest(arrayType.elementType)
               mv.INVOKESTATIC(RUNTIME, "fill", "(" + ("I" * arrayType.dimensions.size) + "Ljava/lang/Object;Lscala/reflect/ClassManifest;)" + ("[" * (arrayType.dimensions.size - 1)) + "Ljava/lang/Object;")
             case dataType =>
-            //generates this code:record[] x = (record[])VHDLRuntime.fill(6, record.class, ClassManifest..MODULE$.classType(record.class));
+              //generates this code:record[] x = (record[])VHDLRuntime.fill(6, record.class, ClassManifest..MODULE$.classType(record.class));
               mv.LDC(Type.getType(getJVMDataType(dataType)))
               loadScalaManifest(dataType)
               mv.INVOKESTATIC(RUNTIME, "fill", "(" + ("I" * arrayType.dimensions.size) + "Ljava/lang/Class;Lscala/reflect/ClassManifest;)" + ("[" * (arrayType.dimensions.size - 1)) + "Ljava/lang/Object;")
@@ -1762,7 +1769,7 @@ object ByteCodeGenerator {
       }
     }
 
-    def visitVariableDeclaration(variableDeclaration: VariableDeclaration, context: Context) =
+    def visitVariableDeclaration(variableDeclaration: VariableDeclaration, context: Context) {
       initSymbols(variableDeclaration.symbols, context) {
         symbol =>
           import context._
@@ -1777,17 +1784,19 @@ object ByteCodeGenerator {
           }
           loadDefaultSubTypeValue(variableDeclaration.subType)
       }
+    }
 
     def visitSignalDeclaration(signalDeclaration: SignalDeclaration, context: Context) =
       error("not implemented")
 
-    def visitConstantDeclaration(constantDeclaration: ConstantDeclaration, context: Context) =
+    def visitConstantDeclaration(constantDeclaration: ConstantDeclaration, context: Context) {
       for (defaultExpression <- constantDeclaration.value) initSymbols(constantDeclaration.symbols, context) {
         symbol =>
           import context._
           acceptExpression(defaultExpression)
           checkIsInRange(symbol.dataType)
       }
+    }
 
     def visitFileDeclaration(fileDeclaration: FileDeclaration, context: Context) {
       import context._
@@ -1844,7 +1853,7 @@ object ByteCodeGenerator {
               PUTFIELD(recordType.implementationName, fieldName, getJVMDataType(fieldDataType))
             }
             RETURN
-            endMethod
+            endMethod()
           }
           {
             implicit val mv = cw.createMethod(name = "<init>")
@@ -1858,7 +1867,7 @@ object ByteCodeGenerator {
               PUTFIELD(recordType.implementationName, fieldName, getJVMDataType(fieldDataType))
             }
             RETURN
-            endMethod
+            endMethod()
           }
           {
             /*
@@ -1898,7 +1907,7 @@ object ByteCodeGenerator {
             ARETURN
             endLabel
             visitLocalVariable("this", "L" + recordType.implementationName + ";", null, startLabel, endLabel, 0)
-            endMethod
+            endMethod()
           }
           {
             /*
@@ -1919,7 +1928,7 @@ object ByteCodeGenerator {
             ARETURN
             endLabel()
             visitLocalVariable("this", "L" + recordType.implementationName + ";", null, startLabel, endLabel, 0)
-            endMethod
+            endMethod()
           }
           {
             /*
@@ -1961,7 +1970,7 @@ object ByteCodeGenerator {
             ARETURN
             endLabel
             visitLocalVariable("this", "L" + recordType.implementationName + ";", null, startLabel, endLabel, 0)
-            endMethod
+            endMethod()
           }
           {
             //generates code for canEqual and equals as described by M. Odersky in this article http://www.artima.com/lejava/articles/equality.html {
@@ -1982,7 +1991,7 @@ object ByteCodeGenerator {
             IRETURN
             visitLocalVariable("this", "L" + recordType.implementationName + ";", null, startLabel, endLabel, 0)
             visitLocalVariable("other", "Ljava/lang/Object;", null, startLabel, endLabel, 1)
-            endMethod
+            endMethod()
           }
           {
             /*
@@ -2044,7 +2053,7 @@ object ByteCodeGenerator {
                   DCMPL
                   IFNE(falseLabel)
                 case _: PhysicalType =>
-                  LCMP
+                  LCMP()
                   IFNE(falseLabel)
                 case _: AccessType | _: RecordType =>
                   INVOKEVIRTUAL(getJVMName(fieldType), "equals", "(Ljava/lang/Object;)Z")
@@ -2067,7 +2076,7 @@ object ByteCodeGenerator {
             visitLocalVariable("this", "L" + recordType.implementationName + ";", null, startLabel, endLabel, 0)
             visitLocalVariable("other", "Ljava/lang/Object;", null, startLabel, endLabel, 1)
             visitLocalVariable("that", "L" + recordType.implementationName + ";", null, thatScopeLabel, afterIfStmtLabel, 2)
-            endMethod
+            endMethod()
           }
           cw.writeToFile()
         case enumType: EnumerationType =>
@@ -2092,7 +2101,7 @@ object ByteCodeGenerator {
             PUTSTATIC(enumType.implementationName, "valuesArray", "[Ljava/lang/String;")
 
             RETURN
-            endMethod
+            endMethod()
           }
           {
             val mv = cw.createMethod(flags = Opcodes.ACC_SYNTHETIC, name = "getValue", parameters = "I", returnType = "Ljava/lang/String;")
@@ -2101,7 +2110,7 @@ object ByteCodeGenerator {
             ILOAD(1)
             INVOKESTATIC(enumType.implementationName, "image", "(I)Ljava/lang/String;")
             ARETURN
-            endMethod
+            endMethod()
           }
           {
             val mv = cw.createMethod(flags = Opcodes.ACC_STATIC + Opcodes.ACC_SYNTHETIC, name = "value", parameters = "Ljava/lang/String;", returnType = "I")
@@ -2127,7 +2136,7 @@ object ByteCodeGenerator {
             }
             defaultLabel()
             throwNewException(p(classOf[VHDLRuntimeException]), "invalid enum string")
-            endMethod
+            endMethod()
           }
           {
             /*        generates code equivalent to
@@ -2169,11 +2178,11 @@ object ByteCodeGenerator {
             INVOKEVIRTUAL("java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;")
             INVOKEVIRTUAL("java/lang/StringBuilder", "toString", "()Ljava/lang/String;")
             INVOKESPECIAL(p(classOf[VHDLRuntimeException]), "<init>", "(Ljava/lang/String;)V")
-            ATHROW
+            ATHROW()
             returnLabel()
             ILOAD(0)
             IRETURN
-            endMethod
+            endMethod()
           }
           {
             val mv = cw.createMethod(flags = Opcodes.ACC_STATIC + Opcodes.ACC_SYNTHETIC, name = "image", parameters = "I", returnType = "Ljava/lang/String;")
@@ -2181,9 +2190,9 @@ object ByteCodeGenerator {
 
             GETSTATIC(enumType.implementationName, "valuesArray", "[Ljava/lang/String;")
             ILOAD(0)
-            AALOAD
+            AALOAD()
             ARETURN
-            endMethod
+            endMethod()
           }
           cw.writeToFile()
         case protectedType: ProtectedType =>
@@ -2202,7 +2211,7 @@ object ByteCodeGenerator {
           INVOKESPECIAL("java/lang/Object", "<init>", "()V")
           acceptDeclarativeItems(declarativeItems, 0, Context(cw, mv, Map(), context.designUnit))
           RETURN
-          endMethod
+          endMethod()
           cw.writeToFile()
         case _ =>
       }
@@ -2237,7 +2246,7 @@ object ByteCodeGenerator {
       }
 
       cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER + flags, name, null, superClass, interfaces.orNull)
-      cw.visitAnnotation(ci(annotationClass), true).visitEnd
+      cw.visitAnnotation(ci(annotationClass), true).visitEnd()
       cw.visitSource(sourceFileName, OpenVCSignature)
       if (createEmptyConstructor) cw.createEmptyConstructor()
       cw

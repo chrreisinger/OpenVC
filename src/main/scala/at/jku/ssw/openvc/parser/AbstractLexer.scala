@@ -28,7 +28,7 @@ abstract class AbstractLexer(input: CharStream, state: RecognizerSharedState) ex
 
   private val lexerErrorList = new scala.collection.immutable.VectorBuilder[CompilerMessage]() //scala.collection.mutable.ListBuffer[A]
 
-  def lexerErrors: Seq[CompilerMessage] = this.lexerErrorList.result
+  def lexerErrors: Seq[CompilerMessage] = this.lexerErrorList.result()
 
   override def getErrorMessage(e: RecognitionException, tokenNames: Array[String]): String =
     if (e.isInstanceOf[NoViableAltException]) {
@@ -39,6 +39,7 @@ abstract class AbstractLexer(input: CharStream, state: RecognizerSharedState) ex
     }
     else super.getErrorMessage(e, tokenNames)
 
-  override def displayRecognitionError(tokenNames: Array[String], e: RecognitionException) =
+  override def displayRecognitionError(tokenNames: Array[String], e: RecognitionException) {
     lexerErrorList += new CompilerMessage(position = new OffsetPosition(e.line, e.charPositionInLine, e.index, e.index + 1), message = getErrorMessage(e, tokenNames))
+  }
 }

@@ -40,7 +40,7 @@ import at.jku.ssw.openvc.CompilerMessage
 
 object SemanticAnalyzer extends Phase {
   val name = "semanticAnalyzer"
-  
+
   type SemanticCheckResult = (ASTNode, Seq[CompilerMessage], Seq[CompilerMessage])
   type Buffer[A] = immutable.VectorBuilder[A]
 
@@ -106,8 +106,8 @@ object SemanticAnalyzer extends Phase {
 
   def apply(unit: CompilationUnit): CompilationUnit = {
     this.configuration = unit.configuration
-    semanticErrors.clear
-    semanticWarnings.clear
+    semanticErrors.clear()
+    semanticWarnings.clear()
     val (newNode, context) = acceptNode(unit.astNode, NoSymbol, Context(new SymbolTable(0, List()), collection.immutable.Stack()))
     unit.addErrors(semanticErrors.result())
     unit.addWarnings(semanticWarnings.result())
@@ -123,13 +123,16 @@ object SemanticAnalyzer extends Phase {
 
   def addWarning(stmt: Locatable, msg: String, messageParameters: AnyRef*) = semanticWarnings += new CompilerMessage(stmt.position, String.format(msg, messageParameters.toArray: _*))
 
-  def checkIdentifiersOption(startOption: Option[Identifier], endOption: Option[Identifier]) = startOption match {
-    case Some(start) => checkIdentifiers(start, endOption)
-    case None => endOption foreach (end => addError(end, "The statement is not labeld, %s is illegal here", end))
+  def checkIdentifiersOption(startOption: Option[Identifier], endOption: Option[Identifier]) {
+    startOption match {
+      case Some(start) => checkIdentifiers(start, endOption)
+      case None => endOption foreach (end => addError(end, "The statement is not labeld, %s is illegal here", end))
+    }
   }
 
-  def checkIdentifiers(start: Identifier, endOption: Option[Identifier]) =
+  def checkIdentifiers(start: Identifier, endOption: Option[Identifier]) {
     for (end <- endOption) if (end.text != start.text) addError(end, "The start label:%s ist differend form this end label:%s", start, end)
+  }
 
   final case class Context(symbolTable: SymbolTable, loopLabels: collection.immutable.Stack[(Option[Identifier], Position)]) {
     def varIndex = symbolTable.varIndex
@@ -206,7 +209,7 @@ object SemanticAnalyzer extends Phase {
 
     def openScope(varIndex: Int) = copy(symbolTable = symbolTable.openScope(varIndex))
 
-    def closeScope(): Seq[Symbol] = symbolTable.currentScope.values.toSeq
+    def closeScope: Seq[Symbol] = symbolTable.currentScope.values.toSeq
 
     def insertSymbols(symbols: Seq[Symbol], generateErrorMessage: Boolean = true): Context =
       copy(symbolTable = insertSymbolsIntoSymbolTable(this.symbolTable, symbols, generateErrorMessage))
@@ -263,11 +266,11 @@ object SemanticAnalyzer extends Phase {
               symbolTable
           }
         case None =>
-        /*
-        ListOfSubprograms and ListOfEnumerations allways contains all symbols with the same name
-        e.g. for ListOfSubprograms: foo(integer),foo(real) -> openScope -> foo(integer),foo(real),foo(boolean)
-        ListOfSubprograms in scope n is allways a superset of the symbols in scope 0 to n-1
-        */
+          /*
+          ListOfSubprograms and ListOfEnumerations allways contains all symbols with the same name
+          e.g. for ListOfSubprograms: foo(integer),foo(real) -> openScope -> foo(integer),foo(real),foo(boolean)
+          ListOfSubprograms in scope n is allways a superset of the symbols in scope 0 to n-1
+          */
           symbolTable.insert(symbol match {
             case subprogramSymbol: SubprogramSymbol => symbolTable.find(subprogramSymbol.identifier.text, classOf[ListOfSubprograms]) match {
               case Some(listOfSubprograms) => new ListOfSubprograms(subprogramSymbol.identifier, subprogramSymbol +: listOfSubprograms.subprograms)
@@ -290,12 +293,12 @@ object SemanticAnalyzer extends Phase {
       _ match {
         case typeSymbol: TypeSymbol => typeSymbol.dataType match {
           case protectedType: ProtectedType =>
-          //Each protected type declaration appearing immediately within a given declarative region (see 10.1) must
-          //have exactly one corresponding protected type body appearing immediately within the same declarative
-          //region and textually subsequent to the protected type declaration. Similarly, each protected type body
-          //appearing immediately within a given declarative region must have exactly one corresponding protected
-          //type declaration appearing immediately within the same declarative region and textually prior to the
-          //protected type body.
+            //Each protected type declaration appearing immediately within a given declarative region (see 10.1) must
+            //have exactly one corresponding protected type body appearing immediately within the same declarative
+            //region and textually subsequent to the protected type declaration. Similarly, each protected type body
+            //appearing immediately within a given declarative region must have exactly one corresponding protected
+            //type declaration appearing immediately within the same declarative region and textually prior to the
+            //protected type body.
             if (!protectedType.isImplemented && !owner.isInstanceOf[PackageSymbol])
               addError(owner, "no protected type body found for type %s", typeSymbol.name)
           //For each incomplete type declaration there must be a corresponding full type declaration with the same identifier.
@@ -320,7 +323,7 @@ object SemanticAnalyzer extends Phase {
 
   @tailrec
   def acceptNodes[A <: ASTNode](nodes: Seq[A], owner: Symbol, context: Context, buffer: Buffer[A] = new Buffer[A]()): (Seq[A], Context) = nodes match {
-    case Seq() => (buffer.result, context)
+    case Seq() => (buffer.result(), context)
     case Seq(head, xs@_*) =>
       val (newNode, newContext) = acceptNode(head, owner, context)
       newNode match {
@@ -1023,11 +1026,11 @@ object SemanticAnalyzer extends Phase {
           case _ =>
             parameters match {
               case Left(subprograms) =>
-              /*
-              A call to an overloaded subprogram is ambiguous (and therefore is an error) if the name of the subprogram, the number of parameter associations,
-              the types and order of the actual parameters, the names of the formal parameters (if named associations are used), and the result type (for functions)
-              are not sufficient to identify exactly one (overloaded) subprogram.
-              */
+                /*
+                A call to an overloaded subprogram is ambiguous (and therefore is an error) if the name of the subprogram, the number of parameter associations,
+                the types and order of the actual parameters, the names of the formal parameters (if named associations are used), and the result type (for functions)
+                are not sufficient to identify exactly one (overloaded) subprogram.
+                */
 
                 @tailrec
                 def mapPositionalElements(positionalElements: Seq[AssociationList.Element], buffer: Buffer[AssociationList.Element], subprograms: Seq[SubprogramSymbol], i: Int): Seq[SubprogramSymbol] = positionalElements match {
@@ -1071,7 +1074,7 @@ object SemanticAnalyzer extends Phase {
                 }
                 val buffer = new Buffer[AssociationList.Element]()
                 mapNamedElements(namedElements, buffer, mapPositionalElements(positionalElements, buffer, subprograms, 0)).filter(_.parameters.size == list.elements.size) match {
-                  case Seq(subprogram) => (Some(subprogram), checkGenericAssociationList(context, Option(AssociationList(buffer.result)), Right(subprogram.parameters), owner)._2)
+                  case Seq(subprogram) => (Some(subprogram), checkGenericAssociationList(context, Option(AssociationList(buffer.result())), Right(subprogram.parameters), owner)._2)
                   case Seq() => (addError(owner, "no matching subprogramm found"), None)
                   case subs => (addError(owner, "ambiguous subprogramm call, found %s matching subprogramms", subs.size.toString), None)
                 }
@@ -1222,7 +1225,7 @@ object SemanticAnalyzer extends Phase {
     }
 
   def checkRange(context: Context, range: Range): Range = range.expressionsOrName match {
-  //TODO check if range expression are locally static expressions
+    //TODO check if range expression are locally static expressions
     case Left((sourceFromExpression, direction, sourceToExpression)) =>
       val fromExpression = checkExpression(context, sourceFromExpression, NoType)
       val toExpression = checkExpression(context, sourceToExpression, fromExpression.dataType)
@@ -1403,7 +1406,7 @@ object SemanticAnalyzer extends Phase {
               case _: IntegerType | _: RealType => createIntegerOrRealSubType(range, baseType, resolutionFunction)
               case e: EnumerationType => createEnumerationSubType(range, e, resolutionFunction)
               case _: AccessType =>
-              //The only form of constraint that is allowed after the name of an access type in a subtype indication is an index constraint
+                //The only form of constraint that is allowed after the name of an access type in a subtype indication is an index constraint
                 addError(range, "you can not create a access subtype with a range constraint")
               case _ => addError(subTypeIndication.typeName, "expected a integer,real or enumeration type")
             }
@@ -1427,7 +1430,7 @@ object SemanticAnalyzer extends Phase {
 
     def createAliasSymbol(symbol: Symbol): ReturnType = symbol match {
       case r: RuntimeSymbol =>
-      //object alias
+        //object alias
         for (signature <- aliasDeclaration.signature) addError(signature, "signature not allowed for object alias")
         val subTypeOption = aliasDeclaration.subType.map(createType(context, _))
         val expr = acceptExpression(aliasDeclaration.name, subTypeOption match {
@@ -1452,7 +1455,7 @@ object SemanticAnalyzer extends Phase {
         addError(aliasDeclaration.name, "aliases for labels are not allowed")
         (aliasDeclaration, context)
       case _ =>
-      //non-object alias
+        //non-object alias
         for (subType <- aliasDeclaration.subType) addError(subType, "a subtype indication is not allowed for a non object alias")
         rest.headOption.foreach(addError(_, "illegal name part in non object alias"))
         val aliasSymbol = symbol match {
@@ -2091,12 +2094,12 @@ object SemanticAnalyzer extends Phase {
     val (sequentialStatements, c2) = acceptNodes(functionDefinition.sequentialStatements, function, c1)
     val newSequentialStatements = sequentialStatements match {
       case Seq(AssertionStatement(pos, _, _, _, _)) =>
-      //corner case for functions with only a assert statement, throw statement will make the JVM verifier happy, that this function does not return a value
+        //corner case for functions with only a assert statement, throw statement will make the JVM verifier happy, that this function does not return a value
         sequentialStatements :+ ThrowStatement(pos, "function fall through")
       case _ => sequentialStatements
     }
     (functionDefinition.copy(parameterInterfaceList = parameterInterfaceList, declarativeItems = declarativeItems, sequentialStatements = newSequentialStatements,
-      symbol = function, localSymbols = c2.closeScope()), tmp)
+      symbol = function, localSymbols = c2.closeScope), tmp)
   }
 
   def visitGroupDeclaration(groupDeclaration: GroupDeclaration, owner: Symbol, context: Context): ReturnType = {
@@ -2158,7 +2161,7 @@ object SemanticAnalyzer extends Phase {
         val symbol = new PackageSymbol(packageBodyDeclaration.identifier, Map(), true, owner)
         val (declarativeItems, newContext) = acceptDeclarativeItems(packageBodyDeclaration.declarativeItems, symbol, context.copy(symbolTable = new SymbolTable(0, scopes ++ context.symbolTable.scopes)))
         require(newContext.symbolTable.depth == 3)
-        newContext.closeScope().foreach {
+        newContext.closeScope.foreach {
           _ match {
             case constantSymbol: ConstantSymbol => if (!constantSymbol.isDefined) addError(packageBodyDeclaration, "the deferred constant %s is not fully declared", constantSymbol.name)
             case _ =>
@@ -2211,7 +2214,7 @@ object SemanticAnalyzer extends Phase {
     val (sequentialStatements, c2) = acceptNodes(procedureDefinition.sequentialStatements, procedure, c1)
     procedure.isPassive = isPassive(sequentialStatements)
     (procedureDefinition.copy(parameterInterfaceList = parameterInterfaceList, declarativeItems = declarativeItems, sequentialStatements = sequentialStatements,
-      symbol = procedure, localSymbols = c2.closeScope()), tmp)
+      symbol = procedure, localSymbols = c2.closeScope), tmp)
   }
 
   def isPassive(list: Seq[SequentialStatement]): Boolean = list.forall {
@@ -2228,7 +2231,7 @@ object SemanticAnalyzer extends Phase {
   @tailrec
   def toLinearList(sequentialStatements: Seq[SequentialStatement], buffer: Buffer[SequentialStatement] = new Buffer[SequentialStatement]()): Seq[SequentialStatement] =
     sequentialStatements match {
-      case Seq() => buffer.result
+      case Seq() => buffer.result()
       case Seq(statement, xs@_*) => statement match {
         case loopStmt: AbstractLoopStatement =>
           buffer += loopStmt
@@ -2269,7 +2272,7 @@ object SemanticAnalyzer extends Phase {
     }.toList
 
     symbol.isPassive = isPassive(newSequentialStatementList)
-    (processStatement.copy(declarativeItems = declarativeItems, sequentialStatements = sequentialStatements, localSymbols = c2.closeScope(), symbol = symbol), context)
+    (processStatement.copy(declarativeItems = declarativeItems, sequentialStatements = sequentialStatements, localSymbols = c2.closeScope, symbol = symbol), context)
   }
 
   def visitReportStatement(reportStmt: ReportStatement, context: Context): ReturnType = {
@@ -2373,7 +2376,7 @@ object SemanticAnalyzer extends Phase {
     (signalDeclaration.copy(defaultExpression = defaultExpression, subType = subType, symbols = symbols), context.insertSymbols(symbols))
   }
 
-  def checkIfNotType(location: Locatable, dataType: DataType, invalidTypes: Set[Class[_]], message: String): Unit = {
+  def checkIfNotType(location: Locatable, dataType: DataType, invalidTypes: Set[Class[_]], message: String) {
     def isInvalidType(dataType: DataType): Boolean =
       invalidTypes.contains(dataType.getClass) || (dataType match {
         case recordType: RecordType => recordType.fields.exists(element => isInvalidType(element._2))
@@ -2383,17 +2386,16 @@ object SemanticAnalyzer extends Phase {
     if (isInvalidType(dataType)) addError(location, "the type can not be a %s type, or a composite type having a subelement that is a %s", message, message)
   }
 
-  def checkIfNotFileProtectedAccessType(location: Locatable, dataType: DataType) =
+  def checkIfNotFileProtectedAccessType(location: Locatable, dataType: DataType) {
     checkIfNotType(location, dataType, Set(classOf[FileType], classOf[ProtectedType], classOf[AccessType]), "file, protected, access")
+  }
 
-  def checkIfNotFileProtectedType(subType: SubTypeIndication) =
-    checkIfNotType(subType, subType.dataType, Set(classOf[FileType], classOf[ProtectedType]), "file, protected")
+  def checkIfNotFileProtectedType(subType: SubTypeIndication) {checkIfNotType(subType, subType.dataType, Set(classOf[FileType], classOf[ProtectedType]), "file, protected")}
 
-  def checkIfNotFileAccessType(location: Locatable, dataType: DataType) =
-    checkIfNotType(location, dataType, Set(classOf[FileType], classOf[AccessType]), "file, access")
+  def checkIfNotFileAccessType(location: Locatable, dataType: DataType) {checkIfNotType(location, dataType, Set(classOf[FileType], classOf[AccessType]), "file, access")}
 
   def visitTypeDeclaration(typeDeclaration: AbstractTypeDeclaration, owner: Symbol, context: Context): ReturnType = {
-    def checkDuplicateIdentifiers(identifiers: Seq[Identifier], message: String) = identifiers.diff(identifiers.distinct).foreach(identifier => addError(identifier, message, identifier))
+    def checkDuplicateIdentifiers(identifiers: Seq[Identifier], message: String) {identifiers.diff(identifiers.distinct).foreach(identifier => addError(identifier, message, identifier))}
 
     val name = typeDeclaration.identifier.text
 
@@ -2527,7 +2529,7 @@ object SemanticAnalyzer extends Phase {
     }
     context.symbolTable.findInCurrentScope(typeDeclaration.identifier.text, classOf[TypeSymbol]) match {
       case Some(symbol) if (symbol.dataType == IncompleteType) =>
-      //we found an incomplete type declaration (TypeSymbol where dataType == IncompleteType), now we must update all access types where this incomplete type is used, so that the point to the new defined type
+        //we found an incomplete type declaration (TypeSymbol where dataType == IncompleteType), now we must update all access types where this incomplete type is used, so that the point to the new defined type
         val accessTypes = context.symbolTable.currentScope.values.collect(_ match {
           case typeSymbol: TypeSymbol if (typeSymbol.dataType.isInstanceOf[AccessType] && typeSymbol.dataType.asInstanceOf[AccessType].pointerType == IncompleteType) => typeSymbol.dataType.asInstanceOf[AccessType]
         }).toSeq
