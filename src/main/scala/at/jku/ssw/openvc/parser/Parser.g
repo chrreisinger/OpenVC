@@ -57,6 +57,9 @@ import ast.simultaneousStatements._
 import util._
 }
 
+saveFollowSet 
+@init{followSet=state.following(state._fsp)} :;
+
 sync [String message]
 @init{
     // Consume any garbled tokens that come before the next statement
@@ -85,7 +88,7 @@ design_file returns [DesignFile designFile]
 	(design_unit{units += $design_unit.designUnit})+ EOF
 	{$designFile=new DesignFile(units.result)};
 
-context_item returns [ContextItem contextItem] :
+context_item returns [ContextItem contextItem=NoNode] :
 	library_clause {contextItem = $library_clause.libraryClause}
 	| use_clause {contextItem = $use_clause.useClause}
 	| {vhdl2008}?=>v2008_context_reference {contextItem = $v2008_context_reference.contextReference};
@@ -162,8 +165,8 @@ entity_declaration returns [EntityDeclaration entityDecl]
 	END ENTITY? end_identifier=identifier? SEMICOLON
 	{$entityDecl=new EntityDeclaration($entityToken,$start_identifier.id,$generic_clause.list,$port_clause.list,declarativeItems.result,concurrentStmt.result,$end_identifier.id)};
 		
-entity_declarative_item returns [DeclarativeItem item] :
-	subprogram_declartion_or_body {item=$subprogram_declartion_or_body.declOrBody}
+entity_declarative_item returns [DeclarativeItem item=NoNode] :
+	subprogram_declaration_or_body {item=$subprogram_declaration_or_body.declOrBody}
 	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration {$item=$v2008_subprogram_instantiation_declaration.subprogramInstantiationDecl}
 			| package_declaration {$item=$package_declaration.packageDecl}
 			| package_body {$item=$package_body.packageBody}
@@ -205,7 +208,7 @@ architecture_body returns [ArchitectureDeclaration archDecl]
 	END ARCHITECTURE? end_identifier=identifier? SEMICOLON
 	{$archDecl=new ArchitectureDeclaration($architectureToken,$start_identifier.id,declarativeItems.result,$selected_name.name_,$concurrent_statement_list.list,$end_identifier.id)};
 		
-configuration_declarative_item returns [DeclarativeItem item] :
+configuration_declarative_item returns [DeclarativeItem item=NoNode] :
 	use_clause {$item=$use_clause.useClause}
 	| attribute_specification {$item=$attribute_specification.attributeSpec}
 	| group_declaration {$item=$group_declaration.groupDecl};
@@ -261,7 +264,7 @@ v2008_context_declaration returns [ContextDeclaration contextDecl] :
 	END CONTEXT? end_identifier=identifier? SEMICOLON
 	{$contextDecl=new ContextDeclaration($contextToken,$start_identifier.id,$context_items.contextItems,$end_identifier.id)};
 		
-//B.3 Declarations and Specifiations
+//B.3 Declarations and Specifications
 package_declaration returns [PackageDeclaration packageDecl]
 @init{
 	val declarativeItems=new Buffer[DeclarativeItem]()
@@ -274,7 +277,7 @@ package_declaration returns [PackageDeclaration packageDecl]
 	END PACKAGE? end_identifier=identifier? SEMICOLON
 	{$packageDecl=new PackageDeclaration($packageToken,$start_identifier.id,$generic_clause.list,$generic_map_aspect.list,declarativeItems.result,$end_identifier.id)};
 		
-package_declarative_item returns [DeclarativeItem item] :
+package_declarative_item returns [DeclarativeItem item=NoNode] :
 	subprogram_declaration {$item=$subprogram_declaration.subprogramDecl}
 	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration {$item=$v2008_subprogram_instantiation_declaration.subprogramInstantiationDecl}
 			| package_declaration {$item=$package_declaration.packageDecl}
@@ -311,8 +314,8 @@ package_body returns [PackageBodyDeclaration packageBody]
 	END (PACKAGE BODY)? end_identifier=identifier? SEMICOLON
 	{$packageBody = new PackageBodyDeclaration($packageToken,$start_identifier.id,declarativeItems.result,$end_identifier.id)};
     
-package_body_declarative_item returns [DeclarativeItem item] :
-	subprogram_declartion_or_body {$item=$subprogram_declartion_or_body.declOrBody}
+package_body_declarative_item returns [DeclarativeItem item=NoNode] :
+	subprogram_declaration_or_body {$item=$subprogram_declaration_or_body.declOrBody}
 	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration {$item=$v2008_subprogram_instantiation_declaration.subprogramInstantiationDecl}
 			| package_declaration {$item=$package_declaration.packageDecl}
 			| package_body {$item=$package_body.packageBody}
@@ -335,7 +338,7 @@ v2008_package_instantiation_declaration returns [PackageInstantiationDeclaration
 		generic_map_aspect? SEMICOLON
 	{$packageInstantiationDecl=new PackageInstantiationDeclaration($PACKAGE,$identifier.id,$selected_name.name_,$generic_map_aspect.list)};
 
-designator returns [Identifier id] :
+designator returns [Identifier id=Identifier.NoIdentifier] :
 	identifier {$id=$identifier.id}
 	| STRING_LITERAL {$id=toIdentifier($STRING_LITERAL)}; //STRING_LITERAL is a operator symbol	
 	  
@@ -349,11 +352,11 @@ subprogram_specification returns [SubProgramDeclaration decl] :
 	(({vhdl2008}?=>PARAMETER)? LPAREN parameter_interface_list_function RPAREN)? RETURN type_mark
 	{$decl=new FunctionDeclaration($FUNCTION,$impure==null,$designator.id,$generic_clause.list,$generic_map_aspect.list,$parameter_interface_list_function.list,$type_mark.typeName)};	
 
-subprogram_declartion_or_body returns [DeclarativeItem declOrBody] :
+subprogram_declaration_or_body returns [DeclarativeItem declOrBody] :
 	subprogram_specification (subprogram_body[$subprogram_specification.decl])? SEMICOLON
 	{$declOrBody=if ($subprogram_body.subProgramDef!=null) $subprogram_body.subProgramDef else $subprogram_specification.decl};	
 		
-subprogram_declaration returns [DeclarativeItem subprogramDecl] :
+subprogram_declaration returns [DeclarativeItem subprogramDecl=NoNode] :
 	subprogram_specification SEMICOLON
 	{$subprogramDecl=$subprogram_specification.decl};
 	
@@ -365,7 +368,7 @@ subprogram_body[SubProgramDeclaration subprogramDecl] returns [SubProgramDefinit
 	IS
 		sync[syncMessage] (subprogram_declarative_item{declItems += $subprogram_declarative_item.item} sync[syncMessage])* 
 	BEGIN
-		sequence_of_statements
+		saveFollowSet sequence_of_statements
 	END ({$subprogramDecl.isInstanceOf[ProcedureDeclaration]}?=>PROCEDURE | {$subprogramDecl.isInstanceOf[FunctionDeclaration]}?=>FUNCTION)? endIdent=designator?
 	{
 		$subProgramDef = $subprogramDecl match {
@@ -376,8 +379,8 @@ subprogram_body[SubProgramDeclaration subprogramDecl] returns [SubProgramDefinit
 		}	
 	};
     	
-subprogram_declarative_item returns [DeclarativeItem item] :
-	subprogram_declartion_or_body {$item=$subprogram_declartion_or_body.declOrBody}
+subprogram_declarative_item returns [DeclarativeItem item=NoNode] :
+	subprogram_declaration_or_body {$item=$subprogram_declaration_or_body.declOrBody}
 	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration {$item=$v2008_subprogram_instantiation_declaration.subprogramInstantiationDecl}
 			| package_declaration {$item=$package_declaration.packageDecl}
 			| package_body {$item=$package_body.packageBody}
@@ -401,14 +404,14 @@ v2008_subprogram_instantiation_declaration returns [SubprogramInstantiationDecla
 			generic_map_aspect? SEMICOLON
 	{$subprogramInstantiationDecl=new SubprogramInstantiationDeclaration(if ($PROCEDURE!=null) $PROCEDURE else $functionToken,$PROCEDURE!=null,$identifier.id,$selected_name.name_,$signature.signature_,$generic_map_aspect.list)};
 
-type_declaration returns [AbstractTypeDeclaration typeDecl] :
+type_declaration returns [DeclarativeItem typeDecl=NoNode] :
 	TYPE identifier (IS type_definition[$identifier.id,toPosition($TYPE)])? SEMICOLON 
 	{
 		$typeDecl=if ($type_definition.typeDef!=null) $type_definition.typeDef
 			  else new IncompleteTypeDeclaration($TYPE,$identifier.id)
 	};
 
-type_definition[Identifier id,Position pos] returns [AbstractTypeDeclaration typeDef] :
+type_definition[Identifier id,Position pos] returns [DeclarativeItem typeDef=NoNode] :
 	enumeration_type_definition[$id,$pos] {$typeDef=$enumeration_type_definition.enumTypeDef}
 	| numeric_type_definition[$id,pos] {$typeDef=$numeric_type_definition.numericTypeDef} //parses integer,real or physcial type definitions
 	| array_type_definition[$id,$pos] {$typeDef=$array_type_definition.arrayTypeDef}
@@ -418,11 +421,11 @@ type_definition[Identifier id,Position pos] returns [AbstractTypeDeclaration typ
 	| protected_type_body[$id,$pos] {$typeDef=$protected_type_body.protectedTypeBody}
 	| protected_type_declaration[$id,$pos] {$typeDef=$protected_type_declaration.protectedTypeDecl};
 		
-ams_nature_declaration returns [AbstractTypeDeclaration natureDecl] :
+ams_nature_declaration returns [DeclarativeItem natureDecl=NoNode] :
 	NATURE identifier IS ams_nature_definition[$identifier.id,toPosition($NATURE)] SEMICOLON
 	{$natureDecl=$ams_nature_definition.natureDef};
 
-ams_terminal_declaration returns [TerminalDeclaration terminalDecl] :
+ams_terminal_declaration returns [DeclarativeItem terminalDecl=NoNode] :
 	TERMINAL identifier_list COLON ams_subnature_indication SEMICOLON
 	{$terminalDecl=new TerminalDeclaration($TERMINAL,$identifier_list.list,$ams_subnature_indication.subNature)};
 	
@@ -435,7 +438,7 @@ ams_through_aspect returns [(Seq[Identifier\],Option[Expression\],Option[Express
 	identifier_list (TOLERANCE toleranceExpression=expression)? (VAR_ASSIGN defaultExpression=expression)? THROUGH
 	{$through_aspect=($identifier_list.list,$toleranceExpression.expr,$defaultExpression.expr)};
 
-ams_quantity_declaration returns [AbstractQuantityDeclaration quantityDecl] :
+ams_quantity_declaration returns [DeclarativeItem quantityDecl=NoNode] :
  	QUANTITY (terminal=ams_terminal_aspect {$quantityDecl=new BranchQuantityDeclaration($QUANTITY,None,None,$terminal.terminal_aspect)}
  		  | identifier_list 
  		  	(
@@ -460,11 +463,11 @@ ams_source_aspect returns [Either[(Expression,Expression),Expression\] source_as
 	SPECTRUM magnitude_simple_expression=simple_expression COMMA phase_simple_expression=simple_expression {$source_aspect=Left(($magnitude_simple_expression.simpleExpr,$phase_simple_expression.simpleExpr))}
 	| NOISE power_simple_expression=simple_expression {$source_aspect=Right($power_simple_expression.simpleExpr)};
 	
-constant_declaration returns [ConstantDeclaration constantDecl] :
+constant_declaration returns [DeclarativeItem constantDecl=NoNode] :
 	CONSTANT identifier_list COLON subtype_indication (VAR_ASSIGN expression)? SEMICOLON 
 	{$constantDecl=new ConstantDeclaration($CONSTANT,$identifier_list.list,$subtype_indication.subType,$expression.expr)};
 	
-signal_declaration returns [SignalDeclaration signalDecl] :	
+signal_declaration returns [DeclarativeItem signalDecl=NoNode] :
 	SIGNAL identifier_list COLON subtype_indication (reg=REGISTER|bus=BUS)? (VAR_ASSIGN expression)? SEMICOLON
 	{
 		val signalType=
@@ -474,35 +477,35 @@ signal_declaration returns [SignalDeclaration signalDecl] :
 		$signalDecl=new SignalDeclaration($SIGNAL,$identifier_list.list,$subtype_indication.subType,signalType,$expression.expr)
 	};
 	
-variable_declaration returns [VariableDeclaration varDecl] :
+variable_declaration returns [DeclarativeItem varDecl=NoNode] :
 	SHARED? VARIABLE identifier_list COLON subtype_indication (VAR_ASSIGN expression)? SEMICOLON
 	{$varDecl=new VariableDeclaration($VARIABLE,$SHARED!=null,$identifier_list.list,$subtype_indication.subType,$expression.expr)};
 	
-file_declaration returns [FileDeclaration fileDecl] :
+file_declaration returns [DeclarativeItem fileDecl=NoNode] :
 	FILE identifier_list COLON subtype_indication ((OPEN file_open_kind_expression=expression)? IS file_logical_name=expression)? SEMICOLON
 	{$fileDecl=new FileDeclaration($FILE,$identifier_list.list,$subtype_indication.subType,$file_open_kind_expression.expr,$file_logical_name.expr)};
 	
-alias_declaration returns [AliasDeclaration aliasDecl] :
+alias_declaration returns [DeclarativeItem aliasDecl=NoNode] :
 	ALIAS alias_designator (COLON subtype_indication)? IS name signature? SEMICOLON
 	{$aliasDecl=new AliasDeclaration($ALIAS,$alias_designator.id,$subtype_indication.subType,$name.name_,$signature.signature_)}; 
 
-alias_designator returns [Identifier id] :
+alias_designator returns [Identifier id=Identifier.NoIdentifier] :
 	identifier {$id=$identifier.id}
 	| CHARACTER_LITERAL{$id=toIdentifier($CHARACTER_LITERAL)}
 	| STRING_LITERAL{$id=toIdentifier($STRING_LITERAL)};	
 	
-component_declaration returns [ComponentDeclaration componentDecl] :
+component_declaration returns [DeclarativeItem componentDecl=NoNode] :
 	componentToken=COMPONENT start_identifier=identifier IS?
 		(generic_clause SEMICOLON)?
 		port_clause?
 	END COMPONENT end_identifier=identifier? SEMICOLON
 	{$componentDecl=new ComponentDeclaration($componentToken,$start_identifier.id,$generic_clause.list,$port_clause.list,$end_identifier.id)};
 
-attribute_declaration returns [AttributeDeclaration attributeDecl] :
+attribute_declaration returns [DeclarativeItem attributeDecl=NoNode] :
 	ATTRIBUTE identifier COLON type_mark SEMICOLON 
 	{$attributeDecl=new AttributeDeclaration($ATTRIBUTE,$identifier.id,$type_mark.typeName)};
 	
-attribute_specification returns [AttributeSpecification attributeSpec] :
+attribute_specification returns [DeclarativeItem attributeSpec=NoNode] :
 	ATTRIBUTE identifier OF entity_name_list COLON entity_class IS expression SEMICOLON 
 	{$attributeSpec=new AttributeSpecification($ATTRIBUTE,$identifier.id,$entity_name_list.list,$entity_class.entityClass,$expression.expr)};
 		
@@ -552,7 +555,7 @@ entity_class returns [EntityClass.Value entityClass] :
 		| TERMINAL {$entityClass=EntityClass.TERMINAL}
 		);
 
-configuration_specification returns [ConfigurationSpecification configSpec] :
+configuration_specification returns [DeclarativeItem configSpec=NoNode] :
 	forToken=FOR component_specification
 		binding_indication SEMICOLON
 		//({psl}?=>psl_verification_unit_binding_indication)*
@@ -579,14 +582,14 @@ binding_indication returns [BindingIndication indication] :
 	port_map_aspect?
 	{indication = new BindingIndication($entity_aspect.entityAspect,$generic_map_aspect.list,$port_map_aspect.list)};
 
-disconnection_specification returns [DisconnectionSpecification disconnectSpec] :
+disconnection_specification returns [DeclarativeItem disconnectSpec=NoNode] :
 	DISCONNECT (selected_name_list | id=OTHERS | id=ALL) COLON type_mark AFTER expression SEMICOLON
 	{
 		val signal_list = if (id==null) Left($selected_name_list.list) else Right(toIdentifier(id))
 		$disconnectSpec= new DisconnectionSpecification($DISCONNECT,signal_list,$type_mark.typeName,$expression.expr)
 	};
 
-ams_step_limit_specification returns [StepLimitSpecification stepLimitSpec] :
+ams_step_limit_specification returns [DeclarativeItem stepLimitSpec=NoNode] :
 	LIMIT (selected_name_list | id=OTHERS | id=ALL ) COLON type_mark WITH expression SEMICOLON	
 	{
 		val signal_list = if (id==null) Left($selected_name_list.list) else Right(toIdentifier(id))
@@ -597,14 +600,14 @@ entity_class_entry returns [GroupTemplateDeclaration.EntityClassEntry entry] :
 	entity_class BOX?
 	{entry = new GroupTemplateDeclaration.EntityClassEntry($entity_class.entityClass,$BOX!=null)};
 		
-group_template_declaration returns [GroupTemplateDeclaration groupTemplateDecl]
+group_template_declaration returns [DeclarativeItem groupTemplateDecl=NoNode]
 @init{
 	val elements=new Buffer[GroupTemplateDeclaration.EntityClassEntry]()
 }:
 	GROUP identifier IS LPAREN e1=entity_class_entry {elements += $e1.entry}(COMMA e2=entity_class_entry {elements += $e2.entry})*  RPAREN SEMICOLON
 	{$groupTemplateDecl=new GroupTemplateDeclaration($GROUP,$identifier.id,elements.result)};		
 		
-group_declaration returns [GroupDeclaration groupDecl] :
+group_declaration returns [DeclarativeItem groupDecl=NoNode] :
 	GROUP identifier COLON selected_name LPAREN group_constituent_list RPAREN SEMICOLON
 	{$groupDecl=new GroupDeclaration($GROUP,$identifier.id,$selected_name.name_,$group_constituent_list.list)};
 	
@@ -624,7 +627,7 @@ use_clause returns [UseClause useClause] :
 	{$useClause=new UseClause($USE,$selected_name_list.list)};	
 	
 // B.4 Type Definitions
-enumeration_literal returns [Identifier id] :
+enumeration_literal returns [Identifier id=Identifier.NoIdentifier] :
 	identifier {$id=$identifier.id}
 	| CHARACTER_LITERAL {$id=toIdentifier($CHARACTER_LITERAL)};
 	
@@ -639,7 +642,7 @@ numeric_type_definition[Identifier id,Position pos] returns [AbstractTypeDeclara
 @init{
 	val elements=new Buffer[PhysicalTypeDefinition.Element]()
 } :
-	range_constraint {$numericTypeDef=new IntegerOrFloatingPointTypeDefinition($pos,$id,$range_constraint.rangeContraint)}
+	range_constraint {$numericTypeDef=new IntegerOrFloatingPointTypeDefinition($pos,$id,$range_constraint.rangeConstraint)}
 	(
 		UNITS
 		baseIdent=identifier SEMICOLON
@@ -648,7 +651,7 @@ numeric_type_definition[Identifier id,Position pos] returns [AbstractTypeDeclara
 			{elements += new PhysicalTypeDefinition.Element($idx.id,$physical_literal.literal_)}
 		)*
 		END UNITS endIdent=identifier?
-		{$numericTypeDef=new PhysicalTypeDefinition($pos,$id,$range_constraint.rangeContraint,$baseIdent.id,elements.result,$endIdent.id)}
+		{$numericTypeDef=new PhysicalTypeDefinition($pos,$id,$range_constraint.rangeConstraint,$baseIdent.id,elements.result,$endIdent.id)}
 	)?;	
 
 index_subtype_definition returns [SelectedName typeMark] :
@@ -718,7 +721,7 @@ ams_record_nature_definition[Identifier id,Position pos] returns [RecordNatureDe
 	END RECORD identifier?
 	{$natureDef=new RecordNatureDefinition(pos,$id,elements.result,$identifier.id)};
 
-ams_subnature_declaration returns [SubNatureDeclaration subnatureDecl] :
+ams_subnature_declaration returns [DeclarativeItem subnatureDecl=NoNode] :
 	SUBNATURE identifier IS ams_subnature_indication SEMICOLON
 	{$subnatureDecl= new SubNatureDeclaration($SUBNATURE,$identifier.id,$ams_subnature_indication.subNature)};
 	
@@ -739,7 +742,7 @@ protected_type_declaration[Identifier id,Position pos] returns [ProtectedTypeDec
 	END PROTECTED identifier?
 	{$protectedTypeDecl=new ProtectedTypeDeclaration($pos,$id,items.result,$identifier.id)};
 		
-protected_type_declarative_item returns [DeclarativeItem item] :
+protected_type_declarative_item returns [DeclarativeItem item=NoNode] :
 	subprogram_declaration {$item=$subprogram_declaration.subprogramDecl}
 	| {vhdl2008}?=>v2008_subprogram_instantiation_declaration {$item=$v2008_subprogram_instantiation_declaration.subprogramInstantiationDecl}
 	| attribute_specification {$item=$attribute_specification.attributeSpec}
@@ -748,15 +751,15 @@ protected_type_declarative_item returns [DeclarativeItem item] :
 protected_type_body[Identifier id,Position pos] returns [ProtectedTypeBodyDeclaration protectedTypeBody]
 @init{
 	val items=new Buffer[DeclarativeItem]()
-	val syncMessage="protected_type declarative item"
+	val syncMessage="protected type declarative item"
 } :
 	PROTECTED BODY
 		sync[syncMessage] (protected_type_body_declarative_item{items += $protected_type_body_declarative_item.item} sync[syncMessage])*
 	END PROTECTED BODY identifier?
 	{$protectedTypeBody=new ProtectedTypeBodyDeclaration($pos,$id,items.result,$identifier.id)};
 		
-protected_type_body_declarative_item returns [DeclarativeItem item] :
-	subprogram_declartion_or_body {$item=$subprogram_declartion_or_body.declOrBody}
+protected_type_body_declarative_item returns [DeclarativeItem item=NoNode] :
+	subprogram_declaration_or_body {$item=$subprogram_declaration_or_body.declOrBody}
 	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration {$item=$v2008_subprogram_instantiation_declaration.subprogramInstantiationDecl}
 			| package_declaration {$item=$package_declaration.packageDecl}
 			| package_body {$item=$package_body.packageBody}
@@ -774,7 +777,7 @@ protected_type_body_declarative_item returns [DeclarativeItem item] :
 	| group_template_declaration {$item=$group_template_declaration.groupTemplateDecl}
 	| group_declaration {$item=$group_declaration.groupDecl};
 		
-subtype_declaration returns [SubTypeDeclaration subTypeDecl] :
+subtype_declaration returns [DeclarativeItem subTypeDecl=NoNode] :
 	SUBTYPE identifier IS subtype_indication SEMICOLON
 	{$subTypeDecl=new SubTypeDeclaration($SUBTYPE,$identifier.id,$subtype_indication.subType)};
 	
@@ -795,8 +798,8 @@ direction returns [Range.Direction.Value rangeDirection] :
 	TO {$rangeDirection=Range.Direction.To}
 	| DOWNTO {$rangeDirection=Range.Direction.Downto};
 
-range_constraint returns [Range rangeContraint] :
-	RANGE range {$rangeContraint=$range.range_};
+range_constraint returns [Range rangeConstraint] :
+	RANGE range {$rangeConstraint=$range.range_};
 
 index_constraint returns [Seq[DiscreteRange\] ranges]
 @init{
@@ -812,11 +815,11 @@ range returns [Range range_] :
 v2008_constraint returns [Either[Range,Seq[DiscreteRange\]\] constraint_] :	
 	array_constraint
 	| v2008_record_constraint //TODO
-	| range_constraint{$constraint_ =Left($range_constraint.rangeContraint)};
+	| range_constraint{$constraint_ =Left($range_constraint.rangeConstraint)};
 		
 constraint returns [Either[Range,Seq[DiscreteRange\]\] constraint_] :
 	index_constraint {$constraint_ =Right($index_constraint.ranges)}
-	| range_constraint {$constraint_ =Left($range_constraint.rangeContraint)};
+	| range_constraint {$constraint_ =Left($range_constraint.rangeConstraint)};
 
 array_constraint :	
 	index_constraint ( array_constraint | v2008_record_constraint )?
@@ -887,8 +890,8 @@ block_statement[Identifier label] returns [BlockStatement blockStmt]
 			declItems.result,$concurrent_statement_list.list,$end_block_label.id)
 	};
 				
-block_declarative_item returns [DeclarativeItem item] :
-	subprogram_declartion_or_body {$item=$subprogram_declartion_or_body.declOrBody}
+block_declarative_item returns [DeclarativeItem item=NoNode] :
+	subprogram_declaration_or_body {$item=$subprogram_declaration_or_body.declOrBody}
 	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration {$item=$v2008_subprogram_instantiation_declaration.subprogramInstantiationDecl}
 			| package_declaration {$item=$package_declaration.packageDecl}
 			| package_body {$item=$package_body.packageBody}
@@ -927,12 +930,12 @@ process_statement[Identifier label,Boolean postponed] returns [ProcessStatement 
 	processToken=PROCESS (LPAREN name_list RPAREN)? IS?
 		sync[syncMessage] (process_declarative_item {declItem += $process_declarative_item.item} sync[syncMessage])*
 	BEGIN
-		sequence_of_statements
+		saveFollowSet sequence_of_statements
 	END POSTPONED? PROCESS end_process_label=identifier? SEMICOLON
 	{$processStmt=new ProcessStatement($processToken,$label,$postponed,$name_list.list,declItem.result,$sequence_of_statements.list,$end_process_label.id)};
     	
-process_declarative_item returns [DeclarativeItem item] :
-	subprogram_declartion_or_body {$item=$subprogram_declartion_or_body.declOrBody}
+process_declarative_item returns [DeclarativeItem item=NoNode] :
+	subprogram_declaration_or_body {$item=$subprogram_declaration_or_body.declOrBody}
 	| {vhdl2008}?=>(v2008_subprogram_instantiation_declaration {$item=$v2008_subprogram_instantiation_declaration.subprogramInstantiationDecl}
 			| package_declaration {$item=$package_declaration.packageDecl}
 			| package_body {$item=$package_body.packageBody}
@@ -1116,12 +1119,12 @@ ams_simultaneous_procedural_statement[Identifier label] returns [SimultaneousPro
 	proceduralToken=PROCEDURAL IS?
 		sync[syncMessage] (ams_simultaneous_procedural_declarative_item{items += $ams_simultaneous_procedural_declarative_item.item} sync[syncMessage])*
 	BEGIN
-		sequence_of_statements
+		saveFollowSet sequence_of_statements
 	END PROCEDURAL end_procedural_label=identifier? SEMICOLON
 	{$proceduralStmt=new SimultaneousProceduralStatement($proceduralToken,$label,items.result,$sequence_of_statements.list,$end_procedural_label.id)};
 		
-ams_simultaneous_procedural_declarative_item returns [DeclarativeItem item] :
-	subprogram_declartion_or_body {$item=$subprogram_declartion_or_body.declOrBody}
+ams_simultaneous_procedural_declarative_item returns [DeclarativeItem item=NoNode] :
+	subprogram_declaration_or_body {$item=$subprogram_declaration_or_body.declOrBody}
 	| type_declaration {$item=$type_declaration.typeDecl}
 	| subtype_declaration {$item=$subtype_declaration.subTypeDecl}
 	| constant_declaration {$item=$constant_declaration.constantDecl}
@@ -1137,16 +1140,18 @@ ams_simultaneous_null_statement[Identifier label] returns [SimultaneousNullState
 	NULL SEMICOLON
 	{$nullStmt=new SimultaneousNullStatement($NULL,$label)};
 
-// B.6 Sequential Statments
+// B.6 Sequential Statements
 sequence_of_statements returns [Seq[SequentialStatement\] list]
 @init{
 	val tmpList=new Buffer[SequentialStatement]()
+	val set=followSet
 } :
-	(sequential_statement{tmpList +=$sequential_statement.stmt})*
+	{syncToFollowSet(set)} (sequential_statement{tmpList +=$sequential_statement.stmt} {syncToFollowSet(set)})*
 	{$list=tmpList.result};
 
-sequential_statement returns [SequentialStatement stmt] :
-	label=label_colon? 
+sequential_statement returns [SequentialStatement stmt]
+@after{$stmt=if ($stmt!=null) $stmt else NoNode} :
+	label=label_colon?
 	(wait_statement[$label.label] {$stmt=$wait_statement.waitStmt}
 	| assertion_statement[$label.label] {$stmt=$assertion_statement.assertStmt}
 	| report_statement[$label.label] {$stmt=$report_statement.reportStmt}
@@ -1253,13 +1258,13 @@ if_statement[Identifier label] returns [IfStatement ifStmt]
 	val ifList=new Buffer[IfStatement.IfThenPart]()
 } :
 	ifToken=IF if_condition=condition THEN
-		if_sequential_statement=sequence_of_statements {ifList += new IfStatement.IfThenPart($if_condition.con,$if_sequential_statement.list)}
+		saveFollowSet if_sequential_statement=sequence_of_statements {ifList += new IfStatement.IfThenPart($if_condition.con,$if_sequential_statement.list)}
 	(ELSIF elsif_condition=condition THEN
-		 elsif_sequential_statement=sequence_of_statements
+		 saveFollowSet elsif_sequential_statement=sequence_of_statements
 		 {ifList += new IfStatement.IfThenPart($elsif_condition.con,$elsif_sequential_statement.list)}
 	)*
 	(ELSE	
-		else_sequential_statement=sequence_of_statements)?
+		saveFollowSet else_sequential_statement=sequence_of_statements)?
 	END IF identifier? SEMICOLON 
 	{$ifStmt=new IfStatement($ifToken,$label,ifList.result,$else_sequential_statement.list,$identifier.id)};
 
@@ -1268,7 +1273,7 @@ case_statement[Identifier label] returns [CaseStatement caseStmt]
 	val alternatives=new Buffer[CaseStatement.When]()
 } :
 	caseToken=CASE ({vhdl2008}?=>qmarkToken=QMARK)? expression IS
-		(WHEN choices ARROW sequence_of_statements {alternatives += new CaseStatement.When($choices.choices_,$sequence_of_statements.list)})+
+		(WHEN choices ARROW saveFollowSet sequence_of_statements {alternatives += new CaseStatement.When($choices.choices_,$sequence_of_statements.list)})+
 	END CASE ({vhdl2008}?=>QMARK)? identifier? SEMICOLON
 	{$caseStmt=new CaseStatement($caseToken,$label,qmarkToken!=null,$expression.expr,alternatives.result,$identifier.id)};
 
@@ -1281,7 +1286,7 @@ loop_statement[Identifier label] returns [SequentialStatement loopStmt]
 	val position=toPosition(input.LT(1))
 } :
 	stmtType=iteration_scheme? LOOP
-		sequence_of_statements
+		saveFollowSet sequence_of_statements
 	END LOOP end_loop_label=identifier? SEMICOLON
 	{		
 		loopStmt=Option(stmtType) match {
@@ -1633,7 +1638,7 @@ name returns [Name name_]
 	name_prefix (name_part {parts += $name_part.part})* {$name_ =new Name($name_prefix.id,parts.result)}
 	| {vhdl2008}?=>v2008_external_name; //TODO
 
-name_prefix returns [Identifier id] :
+name_prefix returns [Identifier id=Identifier.NoIdentifier] :
 	identifier {$id=$identifier.id}
  	| STRING_LITERAL{id=toIdentifier($STRING_LITERAL)};
  	
@@ -1761,8 +1766,7 @@ identifier_list returns [Seq[Identifier\] list]
 	id1=identifier {identifiers += $id1.id} (COMMA id2=identifier {identifiers += $id2.id} )* 
 	{$list=identifiers.result};
 
-identifier returns [Identifier id] 
-@init{$id = Identifier.NoIdentifier} :
+identifier returns [Identifier id=Identifier.NoIdentifier] :
 	(BASIC_IDENTIFIER
 	| EXTENDED_IDENTIFIER)
 	{$id = if (input.LA(-1) == EXTENDED_IDENTIFIER) toIdentifier(input.LT(-1),false) else toIdentifier(input.LT(-1))};

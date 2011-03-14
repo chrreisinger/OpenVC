@@ -2665,7 +2665,7 @@ object SemanticAnalyzer extends Phase {
   }
 
   def acceptNode(node: ASTNode, owner: Symbol, context: Context): ReturnType = node match {
-    case null => (null, context) //nothing
+    case NoNode => (NoNode, context) //nothing
     case DesignFile(designUnits) =>
       val (units, newContext) = acceptNodes(designUnits, owner, context)
       (DesignFile(units), newContext)

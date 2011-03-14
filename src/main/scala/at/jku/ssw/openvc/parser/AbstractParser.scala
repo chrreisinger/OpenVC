@@ -27,6 +27,7 @@ import Parser._
 abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) extends ANTLRParser(input, state) {
   var ams = false
   var vhdl2008 = false
+  var followSet: BitSet = _
 
   type Buffer[A] = scala.collection.immutable.VectorBuilder[A] //scala.collection.mutable.ListBuffer[A]
 
@@ -291,6 +292,15 @@ abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) 
    */
   protected def syncToSet() {
     syncToSet(state.following(state._fsp)) // Compute the follow set that is in context wherever we are in the rule chain/stack
+  }
+
+  protected def syncToFollowSet(follow: BitSet) {
+    val startToken = input.LT(1)
+    syncToSet(follow)
+    // If we consume any tokens at this point then we create an error.
+    if (startToken ne input.LT(1)) {
+      syntaxErrorList += new CompilerMessage(position = toPosition(startToken), message = "garbled sequential statement")
+    }
   }
 
   protected def syncToSet(follow: BitSet) {
