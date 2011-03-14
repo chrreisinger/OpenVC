@@ -65,7 +65,9 @@ sealed abstract class Position extends Ordered[Position] {
    *  <code>x &gt; 0</code>    iff    <code>this &gt; that</code>
    */
   override def compare(that: Position): Int =
-    if (this.start < that.start) -1
+    if (this == NoPosition) -1
+    else if (that == NoPosition) 1
+    else if (this.start < that.start) -1
     else if (this.start == that.start) this.end - that.end
     else 1
 }
