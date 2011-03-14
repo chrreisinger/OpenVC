@@ -18,6 +18,7 @@
 
 package at.jku.ssw.openvc
 
+import util.SourceFile
 import VHDLCompiler.Configuration
 import at.jku.ssw.openvs.VHDLRuntime.VHDLRuntimeException
 import at.jku.ssw.openvs.Simulator
@@ -38,7 +39,7 @@ object Main {
           configuration =>
             allVHDLFiles.foreach {
               file =>
-                val result = VHDLCompiler.compileFile(file.getAbsolutePath, configuration)
+                val result = VHDLCompiler.compile(new CompilationUnit(SourceFile.fromFile(file.getAbsolutePath), configuration))
                 result.printErrors(new PrintWriter(System.out))
             }
         }
@@ -49,7 +50,6 @@ object Main {
       val (configurationOption, files) = parseCommandLineArguments(arguments)
       configurationOption.foreach {
         configuration =>
-          import util.SourceFile
           val classFilter = new FilenameFilter() {
             override def accept(dir: File, name: String): Boolean = name.endsWith(".class")
           }

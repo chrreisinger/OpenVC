@@ -18,11 +18,12 @@
 
 package at.jku.ssw.tests
 
-import at.jku.ssw.openvc.VHDLCompiler
 import at.jku.ssw.openvs.Simulator
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.FunSuite
 import java.io.{File, PrintWriter}
+import at.jku.ssw.openvc.{CompilationUnit, VHDLCompiler}
+import at.jku.ssw.openvc.util.SourceFile
 
 trait GenericTest extends FunSuite with ShouldMatchers {
   val library = "testLibrary"
@@ -32,10 +33,9 @@ trait GenericTest extends FunSuite with ShouldMatchers {
   def compile(source: String) {
     if (directory.exists) directory.listFiles.foreach(_.delete())
 
-    val result = VHDLCompiler.compileFileFromText(source, "testFile", configuration)
-    result.printErrors(new PrintWriter(System.out))
-    result.syntaxErrors.size should equal(0)
-    result.semanticErrors.size should equal(0)
+    val unit = VHDLCompiler.compile(new CompilationUnit(SourceFile.fromText(source, "testFile"), configuration))
+    unit.printErrors(new PrintWriter(System.out))
+    unit.errors.size should equal(0)
   }
 
   def compileAndLoad(text: String)(source: String) =
