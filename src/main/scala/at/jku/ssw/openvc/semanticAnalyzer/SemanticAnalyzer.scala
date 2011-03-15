@@ -1860,8 +1860,10 @@ object SemanticAnalyzer extends Phase {
     }
 
   def visitDesignUnit(designUnit: DesignUnit, owner: Symbol, context: Context): ReturnType = {
-    val libraryUnitOption = designUnit.libraryUnit.map {
-      unit =>
+    val libraryUnit =
+      if (designUnit.libraryUnit == NoNode) NoNode
+      else {
+        val unit = designUnit.libraryUnit
         checkIdentifiers(unit.identifier, unit.endIdentifier)
         val owner = new LibrarySymbol(Identifier(configuration.designLibrary), new DirectoryLibraryArchive(configuration.outputDirectory))
         val contextItems = if ("std" == configuration.designLibrary || unit.isInstanceOf[ContextDeclaration]) designUnit.contextItems
@@ -1920,8 +1922,8 @@ object SemanticAnalyzer extends Phase {
             case x: LibrarySymbol => x
           }).foreach(_.libraryArchive.close)
         libraryUnit
-    }
-    (designUnit.copy(libraryUnit = libraryUnitOption), context)
+      }
+    (designUnit.copy(libraryUnit = libraryUnit), context)
   }
 
   def visitDisconnectionSpecification(disconnectionSpec: DisconnectionSpecification, context: Context): ReturnType = {

@@ -20,7 +20,8 @@ package at.jku.ssw.openvc.ast {
 
 import at.jku.ssw.openvc.util.{TripleEither, Position, NoPosition}
 import at.jku.ssw.openvc.symbolTable.dataTypes.{DataType, RangeType, ConstrainedRangeType, NoType}
-import at.jku.ssw.openvc.ast.expressions.{Name, Aggregate, Expression}
+import at.jku.ssw.openvc.symbolTable.symbols.NoSymbol
+import expressions.{NoExpression, Name, Aggregate, Expression}
 
 /**
  * Marks all classes that contain a position information
@@ -41,9 +42,12 @@ trait Locatable {
  */
 abstract sealed class ASTNode extends Locatable
 
-case object NoNode extends ASTNode with sequentialStatements.SequentialStatement with concurrentStatements.ConcurrentStatement with declarativeItems.DeclarativeItem with designUnits.ContextItem {
+case object NoNode extends ASTNode with sequentialStatements.SequentialStatement with concurrentStatements.ConcurrentStatement with declarativeItems.DeclarativeItem with designUnits.ContextItem with designUnits.LibraryUnit {
   val position = NoPosition
   val label = None
+  val identifier = Identifier.NoIdentifier
+  val endIdentifier = None
+  val symbol = NoSymbol
 }
 
 object Identifier {
@@ -86,7 +90,7 @@ final class Identifier(val position: Position, val originalText: String) extends
  * @param nameOrAggregate the target of the assignment wich is either a name or aggregate
  * @param expression the expression used in the code generator
  */
-final case class Target(nameOrAggregate: Either[Name, Aggregate], expression: Expression = null)
+final case class Target(nameOrAggregate: Either[Name, Aggregate], expression: Expression = NoExpression)
 
 object Range {
   type Direction = Direction.Value
@@ -236,7 +240,10 @@ final case class AssociationList(elements: Seq[AssociationList.Element], paramet
  * @param identifiers the identifiers that identify the VHDL entity
  */
 final class SelectedName(val identifiers: Seq[Identifier]) extends Locatable {
-  val position = identifiers.head.position
+  val position = identifiers match {
+    case Seq(identifier, _) => identifier.position
+    case _ => NoPosition
+  }
   /**
    * returns the identifiers with dots between them, e.g. "std.standard.integer"
    */
@@ -257,7 +264,10 @@ object InterfaceList {
     val expression: Option[Expression]
     val mode: Option[InterfaceMode]
     val subType: SubTypeIndication
-    val position = identifiers.head.position
+    val position = identifiers match {
+      case Seq(identifier, _) => identifier.position
+      case _ => NoPosition
+    }
   }
 
   final case class InterfaceConstantDeclaration(identifiers: Seq[Identifier], subType: SubTypeIndication, expression: Option[Expression]) extends InterfaceObjectDeclaration {
@@ -333,11 +343,17 @@ final case class ContextReference(position: Position, contexts: Seq[SelectedName
  * @param designUnits the design units in this design file
  */
 final case class DesignFile(designUnits: Seq[DesignUnit]) extends ASTNode {
-  lazy val position = designUnits.head.position
+  lazy val position = designUnits match {
+    case Seq(unit, _) => unit.position
+    case _ => NoPosition
+  }
 }
 
-final case class DesignUnit(contextItems: Seq[ContextItem], libraryUnit: Option[LibraryUnit]) extends ASTNode {
-  lazy val position = contextItems.head.position
+final case class DesignUnit(contextItems: Seq[ContextItem], libraryUnit: LibraryUnit) extends ASTNode {
+  lazy val position = contextItems match {
+    case Seq(contextItem, _) => contextItem.position
+    case _ => libraryUnit.position
+  }
 }
 
 /**
@@ -346,7 +362,7 @@ final case class DesignUnit(contextItems: Seq[ContextItem], libraryUnit: Option[
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.library_unit]]
  */
-abstract sealed class LibraryUnit extends ASTNode {
+sealed trait LibraryUnit extends ASTNode {
   val symbol: Symbol
   val identifier: Identifier
   val endIdentifier: Option[Identifier]
@@ -405,8 +421,8 @@ final case class EntityDeclaration(position: Position, identifier: Identifier, g
  *
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.package_declaration]]
- * @param genericInterfaceList TODO
- * @param genericAssociationList TODO
+ * @param genericInterfaceList generic interface list
+ * @param genericAssociationList generic associations list
  */
 final case class PackageDeclaration(position: Position, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], genericAssociationList: Option[AssociationList], declarativeItems: Seq[DeclarativeItem], endIdentifier: Option[Identifier], symbol: PackageSymbol = null) extends LibraryUnit with DeclarativeItem
 
@@ -618,6 +634,8 @@ abstract sealed class SubProgramDefinition extends DeclarativeItem {
   val genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]]
   val genericAssociationList: Option[AssociationList]
   val parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]]
+  val declarativeItems: Seq[DeclarativeItem]
+  val sequentialStatements: Seq[SequentialStatement]
   val symbol: SubprogramSymbol
 }
 
@@ -1454,7 +1472,7 @@ final case class ForGenerateStatement(position: Position, label: Option[Identifi
 
 object CaseGenerateStatement {
 
-  final class When(val label: Option[Identifier], val choices: Seq[Choices.Choice], val declarativeItems: Seq[DeclarativeItem], val concurrentStatements: Seq[ConcurrentStatement], val endLabel: Option[Identifier])
+  final case class When(label: Option[Identifier], choices: Seq[Choices.Choice], declarativeItems: Seq[DeclarativeItem], concurrentStatements: Seq[ConcurrentStatement], endLabel: Option[Identifier])
 
 }
 

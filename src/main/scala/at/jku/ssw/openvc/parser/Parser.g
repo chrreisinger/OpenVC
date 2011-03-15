@@ -103,7 +103,8 @@ design_unit returns [DesignUnit designUnit] :
 	context_items library_unit 
 	{$designUnit=new DesignUnit($context_items.contextItems,$library_unit.libraryUnit)};
 	
-library_unit returns [LibraryUnit libraryUnit] :
+library_unit returns [LibraryUnit libraryUnit=NoNode]
+@after{$libraryUnit=if ($libraryUnit!=null) $libraryUnit else NoNode} :
 	entity_declaration {$libraryUnit=$entity_declaration.entityDecl}
 	| architecture_body {$libraryUnit=$architecture_body.archDecl}
 	| package_declaration {$libraryUnit=$package_declaration.packageDecl}

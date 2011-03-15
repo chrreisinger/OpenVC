@@ -206,7 +206,7 @@ object ByteCodeGenerator {
     def acceptNode(node: ASTNode, context: Context) {
       node match {
         case DesignFile(designUnits) => acceptNodes(designUnits, context)
-        case designUnit: DesignUnit => designUnit.libraryUnit.foreach(acceptNode(_, context))
+        case designUnit: DesignUnit => acceptNode(designUnit.libraryUnit, context)
         case packageBodyDeclaration: PackageBodyDeclaration => visitPackageBodyDeclaration(packageBodyDeclaration)
         case packageDeclaration: PackageDeclaration => visitPackageDeclaration(packageDeclaration)
         case entityDeclaration: EntityDeclaration => visitEntityDeclaration(entityDeclaration)

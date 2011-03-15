@@ -36,7 +36,7 @@ object ASTStatementTransformer {
 
     def acceptNode(node: ASTNode): ASTNode = node match {
       case DesignFile(designUnits) => DesignFile(acceptNodes(designUnits))
-      case DesignUnit(contextItems, libraryUnit) => DesignUnit(contextItems, libraryUnit.map(unit => acceptNode(unit).asInstanceOf[LibraryUnit]))
+      case DesignUnit(contextItems, libraryUnit) => DesignUnit(contextItems, acceptNode(libraryUnit).asInstanceOf[LibraryUnit])
       case packageBodyDeclaration: PackageBodyDeclaration => packageBodyDeclaration.copy(declarativeItems = acceptNodes(packageBodyDeclaration.declarativeItems))
       case entityDeclaration: EntityDeclaration => entityDeclaration.copy(declarativeItems = acceptNodes(entityDeclaration.declarativeItems), concurrentStatements = transformNodes(entityDeclaration.concurrentStatements))
       case architectureDeclaration: ArchitectureDeclaration => architectureDeclaration.copy(declarativeItems = acceptNodes(architectureDeclaration.declarativeItems), concurrentStatements = transformNodes(architectureDeclaration.concurrentStatements))
