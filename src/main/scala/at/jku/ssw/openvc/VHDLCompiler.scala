@@ -83,7 +83,7 @@ object VHDLCompiler {
     import annotation.tailrec
     import unit.configuration
     import parser.SyntaxAnalyzer
-    import semanticAnalyzer.SemanticAnalyzer
+    import semanticAnalyzer.{PreAnalyzerTransformer, SemanticAnalyzer}
     import backend.BackendPhase
 
     @tailrec
@@ -102,7 +102,7 @@ object VHDLCompiler {
 
     val phases =
       if (configuration.parseOnly) Seq(SyntaxAnalyzer)
-      else Seq(SyntaxAnalyzer, SemanticAnalyzer, BackendPhase)
+      else Seq(SyntaxAnalyzer, PreAnalyzerTransformer, SemanticAnalyzer, BackendPhase)
 
     run(phases, unit)
   }

@@ -1792,69 +1792,6 @@ object SemanticAnalyzer extends Phase {
     }
   }
 
-  def expressionToSensitivityList(expr: Expression): Seq[SignalSymbol] = Seq()
-
-  //TODO
-
-  def toProcessStatement(statement: SequentialStatement, sensitivityList: Seq[SignalSymbol], label: Option[Identifier], isPostponed: Boolean, owner: Symbol, context: Context): ReturnType = {
-    val waitStatement = WaitStatement(statement.position, label = None, signals = None, untilCondition = None, forExpression = None, sensitivitySignalList = sensitivityList)
-    visitProcessStatement(ProcessStatement(statement.position, label = label, isPostponed = isPostponed, sensitivityList = None, declarativeItems = Seq(),
-      sequentialStatements = Seq(statement, waitStatement), endLabel = None), owner, context)
-  }
-
-  def visitConcurrentAssertionStatement(concurrentAssertStmt: ConcurrentAssertionStatement, owner: Symbol, context: Context): ReturnType = {
-    val assertStmt = AssertionStatement(concurrentAssertStmt.position, None, concurrentAssertStmt.condition, concurrentAssertStmt.reportExpression, concurrentAssertStmt.severityExpression)
-    toProcessStatement(assertStmt, expressionToSensitivityList(concurrentAssertStmt.condition), concurrentAssertStmt.label, concurrentAssertStmt.isPostponed, owner, context)
-  }
-
-  def visitConcurrentProcedureCallStatement(concurrentProcedureCallStmt: ConcurrentProcedureCallStatement, owner: Symbol, context: Context): ReturnType = {
-    val procedureCallStmt = ProcedureCallStatement(None, concurrentProcedureCallStmt.name, concurrentProcedureCallStmt.parameterAssociation)
-    val sensitivityList = concurrentProcedureCallStmt.parameterAssociation.map {
-      _.elements.flatMap {
-        _.actualPart.fold(expressionToSensitivityList(_), id => Seq[SignalSymbol]())
-      }
-    }.toList.flatten
-    toProcessStatement(procedureCallStmt, sensitivityList, concurrentProcedureCallStmt.label, concurrentProcedureCallStmt.isPostponed, owner, context)
-  }
-
-  def convertWaveformAssignment(waveformAssignment: WaveformAssignment): SequentialStatement = {
-    def waveTransform(waveform: Waveform): SequentialStatement =
-      if (waveform.isUnaffected) {
-        NullStatement(waveform.position, label = None)
-      } else {
-        SimpleWaveformAssignmentStatement(waveform.position, None, waveformAssignment.target, waveformAssignment.delay, waveform)
-      }
-
-    waveformAssignment match {
-      case conditionalWaveformAssignment: ConditionalWaveformAssignment => conditionalWaveformAssignment.alternatives match {
-        case Seq(alternative) if (alternative.condition == None) => waveTransform(alternative.waveform)
-        case _ =>
-          val last = conditionalWaveformAssignment.alternatives.last
-          val mapper = (alternative: ConcurrentConditionalSignalAssignment.When) => new IfStatement.IfThenPart(alternative.condition.get, Seq(waveTransform(alternative.waveform)))
-          val (ifThenList, elseSequentialStatements) = if (last.condition == None) {
-            (conditionalWaveformAssignment.alternatives.init.map(mapper), Some(Seq(waveTransform(last.waveform))))
-          }
-          else {
-            (conditionalWaveformAssignment.alternatives.map(mapper), None)
-          }
-          IfStatement(conditionalWaveformAssignment.position, label = None, ifThenList = ifThenList, elseSequentialStatements = elseSequentialStatements, endLabel = None)
-      }
-      case selectedWaveformAssignment: SelectedWaveformAssignment =>
-        val caseStmtAlternatives = selectedWaveformAssignment.alternatives.map(alternative => new CaseStatement.When(alternative.choices, Seq(waveTransform(alternative.waveform))))
-        CaseStatement(selectedWaveformAssignment.position, isMatchingCase = selectedWaveformAssignment.isMatchingCase, label = None, expression = selectedWaveformAssignment.expression, alternatives = caseStmtAlternatives, endLabel = None)
-    }
-  }
-
-  def visitConcurrentSignalAssignmentStatement(signalAssignStmt: ConcurrentSignalAssignmentStatement, owner: Symbol, context: Context): ReturnType = {
-    require(!signalAssignStmt.isGuarded)
-
-    val newStatement = signalAssignStmt match {
-      case ConcurrentConditionalSignalAssignment(position, label, _, target, _, delay, alternatives) => convertWaveformAssignment(ConditionalWaveformAssignment(position, label, target, delay, alternatives))
-      case ConcurrentSelectedSignalAssignment(position, label, _, expression, isMatchingCase, target, _, delay, alternatives) => convertWaveformAssignment(SelectedWaveformAssignment(position, label, expression, isMatchingCase, target, delay, alternatives))
-    }
-    toProcessStatement(newStatement, Seq(), signalAssignStmt.label, signalAssignStmt.isPostponed, owner, context)
-  }
-
   def visitConstantDeclaration(constantDeclaration: ConstantDeclaration, owner: Symbol, context: Context): ReturnType = {
     val subType = createType(context, constantDeclaration.subType)
     checkIfNotFileProtectedAccessType(constantDeclaration.subType, subType.dataType)
@@ -2251,6 +2188,7 @@ object SemanticAnalyzer extends Phase {
     }
 
   def visitProcessStatement(processStatement: ProcessStatement, owner: Symbol, context: Context): ReturnType = {
+    //TODO calculate wait statement for transformed concurrent statements (ConcurrentProcedureCallStatement, ConcurrentAssertionStatement and ConcurrentSignalAssignmentStatement)
     checkIdentifiersOption(processStatement.label, processStatement.endLabel)
 
     val name = processStatement.label.getOrElse(Identifier(processStatement.position, "process_" + processStatement.position.line))
@@ -2263,7 +2201,7 @@ object SemanticAnalyzer extends Phase {
       sensitivityList =>
         toLinearList(newSequentialStatementList).foreach {
           _ match {
-            case waitStatement: WaitStatement => addError(waitStatement, "a process with a sensitivity list can not contain an exlicit wait statement")
+            case waitStatement: WaitStatement => addError(waitStatement, "a process with a sensitivity list can not contain an explicit wait statement")
             case procedureCallStatement: ProcedureCallStatement =>
               if (procedureCallStatement.symbol != null && !procedureCallStatement.symbol.isPassive)
                 addError(procedureCallStatement, "a process with a sensitivity list can not call a procedure with a wait statement")
@@ -2314,57 +2252,33 @@ object SemanticAnalyzer extends Phase {
           new DelayMechanism(delayMechanism.delayType, rejectExpression = rejectExpression)
       }
 
-    signalAssignStmt match {
-      case stmt: SimpleWaveformAssignmentStatement =>
-        stmt.target.nameOrAggregate match {
-          case Left(name) =>
-            val nameExpression = acceptExpression(name, NoType, context)
-            nameExpression match {
-              case w: WithSymbol if (w.symbol.isInstanceOf[SignalSymbol]) =>
-                val signalSymbol = w.symbol.asInstanceOf[SignalSymbol]
-                if (signalSymbol.mode == InterfaceList.Mode.IN) addError(signalAssignStmt, "can not write signal %s with modifier IN", signalSymbol.name)
-                owner match {
-                  case processSymbol: ProcessSymbol =>
-                    if (signalSymbol.isUnresolved && signalSymbol.driver != null
-                      && (signalSymbol.driver ne processSymbol)) {
-                      addError(signalAssignStmt, "signal %s already has a driver at line: %s", signalSymbol.name, signalSymbol.driver.position.line.toString)
-                    } else {
-                      signalSymbol.driver = processSymbol
-                    }
-                  case _ =>
+    val simpleWaveformAssignment = signalAssignStmt.asInstanceOf[SimpleWaveformAssignmentStatement]
+    simpleWaveformAssignment.target.nameOrAggregate match {
+      case Left(name) =>
+        val nameExpression = acceptExpression(name, NoType, context)
+        nameExpression match {
+          case w: WithSymbol if (w.symbol.isInstanceOf[SignalSymbol]) =>
+            val signalSymbol = w.symbol.asInstanceOf[SignalSymbol]
+            if (signalSymbol.mode == InterfaceList.Mode.IN) addError(signalAssignStmt, "can not write signal %s with modifier IN", signalSymbol.name)
+            owner match {
+              case processSymbol: ProcessSymbol =>
+                if (signalSymbol.isUnresolved && signalSymbol.driver != null
+                  && (signalSymbol.driver ne processSymbol)) {
+                  addError(signalAssignStmt, "signal %s already has a driver at line: %s", signalSymbol.name, signalSymbol.driver.position.line.toString)
+                } else {
+                  signalSymbol.driver = processSymbol
                 }
-                checkPure(context, signalAssignStmt, owner, signalSymbol)
-                val delayMechanism = checkDelayMechanism(stmt.delayMechanism)
-                val waveform = checkWaveform(stmt.waveform, signalSymbol.dataType)
-                (stmt.copy(waveform = waveform, delayMechanism = delayMechanism), context)
               case _ =>
-                addError(name.identifier, "%s is not a signal", name.identifier.text)
-                (stmt, context)
             }
-          case Right(aggregate) => error("not implemented") // TODO stmt.target.aggregate
-        }
-      //VHDL 2008
-      case waveformAssignment: WaveformAssignment => acceptNode(convertWaveformAssignment(waveformAssignment), owner, context)
-      case conditionalForceAssignment: ConditionalForceAssignment =>
-        def toForceAssignment(alternative: ConditionalVariableAssignment.When) = SimpleForceAssignment(alternative.expression.position, None, conditionalForceAssignment.target, conditionalForceAssignment.forceMode, alternative.expression)
-        conditionalForceAssignment.alternatives match {
-          case Seq(alternative) if (alternative.condition == None) => visitSignalAssignmentStatement(toForceAssignment(alternative), owner, context)
+            checkPure(context, signalAssignStmt, owner, signalSymbol)
+            val delayMechanism = checkDelayMechanism(simpleWaveformAssignment.delayMechanism)
+            val waveform = checkWaveform(simpleWaveformAssignment.waveform, signalSymbol.dataType)
+            (simpleWaveformAssignment.copy(waveform = waveform, delayMechanism = delayMechanism), context)
           case _ =>
-            val last = conditionalForceAssignment.alternatives.last
-            val mapper = (alternative: ConditionalVariableAssignment.When) => new IfStatement.IfThenPart(alternative.condition.get, Seq(toForceAssignment(alternative)))
-            val (ifThenList, elseSequentialStatements) = if (last.condition == None) {
-              (conditionalForceAssignment.alternatives.init.map(mapper), Some(Seq(toForceAssignment(last))))
-            }
-            else {
-              (conditionalForceAssignment.alternatives.map(mapper), None)
-            }
-            visitIfStatement(IfStatement(conditionalForceAssignment.position, label = conditionalForceAssignment.label, ifThenList = ifThenList,
-              elseSequentialStatements = elseSequentialStatements, endLabel = conditionalForceAssignment.label), owner, context)
+            addError(name.identifier, "%s is not a signal", name.identifier.text)
+            (simpleWaveformAssignment, context)
         }
-      case selectedForceAssignment: SelectedForceAssignment =>
-        val caseStmtAlternatives = selectedForceAssignment.alternatives.map(alternative => new CaseStatement.When(alternative.choices, Seq(SimpleForceAssignment(alternative.expression.position, None, selectedForceAssignment.target, selectedForceAssignment.forceMode, alternative.expression))))
-        visitCaseStatement(CaseStatement(selectedForceAssignment.position, isMatchingCase = selectedForceAssignment.isMatchingCase, label = selectedForceAssignment.label,
-          expression = selectedForceAssignment.expression, alternatives = caseStmtAlternatives, endLabel = selectedForceAssignment.label), owner, context)
+      case Right(aggregate) => error("not implemented") // TODO stmt.target.aggregate
     }
   }
 
@@ -2595,27 +2509,6 @@ object SemanticAnalyzer extends Phase {
           (stmt.copy(expression = expression, target = stmt.target.copy(expression = nameExpression)), context)
         case Right(aggregate) => error("not implemented") // TODO stmt.target.aggregate
       }
-    //VHDL 2008
-    case conditionalVariableAssignment: ConditionalVariableAssignment =>
-      def toVariableAssignment(alternative: ConditionalVariableAssignment.When) = SimpleVariableAssignmentStatement(alternative.expression.position, None, conditionalVariableAssignment.target, alternative.expression)
-      conditionalVariableAssignment.alternatives match {
-        case Seq(alternative) if (alternative.condition == None) => visitVariableAssignmentStatement(toVariableAssignment(alternative), owner, context)
-        case _ =>
-          val last = conditionalVariableAssignment.alternatives.last
-          val mapper = (alternative: ConditionalVariableAssignment.When) => new IfStatement.IfThenPart(alternative.condition.get, Seq(toVariableAssignment(alternative)))
-          val (ifThenList, elseSequentialStatements) = if (last.condition == None) {
-            (conditionalVariableAssignment.alternatives.init.map(mapper), Some(Seq(toVariableAssignment(last))))
-          }
-          else {
-            (conditionalVariableAssignment.alternatives.map(mapper), None)
-          }
-          visitIfStatement(IfStatement(conditionalVariableAssignment.position, label = conditionalVariableAssignment.label, ifThenList = ifThenList,
-            elseSequentialStatements = elseSequentialStatements, endLabel = conditionalVariableAssignment.label), owner, context)
-      }
-    case selectedVariableAssignment: SelectedVariableAssignment =>
-      val caseStmtAlternatives = selectedVariableAssignment.alternatives.map(alternative => new CaseStatement.When(alternative.choices, Seq(SimpleVariableAssignmentStatement(alternative.expression.position, None, selectedVariableAssignment.target, alternative.expression))))
-      visitCaseStatement(CaseStatement(selectedVariableAssignment.position, isMatchingCase = selectedVariableAssignment.isMatchingCase, label = selectedVariableAssignment.label,
-        expression = selectedVariableAssignment.expression, alternatives = caseStmtAlternatives, endLabel = selectedVariableAssignment.label), owner, context)
   }
 
 
@@ -2711,9 +2604,6 @@ object SemanticAnalyzer extends Phase {
     case caseStmt: CaseStatement => visitCaseStatement(caseStmt, owner, context)
     case ifStmt: IfStatement => visitIfStatement(ifStmt, owner, context)
     //concurrent Statements
-    case concurrentSignalAssignmentStmt: ConcurrentSignalAssignmentStatement => visitConcurrentSignalAssignmentStatement(concurrentSignalAssignmentStmt, owner, context)
-    case concurrentProcedureCallStmt: ConcurrentProcedureCallStatement => visitConcurrentProcedureCallStatement(concurrentProcedureCallStmt, owner, context)
-    case concurrentAssertStmt: ConcurrentAssertionStatement => visitConcurrentAssertionStatement(concurrentAssertStmt, owner, context)
     case ifGenerateStmt: IfGenerateStatement => visitIfGenerateStatement(ifGenerateStmt, owner, context)
     case caseGenerateStmt: CaseGenerateStatement => visitCaseGenerateStatement(caseGenerateStmt, owner, context)
     case forGenerateStmt: ForGenerateStatement => visitForGenerateStatement(forGenerateStmt, owner, context)
