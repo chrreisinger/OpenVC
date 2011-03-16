@@ -32,7 +32,7 @@ object ASTStatementTransformer {
 
     def acceptNodes[A <: ASTNode](nodes: Seq[A]): Seq[A] = nodes.map(node => acceptNode(node).asInstanceOf[A])
 
-    def transformNodes[A <: ASTNode](nodes: Seq[A]): Seq[A] = nodes.map(node => transformer(node).asInstanceOf[A])
+    def transformNodes[A <: ASTNode](nodes: Seq[A]): Seq[A] = nodes.map(node => acceptNode(transformer(node)).asInstanceOf[A])
 
     def acceptNode(node: ASTNode): ASTNode = node match {
       case DesignFile(designUnits) => DesignFile(acceptNodes(designUnits))

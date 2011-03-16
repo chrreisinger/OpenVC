@@ -968,7 +968,7 @@ object ByteCodeGenerator {
 
       generateCodeForIfThenPart(ifStmt.ifThenList.head, elseIfList.nonEmpty || ifStmt.elseSequentialStatements.isDefined)
       if (elseIfList.nonEmpty) {
-        elseIfList.foreach(generateCodeForIfThenPart(_, true))
+        elseIfList.init.foreach(generateCodeForIfThenPart(_, true))
         generateCodeForIfThenPart(elseIfList.last, ifStmt.elseSequentialStatements.isDefined)
       }
       ifStmt.elseSequentialStatements.foreach(acceptNodes(_, context))

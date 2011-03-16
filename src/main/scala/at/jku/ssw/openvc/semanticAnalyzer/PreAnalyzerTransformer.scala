@@ -64,7 +64,6 @@ object PreAnalyzerTransformer extends Phase {
 
   private def transform(node: ASTNode): ASTNode = node match {
     case signalAssignmentStmt: SignalAssignmentStatement => signalAssignmentStmt match {
-      case _: SimpleWaveformAssignmentStatement => signalAssignmentStmt
       //VHDL 2008
       case waveformAssignment: WaveformAssignment => convertWaveformAssignment(waveformAssignment)
       case conditionalForceAssignment: ConditionalForceAssignment =>
@@ -86,9 +85,9 @@ object PreAnalyzerTransformer extends Phase {
         val caseStmtAlternatives = selectedForceAssignment.alternatives.map(alternative => new CaseStatement.When(alternative.choices, Seq(SimpleForceAssignment(alternative.expression.position, None, selectedForceAssignment.target, selectedForceAssignment.forceMode, alternative.expression))))
         CaseStatement(selectedForceAssignment.position, isMatchingCase = selectedForceAssignment.isMatchingCase, label = selectedForceAssignment.label,
           expression = selectedForceAssignment.expression, alternatives = caseStmtAlternatives, endLabel = selectedForceAssignment.label)
+      case _ => signalAssignmentStmt
     }
     case variableAssignmentStmt: VariableAssignmentStatement => variableAssignmentStmt match {
-      case _: SimpleVariableAssignmentStatement => variableAssignmentStmt
       //VHDL 2008
       case conditionalVariableAssignment: ConditionalVariableAssignment =>
         def toVariableAssignment(alternative: ConditionalVariableAssignment.When) = SimpleVariableAssignmentStatement(alternative.expression.position, None, conditionalVariableAssignment.target, alternative.expression)
@@ -109,6 +108,7 @@ object PreAnalyzerTransformer extends Phase {
         val caseStmtAlternatives = selectedVariableAssignment.alternatives.map(alternative => new CaseStatement.When(alternative.choices, Seq(SimpleVariableAssignmentStatement(alternative.expression.position, None, selectedVariableAssignment.target, alternative.expression))))
         CaseStatement(selectedVariableAssignment.position, isMatchingCase = selectedVariableAssignment.isMatchingCase, label = selectedVariableAssignment.label,
           expression = selectedVariableAssignment.expression, alternatives = caseStmtAlternatives, endLabel = selectedVariableAssignment.label)
+      case _ => variableAssignmentStmt
     }
     //concurrent Statements
     case concurrentProcedureCallStmt: ConcurrentProcedureCallStatement =>
