@@ -39,6 +39,7 @@ import at.jku.ssw.openvs.VHDLRuntime.{EnumerationType => EnumerationTypeInterfac
 
 //opcodes currently not used: jsr,monitorenter,monitorexit,pop2,ret,swap
 object ByteCodeGenerator {
+  val RuntimeMarker = "$RUNTIME$"
   //remove $ from class name
   val RUNTIME = p(VHDLRuntime.getClass).init
   //something like at/jku/ssw/openvc , without VHDLRuntime
@@ -492,8 +493,8 @@ object ByteCodeGenerator {
           case Some(attributeSymbol) if (attributeSymbol.isInstanceOf[ForeignAttributeSymbol]) =>
             loadParameters(functionCallExpr.parameterAssociation)
             attributeSymbol.asInstanceOf[ForeignAttributeSymbol].jvmSignature match {
-              case Left((className, methodName)) => mv.INVOKESTATIC(className, methodName, "(" + getJVMParameterList(functionSymbol.parameters) + ")" + getJVMDataType(functionSymbol.returnType))
-              case Right((className, methodName, parameterTypes)) => mv.INVOKESTATIC(className, methodName, parameterTypes)
+              case Left((className, methodName)) => mv.INVOKESTATIC(if (className == RuntimeMarker) RUNTIME else className, methodName, "(" + getJVMParameterList(functionSymbol.parameters) + ")" + getJVMDataType(functionSymbol.returnType))
+              case Right((className, methodName, parameterTypes)) => mv.INVOKESTATIC(if (className == RuntimeMarker) RUNTIME else className, methodName, parameterTypes)
             }
           case _ =>
             val functionCallType = if (functionSymbol.isStatic) Opcodes.INVOKESTATIC
@@ -1556,8 +1557,8 @@ object ByteCodeGenerator {
         case Some(attributeSymbol) if (attributeSymbol.isInstanceOf[ForeignAttributeSymbol]) =>
           loadParameters(procedureCallStmt.parameterAssociation)
           attributeSymbol.asInstanceOf[ForeignAttributeSymbol].jvmSignature match {
-            case Left((className, methodName)) => INVOKESTATIC(className, methodName, "(" + getJVMParameterList(procedureSymbol.parameters) + ")V")
-            case Right((className, methodName, parameterTypes)) => INVOKESTATIC(className, methodName, parameterTypes)
+            case Left((className, methodName)) => INVOKESTATIC(if (className == RuntimeMarker) RUNTIME else className, methodName, "(" + getJVMParameterList(procedureSymbol.parameters) + ")V")
+            case Right((className, methodName, parameterTypes)) => INVOKESTATIC(if (className == RuntimeMarker) RUNTIME else className, methodName, parameterTypes)
           }
         case _ =>
           val procedureCallType = if (procedureSymbol.isStatic) Opcodes.INVOKESTATIC
