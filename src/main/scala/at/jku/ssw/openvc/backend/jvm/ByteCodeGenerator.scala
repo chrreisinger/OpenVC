@@ -103,6 +103,8 @@ object ByteCodeGenerator {
       else p(classOf[MutableCharacter])
   }
 
+  def getJVMDataType(expression: Expression): String = getJVMDataType(expression.dataType)
+
   def getJVMDataType(symbol: RuntimeSymbol): String = symbol match {
     case signal: SignalSymbol => ci(classOf[AbstractSignal[_]])
     case _ => getJVMDataType(symbol.dataType)
@@ -307,15 +309,15 @@ object ByteCodeGenerator {
               case SLA | SRA =>
                 //TODO is ascending? shiftExpression.dataType.asInstanceOf[ArrayType].dimensions
                 ICONST_1
-                "(" + getJVMDataType(shiftExpression.left.dataType) + "IZ)"
-              case _ => "(" + getJVMDataType(shiftExpression.left.dataType) + "I)"
+                "(" + getJVMDataType(shiftExpression.left) + "IZ)"
+              case _ => "(" + getJVMDataType(shiftExpression.left) + "I)"
             }
-            INVOKESTATIC(RUNTIME, shiftExpression.operator.toString, parameters + getJVMDataType(shiftExpression.left.dataType))
+            INVOKESTATIC(RUNTIME, shiftExpression.operator.toString, parameters + getJVMDataType(shiftExpression.left))
           case DefaultExpression(symbol) =>
             mv.INVOKESTATIC(symbol.owner.owner.implementationName, "$default$" + (symbol.owner match {
               case subprogram: SubprogramSymbol => subprogram.mangledName
               case s => s.name
-            }) + "_" + symbol.name, "()" + getJVMDataType(symbol.dataType))
+            }) + "_" + symbol.name, "()" + getJVMDataType(symbol))
           case functionCallExpr: FunctionCallExpression => visitFunctionCallExpression(functionCallExpr)
           case logicalExpr: LogicalExpression =>
             logicalExpr.dataType match {
@@ -471,11 +473,11 @@ object ByteCodeGenerator {
           case POW =>
             acceptExpressionInner(factor.left, context)
             acceptExpressionInner(factor.rightOption.get, context)
-            INVOKESTATIC(RUNTIME, "pow", "(" + getJVMDataType(factor.dataType) + "I)" + getJVMDataType(factor.dataType)) //calls pow(II)I or pow(DI)D
+            INVOKESTATIC(RUNTIME, "pow", "(" + getJVMDataType(factor) + "I)" + getJVMDataType(factor)) //calls pow(II)I or pow(DI)D
           case ABS =>
             require(factor.rightOption.isEmpty)
             acceptExpressionInner(factor.left, context)
-            INVOKESTATIC("java/lang/Math", "abs", "(" + getJVMDataType(factor.dataType) + ")" + getJVMDataType(factor.dataType)) //calls abs(I)I or abs(D)D or abs(L)L
+            INVOKESTATIC("java/lang/Math", "abs", "(" + getJVMDataType(factor) + ")" + getJVMDataType(factor)) //calls abs(I)I or abs(D)D or abs(L)L
           case NOT =>
             require(factor.rightOption.isEmpty)
             factor.dataType match {
@@ -670,19 +672,19 @@ object ByteCodeGenerator {
                   relation.operator match {
                     case EQ | NEQ =>
                       if (relation.left.dataType == SymbolTable.stringType) INVOKEVIRTUAL("java/lang/String", "equals", "(Ljava/lang/Object;)Z")
-                      else if (arrayType.dimensions.size == 1) INVOKESTATIC("java/util/Arrays", "equals", "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
+                      else if (arrayType.dimensions.size == 1) INVOKESTATIC("java/util/Arrays", "equals", "(" + (getJVMDataType(relation.left) * 2) + ")Z")
                       else INVOKESTATIC("java/util/Arrays", "deepEquals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z")
 
                       if (relation.operator == EQ) if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)
                       else if (jumpInverted) IFNE(jumpLabel) else IFEQ(jumpLabel)
                     case LT | LEQ =>
-                      INVOKESTATIC(RUNTIME, relation.operator.toString, "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
+                      INVOKESTATIC(RUNTIME, relation.operator.toString, "(" + (getJVMDataType(relation.left) * 2) + ")Z")
                       if (jumpInverted) IFEQ(jumpLabel) else IFNE(jumpLabel)
                     case GT | GEQ =>
                       //The relations > (greater than) and >= (greater than or equal) are defined to be the complements of the <= and < operators,
                       //respectively, for the same two operands.
                       val operatorName = if (relation.operator == GT) "LEQ" else "LT"
-                      INVOKESTATIC(RUNTIME, operatorName, "(" + (getJVMDataType(relation.left.dataType) * 2) + ")Z")
+                      INVOKESTATIC(RUNTIME, operatorName, "(" + (getJVMDataType(relation.left) * 2) + ")Z")
                       if (jumpInverted) IFNE(jumpLabel) else IFEQ(jumpLabel)
                   }
                 case recordType: RecordType =>
@@ -749,7 +751,7 @@ object ByteCodeGenerator {
                 case _: RealType => DSUB
                 case _: PhysicalType => LSUB
               }
-            case AddOperator.CONCATENATION => INVOKESTATIC(RUNTIME, "concatenate", "(" + getJVMDataType(simpleExpr.left.dataType) + getJVMDataType(simpleExpr.rightOption.get.dataType) + ")" + getJVMDataType(simpleExpr.dataType))
+            case AddOperator.CONCATENATION => INVOKESTATIC(RUNTIME, "concatenate", "(" + getJVMDataType(simpleExpr.left) + getJVMDataType(simpleExpr.rightOption.get) + ")" + getJVMDataType(simpleExpr))
           }
         }
         for (signOperator <- simpleExpr.signOperator) {
@@ -1137,7 +1139,7 @@ object ByteCodeGenerator {
             case objectDeclaration: InterfaceList.InterfaceObjectDeclaration =>
               for (expression <- objectDeclaration.expression) {
                 for (identifier <- objectDeclaration.identifiers) {
-                  val mv = cw.createMethod(Opcodes.ACC_STATIC, "$default$" + parentName + "_" + identifier.text, returnType = getJVMDataType(expression.dataType))
+                  val mv = cw.createMethod(Opcodes.ACC_STATIC, "$default$" + parentName + "_" + identifier.text, returnType = getJVMDataType(expression))
                   visitReturnStatement(ReturnStatement(NoPosition, None, objectDeclaration.expression), Context(cw, mv))
                   mv.endMethod()
                 }
