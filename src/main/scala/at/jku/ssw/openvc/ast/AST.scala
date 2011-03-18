@@ -614,7 +614,7 @@ final case class ComponentDeclaration(position: Position, identifier: Identifier
  */
 final case class SubTypeDeclaration(position: Position, identifier: Identifier, subType: SubTypeIndication) extends DeclarativeItem
 
-abstract sealed class SubProgramDeclaration extends DeclarativeItem {
+abstract sealed class SubprogramDeclaration extends DeclarativeItem {
   val identifier: Identifier
   val parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]]
   val genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]]
@@ -623,14 +623,14 @@ abstract sealed class SubProgramDeclaration extends DeclarativeItem {
 }
 
 final case class FunctionDeclaration(position: Position, isPure: Boolean, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], genericAssociationList: Option[AssociationList], parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], returnType: SelectedName, symbol: FunctionSymbol = null)
-  extends SubProgramDeclaration
+  extends SubprogramDeclaration
 
 final case class ProcedureDeclaration(position: Position, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], genericAssociationList: Option[AssociationList], parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], symbol: ProcedureSymbol = null)
-  extends SubProgramDeclaration
+  extends SubprogramDeclaration
 
 final case class SubprogramInstantiationDeclaration(position: Position, isProcedure: Boolean, identifier: Identifier, subprogramName: SelectedName, signature: Signature, genericAssociationList: Option[AssociationList]) extends DeclarativeItem
 
-abstract sealed class SubProgramDefinition extends DeclarativeItem {
+abstract sealed class SubprogramDefinition extends DeclarativeItem {
   val identifier: Identifier
   val genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]]
   val genericAssociationList: Option[AssociationList]
@@ -643,12 +643,12 @@ abstract sealed class SubProgramDefinition extends DeclarativeItem {
 final case class FunctionDefinition(position: Position, isPure: Boolean, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], genericAssociationList: Option[AssociationList],
                                     parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], returnType: SelectedName,
                                     declarativeItems: Seq[DeclarativeItem], sequentialStatements: Seq[SequentialStatement], endIdentifier: Option[Identifier],
-                                    localSymbols: Seq[Symbol] = Seq(), symbol: FunctionSymbol = null) extends SubProgramDefinition
+                                    localSymbols: Seq[Symbol] = Seq(), symbol: FunctionSymbol = null) extends SubprogramDefinition
 
 final case class ProcedureDefinition(position: Position, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], genericAssociationList: Option[AssociationList],
                                      parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], declarativeItems: Seq[DeclarativeItem],
                                      sequentialStatements: Seq[SequentialStatement], endIdentifier: Option[Identifier],
-                                     localSymbols: Seq[Symbol] = Seq(), symbol: ProcedureSymbol = null) extends SubProgramDefinition
+                                     localSymbols: Seq[Symbol] = Seq(), symbol: ProcedureSymbol = null) extends SubprogramDefinition
 
 final case class ConfigurationSpecification(position: Position, componentSpecification: ComponentSpecification, bindingIndication: BindingIndication) extends DeclarativeItem
 

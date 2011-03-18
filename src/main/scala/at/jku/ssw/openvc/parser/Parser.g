@@ -343,7 +343,7 @@ designator returns [Identifier id=Identifier.NoIdentifier] :
 	identifier {$id=$identifier.id}
 	| STRING_LITERAL {$id=toIdentifier($STRING_LITERAL)}; //STRING_LITERAL is a operator symbol	
 	  
-subprogram_specification returns [SubProgramDeclaration decl] :
+subprogram_specification returns [SubprogramDeclaration decl] :
 	PROCEDURE identifier
 	({vhdl2008}?=>generic_clause generic_map_aspect?)?
 	(({vhdl2008}?=>PARAMETER)? LPAREN parameter_interface_list_procedure RPAREN)? 
@@ -361,7 +361,7 @@ subprogram_declaration returns [DeclarativeItem subprogramDecl=NoNode] :
 	subprogram_specification SEMICOLON
 	{$subprogramDecl=$subprogram_specification.decl};
 	
-subprogram_body[SubProgramDeclaration subprogramDecl] returns [SubProgramDefinition subProgramDef]
+subprogram_body[SubprogramDeclaration subprogramDecl] returns [SubprogramDefinition subProgramDef]
 @init{
 	val declItems=new Buffer[DeclarativeItem]()
 	val syncMessage="subprogram declarative item"

@@ -1221,12 +1221,12 @@ object ByteCodeGenerator {
     def visitPackageDeclaration(packageDeclaration: PackageDeclaration) {
       val cw = createClass(Opcodes.ACC_FINAL, packageDeclaration.symbol.implementationName, "java/lang/Object", classOf[PackageHeaderAnnotation])
       val packageBodyName = packageDeclaration.symbol.copy(isBody = true).implementationName
-      val (subprograms, others) = packageDeclaration.declarativeItems.partition(_.isInstanceOf[SubProgramDeclaration])
+      val (subprograms, others) = packageDeclaration.declarativeItems.partition(_.isInstanceOf[SubprogramDeclaration])
       subprograms.foreach {
         subprogram =>
         //creates forwarder methods in the form:
         //def method(x:Int,y:Int) = Package_Body.method(x,y)
-          val subProgramDeclaration = subprogram.asInstanceOf[SubProgramDeclaration]
+          val subProgramDeclaration = subprogram.asInstanceOf[SubprogramDeclaration]
           val subprogramSymbol = subProgramDeclaration.symbol
           createDefaultValuesMethods(subProgramDeclaration.parameterInterfaceList, subprogramSymbol.mangledName, cw)
           val mv = cw.createMethod(Opcodes.ACC_STATIC + Opcodes.ACC_FINAL, subprogramSymbol)
