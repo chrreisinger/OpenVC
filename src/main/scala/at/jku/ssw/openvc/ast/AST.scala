@@ -241,7 +241,7 @@ final case class AssociationList(elements: Seq[AssociationList.Element], paramet
  */
 final class SelectedName(val identifiers: Seq[Identifier]) extends Locatable {
   val position = identifiers match {
-    case Seq(identifier, _) => identifier.position
+    case Seq(identifier, _*) => identifier.position
     case _ => NoPosition
   }
   /**
@@ -265,7 +265,7 @@ object InterfaceList {
     val mode: Option[InterfaceMode]
     val subType: SubTypeIndication
     val position = identifiers match {
-      case Seq(identifier, _) => identifier.position
+      case Seq(identifier, _*) => identifier.position
       case _ => NoPosition
     }
   }
@@ -344,14 +344,14 @@ final case class ContextReference(position: Position, contexts: Seq[SelectedName
  */
 final case class DesignFile(designUnits: Seq[DesignUnit]) extends ASTNode {
   lazy val position = designUnits match {
-    case Seq(unit, _) => unit.position
+    case Seq(unit, _*) => unit.position
     case _ => NoPosition
   }
 }
 
 final case class DesignUnit(contextItems: Seq[ContextItem], libraryUnit: LibraryUnit) extends ASTNode {
   lazy val position = contextItems match {
-    case Seq(contextItem, _) => contextItem.position
+    case Seq(contextItem, _*) => contextItem.position
     case _ => libraryUnit.position
   }
 }
