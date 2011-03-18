@@ -20,6 +20,7 @@ package at.jku.ssw.openvc.backend.jvm
 
 import at.jku.ssw.openvc.symbolTable.dataTypes._
 import at.jku.ssw.openvc.symbolTable.symbols._
+import ByteCodeGenerator.{getJVMDataType, getJVMName, getBoxedType, getJVMParameterList}
 
 import org.objectweb.asm._
 
@@ -60,6 +61,20 @@ final class RichClassWriter(private val outputDirectory: String, val className: 
     mv
   }
 
+  def createMethod(flags: Int, subprogramSymbol: SubprogramSymbol): RichMethodVisitor = subprogramSymbol match {
+    case procedureSymbol: ProcedureSymbol =>
+      val (returnType, signature) = procedureSymbol.copyBackSymbols match {
+        case Seq() => ("V", null)
+        case Seq(symbol) => (getJVMDataType(symbol), null)
+        case _ =>
+          ("Lscala/Tuple" + procedureSymbol.copyBackSymbols.size + ";",
+            "()Lscala/Tuple" + procedureSymbol.copyBackSymbols.size + "<" + procedureSymbol.copyBackSymbols.map(symbol => getBoxedType(symbol.dataType)).mkString + ">;")
+      }
+      createMethod(flags = flags, name = procedureSymbol.mangledName, parameters = getJVMParameterList(procedureSymbol.parameters), returnType = returnType, signature = signature)
+    case functionSymbol: FunctionSymbol =>
+      createMethod(flags = flags, name = functionSymbol.mangledName, parameters = getJVMParameterList(functionSymbol.parameters), returnType = getJVMDataType(functionSymbol.returnType))
+  }
+
   def visitField(access: Int, name: String, desc: String): FieldVisitor =
     super.visitField(access, name, desc, null, null)
 
@@ -71,8 +86,6 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
 
   import at.jku.ssw.openvc.ast.Locatable
   import at.jku.ssw.openvc.util.{Position, NoPosition}
-
-  import ByteCodeGenerator.{getJVMDataType, getJVMName}
 
   private[this] var lastLine = -1
 

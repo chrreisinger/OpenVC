@@ -619,6 +619,7 @@ abstract sealed class SubProgramDeclaration extends DeclarativeItem {
   val parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]]
   val genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]]
   val genericAssociationList: Option[AssociationList]
+  val symbol: SubprogramSymbol
 }
 
 final case class FunctionDeclaration(position: Position, isPure: Boolean, identifier: Identifier, genericInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], genericAssociationList: Option[AssociationList], parameterInterfaceList: Option[Seq[InterfaceList.AbstractInterfaceElement]], returnType: SelectedName, symbol: FunctionSymbol = null)

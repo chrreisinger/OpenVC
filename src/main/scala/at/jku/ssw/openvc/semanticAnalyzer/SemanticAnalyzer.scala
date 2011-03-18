@@ -2008,7 +2008,7 @@ object SemanticAnalyzer extends Phase {
   def visitFunctionDeclaration(functionDeclaration: FunctionDeclaration, owner: Symbol, context: Context): ReturnType = {
     val returnType = context.findType(functionDeclaration.returnType)
     val function = new FunctionSymbol(getMangledName(functionDeclaration.identifier), Seq(), returnType, owner, functionDeclaration.isPure, false)
-    val (parameters, parameterInterfaceList) = createSymbolsFromInterfaceList(context, functionDeclaration.parameterInterfaceList, owner)
+    val (parameters, parameterInterfaceList) = createSymbolsFromInterfaceList(context, functionDeclaration.parameterInterfaceList, function)
     function.parameters = parameters
     checkIsValidOverloadedOperator(functionDeclaration.identifier, parameters)
     (functionDeclaration.copy(parameterInterfaceList = parameterInterfaceList, symbol = function), context.insertSymbol(function))

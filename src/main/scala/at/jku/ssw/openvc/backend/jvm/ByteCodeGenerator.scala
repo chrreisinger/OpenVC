@@ -73,7 +73,7 @@ object ByteCodeGenerator {
     }
   }
 
-  private def getJVMParameterList(list: Seq[RuntimeSymbol]): String = list.map(getJVMDataType).mkString
+  def getJVMParameterList(list: Seq[RuntimeSymbol]): String = list.map(getJVMDataType).mkString
 
   private def p(n: Class[_]): String = n.getName.replace('.', '/')
 
@@ -1219,13 +1219,50 @@ object ByteCodeGenerator {
     }
 
     def visitPackageDeclaration(packageDeclaration: PackageDeclaration) {
-      val cw = createClass(Opcodes.ACC_ABSTRACT, packageDeclaration.symbol.implementationName, "java/lang/Object", classOf[PackageHeaderAnnotation])
-      createClinitAndAcceptItems(packageDeclaration.identifier.text, packageDeclaration.declarativeItems, cw)
+      val cw = createClass(Opcodes.ACC_FINAL, packageDeclaration.symbol.implementationName, "java/lang/Object", classOf[PackageHeaderAnnotation])
+      val packageBodyName = packageDeclaration.symbol.copy(isBody = true).implementationName
+      val (subprograms, others) = packageDeclaration.declarativeItems.partition(_.isInstanceOf[SubProgramDeclaration])
+      subprograms.foreach {
+        subprogram =>
+        //creates forwarder methods in the form:
+        //def method(x:Int,y:Int) = Package_Body.method(x,y)
+          val subProgramDeclaration = subprogram.asInstanceOf[SubProgramDeclaration]
+          val subprogramSymbol = subProgramDeclaration.symbol
+          createDefaultValuesMethods(subProgramDeclaration.parameterInterfaceList, subprogramSymbol.mangledName, cw)
+          val mv = cw.createMethod(Opcodes.ACC_STATIC + Opcodes.ACC_FINAL, subprogramSymbol)
+          import mv._
+          val startLabel = createLabel
+          val stopLabel = createLabel
+          startLabel()
+          createDebugLineNumberInformation(subProgramDeclaration.identifier)
+          subprogramSymbol.parameters.foreach(loadSymbol)
+          val returnType = subprogramSymbol match {
+            case procedureSymbol: ProcedureSymbol =>
+              if (procedureSymbol.needsCopyBack)
+                (if (procedureSymbol.copyBackSymbols.size == 1) getJVMDataType(procedureSymbol.copyBackSymbols.head) else "Lscala/Tuple" + procedureSymbol.copyBackSymbols.size + ";")
+              else "V"
+            case functionSymbol: FunctionSymbol => getJVMDataType(functionSymbol.returnType)
+          }
+          INVOKESTATIC(packageBodyName, subprogramSymbol.mangledName, "(" + getJVMParameterList(subprogramSymbol.parameters) + ")" + returnType)
+          subprogramSymbol match {
+            case functionSymbol: FunctionSymbol => functionSymbol.returnType match {
+              case _: IntegerType | _: EnumerationType => IRETURN
+              case _: RealType => DRETURN
+              case _: PhysicalType => LRETURN
+              case _ => ARETURN
+            }
+            case procedureSymbol: ProcedureSymbol => if (procedureSymbol.needsCopyBack) ARETURN else RETURN
+          }
+          stopLabel()
+          createDebugLocalVariableInformation(subprogramSymbol.parameters, startLabel, stopLabel)
+          endMethod()
+      }
+      createClinitAndAcceptItems(packageDeclaration.identifier.text, others, cw)
       cw.writeToFile()
     }
 
     def visitPackageBodyDeclaration(packageBodyDeclaration: PackageBodyDeclaration) {
-      val cw = createClass(Opcodes.ACC_FINAL, packageBodyDeclaration.symbol.implementationName, packageBodyDeclaration.symbol.copy(isBody = false).implementationName, classOf[PackageBodyAnnotation])
+      val cw = createClass(Opcodes.ACC_FINAL, packageBodyDeclaration.symbol.implementationName, "java/lang/Object", classOf[PackageBodyAnnotation])
       createClinitAndAcceptItems(packageBodyDeclaration.identifier.text, packageBodyDeclaration.declarativeItems, cw)
       cw.writeToFile()
     }
@@ -1439,8 +1476,7 @@ object ByteCodeGenerator {
       createDefaultValuesMethods(functionDefinition.parameterInterfaceList, functionSymbol.mangledName, context.cw)
 
       val flags = (if (functionSymbol.isStatic) Opcodes.ACC_STATIC else 0) + (if (functionSymbol.isSynchronized) Opcodes.ACC_SYNCHRONIZED else 0)
-      val mv = context.cw.createMethod(flags = flags, name = functionSymbol.mangledName,
-        parameters = getJVMParameterList(functionSymbol.parameters), returnType = getJVMDataType(functionSymbol.returnType))
+      val mv = context.cw.createMethod(flags, functionSymbol)
       val newContext = Context(context.cw, mv, Map(), context.designUnit, functionDefinition.localSymbols.collect(_ match {
         case f: FileSymbol => f
       }))
@@ -1460,16 +1496,8 @@ object ByteCodeGenerator {
       val procedureSymbol = procedureDefinition.symbol
       createDefaultValuesMethods(procedureDefinition.parameterInterfaceList, procedureSymbol.mangledName, context.cw)
 
-      val (returnType, signature) = procedureSymbol.copyBackSymbols match {
-        case Seq() => ("V", null)
-        case Seq(symbol) => (getJVMDataType(symbol), null)
-        case _ =>
-          ("Lscala/Tuple" + procedureSymbol.copyBackSymbols.size + ";",
-            "()Lscala/Tuple" + procedureSymbol.copyBackSymbols.size + "<" + procedureSymbol.copyBackSymbols.map(symbol => getBoxedType(symbol.dataType)).mkString + ">;")
-      }
-
       val flags = (if (procedureSymbol.isStatic) Opcodes.ACC_STATIC else 0) + (if (procedureSymbol.isSynchronized) Opcodes.ACC_SYNCHRONIZED else 0)
-      val mv = context.cw.createMethod(flags = flags, name = procedureSymbol.mangledName, parameters = getJVMParameterList(procedureSymbol.parameters), returnType = returnType, signature = signature)
+      val mv = context.cw.createMethod(flags, procedureSymbol.mangledName)
       val newContext = Context(context.cw, mv, Map(), context.designUnit, procedureDefinition.localSymbols.collect(_ match {
         case f: FileSymbol => f
       }))
