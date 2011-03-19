@@ -220,22 +220,34 @@ object VHDLRuntime {
 
     var value: A
 
-    def delayed(delay: TimeType): AbstractSignal[A]
+    def delayed(delay: TimeType): AbstractSignal[A] = null
 
-    def stable(time: TimeType): Boolean
+    def stable(time: TimeType): Boolean = true
 
-    def quiet(time: TimeType): Boolean
+    def quiet(time: TimeType): Boolean = true
 
-    var transaction: Boolean
-    var event: Boolean
-    var active: Boolean
-    var last_event: TimeType
-    var last_active: TimeType
-    var last_value: A
-    var driving: Boolean
-    var driving_value: A
+    var transaction: Boolean = _
+    var event: Boolean = _
+    var active: Boolean = _
+    var last_event: TimeType = _
+    var last_active: TimeType = _
+    var last_value: A = _
+    var driving: Boolean = _
+    var driving_value: A = _
 
     override def toString = value.toString
+  }
+
+  final class ScalarSignal[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](var value: A) extends AbstractSignal[A] {
+
+  }
+
+  final class Array1DSignal[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](var value: RuntimeArray1D[ScalarSignal[A]]) extends AbstractSignal[RuntimeArray1D[ScalarSignal[A]]] {
+
+  }
+
+  final class Array2DSignal[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](var value: RuntimeArray2D[ScalarSignal[A]]) extends AbstractSignal[RuntimeArray2D[ScalarSignal[A]]] {
+
   }
 
   final class RuntimeFile {
