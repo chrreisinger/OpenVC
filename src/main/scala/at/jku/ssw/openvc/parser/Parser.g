@@ -81,7 +81,7 @@ sync [String message]
     
 //B.1 Design File
 
-design_file returns [DesignFile designFile]
+design_file returns [ASTNode designFile=NoNode]
 @init{
 	val units=new Buffer[DesignUnit]()
 } :
@@ -93,7 +93,7 @@ context_item returns [ContextItem contextItem=NoNode] :
 	| use_clause {contextItem = $use_clause.useClause}
 	| {vhdl2008}?=>v2008_context_reference {contextItem = $v2008_context_reference.contextReference};
 	
-context_items returns [Seq[ContextItem\] contextItems] 
+context_items returns [Seq[ContextItem\] contextItems=Seq()] 
 @init {
 	val items=new Buffer[ContextItem]()
 } :
@@ -122,22 +122,22 @@ v2008_context_reference returns [ContextReference contextReference] :
 	CONTEXT selected_name_list SEMICOLON {$contextReference = new ContextReference($CONTEXT,$selected_name_list.list)};
 
 //B.2 Library Unit Declarations
-generic_clause returns [Seq[InterfaceList.AbstractInterfaceElement\] list] :
+generic_clause returns [Seq[InterfaceList.AbstractInterfaceElement\] list=Seq()] :
 	GENERIC LPAREN generic_interface_list RPAREN
 	{$list = $generic_interface_list.list};
 
-generic_interface_list returns [Seq[InterfaceList.AbstractInterfaceElement\] list]
+generic_interface_list returns [Seq[InterfaceList.AbstractInterfaceElement\] list=Seq()]
 @init{
 	val elements=new Buffer[InterfaceList.AbstractInterfaceElement]()
 } :
 	decl1=interface_element_generic {elements += $decl1.element} (SEMICOLON decl2=interface_element_generic {elements += $decl2.element})*
 	{$list=elements.result};
     
-port_clause returns [Seq[InterfaceList.AbstractInterfaceElement\] list] :
+port_clause returns [Seq[InterfaceList.AbstractInterfaceElement\] list=Seq()] :
 	PORT LPAREN port_interface_list RPAREN SEMICOLON
 	{$list = $port_interface_list.list};
 
-port_interface_list returns [Seq[InterfaceList.AbstractInterfaceElement\] list]
+port_interface_list returns [Seq[InterfaceList.AbstractInterfaceElement\] list=Seq()]
 @init{
 	val elements=new Buffer[InterfaceList.AbstractInterfaceElement]()
 } :
@@ -353,7 +353,7 @@ subprogram_specification returns [SubprogramDeclaration decl] :
 	(({vhdl2008}?=>PARAMETER)? LPAREN parameter_interface_list_function RPAREN)? RETURN type_mark
 	{$decl=new FunctionDeclaration($FUNCTION,$impure==null,$designator.id,$generic_clause.list,$generic_map_aspect.list,$parameter_interface_list_function.list,$type_mark.typeName)};	
 
-subprogram_declaration_or_body returns [DeclarativeItem declOrBody] :
+subprogram_declaration_or_body returns [DeclarativeItem declOrBody=NoNode] :
 	subprogram_specification (subprogram_body[$subprogram_specification.decl])? SEMICOLON
 	{$declOrBody=if ($subprogram_body.subProgramDef!=null) $subprogram_body.subProgramDef else $subprogram_specification.decl};	
 		
@@ -399,7 +399,7 @@ subprogram_declarative_item returns [DeclarativeItem item=NoNode] :
 	| group_template_declaration {$item=$group_template_declaration.groupTemplateDecl}
 	| group_declaration {$item=$group_declaration.groupDecl};
 
-v2008_subprogram_instantiation_declaration returns [SubprogramInstantiationDeclaration subprogramInstantiationDecl] :
+v2008_subprogram_instantiation_declaration returns [DeclarativeItem subprogramInstantiationDecl=NoNode] :
 	(PROCEDURE | functionToken=FUNCTION) identifier IS
 		NEW selected_name signature?
 			generic_map_aspect? SEMICOLON
@@ -616,7 +616,7 @@ group_constituent returns [Either[Name,Identifier\] constituent] :
 	name {$constituent=Left($name.name_)}
 	| CHARACTER_LITERAL {$constituent=Right(toIdentifier($CHARACTER_LITERAL))};
 
-group_constituent_list returns [Seq[Either[Name,Identifier\]\] list]
+group_constituent_list returns [Seq[Either[Name,Identifier\]\] list=Seq()]
 @init{
 	val elements=new Buffer[Either[Name,Identifier]]()
 } :
@@ -802,7 +802,7 @@ direction returns [Range.Direction.Value rangeDirection] :
 range_constraint returns [Range rangeConstraint] :
 	RANGE range {$rangeConstraint=$range.range_};
 
-index_constraint returns [Seq[DiscreteRange\] ranges]
+index_constraint returns [Seq[DiscreteRange\] ranges=Seq()]
 @init{
 	val list=new Buffer[DiscreteRange]()
 } :
@@ -837,26 +837,27 @@ type_mark returns [SelectedName typeName] :
 	selected_name {$typeName=$selected_name.name_}; // could be type_name or subtype_name
 
 // B.5 Concurrent Statements
-concurrent_statement_list returns [Seq[ConcurrentStatement\] list] 
+concurrent_statement_list returns [Seq[ConcurrentStatement\] list=Seq()]
 @init{
 	val statementList=new Buffer[ConcurrentStatement]()
 } : 
 	(concurrent_statement {statementList += $concurrent_statement.stmt})*
 	{$list=statementList.result};
 
-concurrent_statement returns [ConcurrentStatement stmt] :
+concurrent_statement returns [ConcurrentStatement stmt=NoNode]
+@after{$stmt=if ($stmt!=null) $stmt else NoNode} :
 	  label=label_colon (
 			(COMPONENT | (selected_name (GENERIC | PORT) MAP) | ENTITY | CONFIGURATION | BLOCK | IF ({vhdl2008}?=>label_colon)? condition GENERATE | FOR | {vhdl2008}?=> CASE expression GENERATE)=>concurrent_statement_with_label[$label.label] {$stmt=$concurrent_statement_with_label.stmt}
 			| concurrent_statement_optional_label[$label.label] {$stmt=$concurrent_statement_optional_label.stmt}
 			)
 		| concurrent_statement_optional_label[$label.label] {$stmt=$concurrent_statement_optional_label.stmt};
 
-concurrent_statement_with_label[Identifier label] returns [ConcurrentStatement stmt] :
+concurrent_statement_with_label[Identifier label] returns [ConcurrentStatement stmt=NoNode] :
 	component_instantiation_statement[$label] {$stmt=$component_instantiation_statement.stmt}
 	| block_statement[$label] {$stmt=$block_statement.blockStmt}
 	| generate_statement[$label] {$stmt=$generate_statement.generateStmt};
 				
-concurrent_statement_optional_label[Identifier label] returns [ConcurrentStatement stmt] :
+concurrent_statement_optional_label[Identifier label] returns [ConcurrentStatement stmt=NoNode] :
 	{ams}?=>ams_concurrent_break_statement[$label] {$stmt=$ams_concurrent_break_statement.breakStmt}
 	| ({ams}?=>((simple_expression AMS_ASSIGN) | IF | PROCEDURAL | CASE | NULL))=>ams_simultaneous_statement[$label] {$stmt=$ams_simultaneous_statement.stmt}	
 	| postponed=POSTPONED? 
@@ -985,7 +986,7 @@ concurrent_selected_signal_assignment[Identifier label,Boolean postponed] return
 selected_waveform returns [ConcurrentSelectedSignalAssignment.When whenClause] :
 	waveform WHEN choices {whenClause = new ConcurrentSelectedSignalAssignment.When($waveform.waveForm,$choices.choices_)};
 	
-selected_waveforms returns [Seq[ConcurrentSelectedSignalAssignment.When\] waveforms]
+selected_waveforms returns [Seq[ConcurrentSelectedSignalAssignment.When\] waveforms=Seq()]
 @init{
 	val elements=new Buffer[ConcurrentSelectedSignalAssignment.When]()
 } :
@@ -1048,7 +1049,7 @@ v2008_case_generate_statement[Identifier label] returns [CaseGenerateStatement c
 	END GENERATE identifier? SEMICOLON
 	{$caseGenerateStmt=new CaseGenerateStatement($CASE,$label,$expression.expr,alternatives.result,$identifier.id)};
 		
-generate_statement_body returns [Seq[DeclarativeItem\] declarativeItems,Seq[ConcurrentStatement\] statementList,Identifier endLabel]
+generate_statement_body returns [Seq[DeclarativeItem\] declarativeItems=Seq(),Seq[ConcurrentStatement\] statementList=Seq(),Identifier endLabel]
 @init{
 	val items=new Buffer[DeclarativeItem]()
 	val syncMessage="block declarative item"
@@ -1070,14 +1071,14 @@ ams_concurrent_break_statement[Identifier label] returns [ConcurrentBreakStateme
 	{$breakStmt=new ConcurrentBreakStatement($BREAK,$label,$ams_break_element_list.list,$name_list.list,$expression.expr)};
 
 // E.6 Simultaneous Statements
-ams_simultaneous_statement[Identifier label] returns [SimultaneousStatement stmt] :
+ams_simultaneous_statement[Identifier label] returns [SimultaneousStatement stmt=NoNode] :
 	ams_simple_simultaneous_statement[$label] {$stmt=$ams_simple_simultaneous_statement.stmt}
 	| ams_simultaneous_if_statement[$label] {$stmt=$ams_simultaneous_if_statement.ifStmt}
 	| ams_simultaneous_procedural_statement[$label] {$stmt=$ams_simultaneous_procedural_statement.proceduralStmt}
 	| ams_simultaneous_case_statement[$label] {$stmt=$ams_simultaneous_case_statement.caseStmt}
 	| ams_simultaneous_null_statement[$label] {$stmt=$ams_simultaneous_null_statement.nullStmt};
 
-ams_simultaneous_statement_list returns [Seq[SimultaneousStatement\] list]
+ams_simultaneous_statement_list returns [Seq[SimultaneousStatement\] list=Seq()]
 @init{
 	val tmpList=new Buffer[SimultaneousStatement]()
 } :
@@ -1142,7 +1143,7 @@ ams_simultaneous_null_statement[Identifier label] returns [SimultaneousNullState
 	{$nullStmt=new SimultaneousNullStatement($NULL,$label)};
 
 // B.6 Sequential Statements
-sequence_of_statements returns [Seq[SequentialStatement\] list]
+sequence_of_statements returns [Seq[SequentialStatement\] list=Seq()]
 @init{
 	val tmpList=new Buffer[SequentialStatement]()
 	val set=followSet
@@ -1190,7 +1191,7 @@ v2008_conditional_expressions[Buffer[ConditionalVariableAssignment.When\] elemen
 v2008_selected_expression returns [SelectedVariableAssignment.When whenClause]: 
 	expression WHEN choices {whenClause = new SelectedVariableAssignment.When($expression.expr,$choices.choices_)};
 	
-v2008_selected_expressions returns [Seq[SelectedVariableAssignment.When\] expressions] 
+v2008_selected_expressions returns [Seq[SelectedVariableAssignment.When\] expressions=Seq()]
 @init{
 	val elements=new Buffer[SelectedVariableAssignment.When]()
 } :
@@ -1319,7 +1320,7 @@ ams_break_statement[Identifier label] returns [AMSBreakStatement breakStmt] :
 	BREAK ams_break_element_list? (WHEN expression)? SEMICOLON
 	{$breakStmt=new AMSBreakStatement($BREAK,$label,$ams_break_element_list.list,$expression.expr)};
 
-ams_break_element_list returns [Seq[BreakElement\] list]
+ams_break_element_list returns [Seq[BreakElement\] list=Seq()]
 @init{
 	val elements=new Buffer[BreakElement]()
 } :
@@ -1364,14 +1365,14 @@ interface_element_function returns [InterfaceList.AbstractInterfaceElement eleme
 		| ams_interface_quantity_declaration {$element=$ams_interface_quantity_declaration.quantityDecl}
 		);
 		
-parameter_interface_list_procedure returns [Seq[InterfaceList.AbstractInterfaceElement\] list]
+parameter_interface_list_procedure returns [Seq[InterfaceList.AbstractInterfaceElement\] list=Seq()]
 @init{
 	val elements=new Buffer[InterfaceList.AbstractInterfaceElement]()
 } :
 	e1=interface_element_procedure{elements += $e1.element} (SEMICOLON e2=interface_element_procedure {elements += $e2.element})* 
 	{$list=elements.result};
 		
-parameter_interface_list_function returns [Seq[InterfaceList.AbstractInterfaceElement\] list]
+parameter_interface_list_function returns [Seq[InterfaceList.AbstractInterfaceElement\] list=Seq()]
 @init{
 	val elements=new Buffer[InterfaceList.AbstractInterfaceElement]()
 } :
@@ -1477,12 +1478,13 @@ actual_part returns [Either[Expression,Identifier\] actual_part_ ] :
 condition returns [Expression con] :
 	expression {$con=$expression.expr};  
 
-expression returns [Expression expr]:
+expression returns [Expression expr]
+@after{if ($expr==null) $expr=NoExpression} :
 	 logical_expression {$expr=$logical_expression.expr}
 	 | {vhdl2008}?=> CONDITION_OPERATOR primary {$expr=new ConditionExpression($CONDITION_OPERATOR,$primary.obj)};	
 
 logical_expression returns [Expression expr]
-@after{if ($expr==null) $expr=NoExpression}:
+@after{if ($expr==null) $expr=NoExpression} :
 	r1=relation (	   
 	   NAND r2=relation {$expr=new LogicalExpression($NAND,$r1.rel,LogicalExpression.Operator.NAND,$r2.rel)}
 	   | NOR r2=relation {$expr=new LogicalExpression($NOR,$r1.rel,LogicalExpression.Operator.NOR,$r2.rel)}
@@ -1570,7 +1572,7 @@ multiplying_operator returns [Term.Operator.Value mulOp,Position pos]
 	| REM {$mulOp=Term.Operator.REM};
 
 term returns [Expression term_]
-@after{if ($term_ ==null) $term_ = NoExpression}:
+@after{if ($term_ ==null) $term_ = NoExpression} :
 	f1=factor {$term_ = $f1.factor_} 
 	(multiplying_operator f2=factor {$term_ = new Term($multiplying_operator.pos,$term_,$multiplying_operator.mulOp,$f2.factor_)})*;
  
@@ -1589,12 +1591,12 @@ factor_operator returns [Factor.Operator.Value factorOp,Position pos]
 			);
 	
 factor returns [Expression factor_]
-@after{if ($factor_ ==null) $factor_ = NoExpression}:
+@after{if ($factor_ ==null) $factor_ = NoExpression} :
 	p1=primary{$factor_ = $p1.obj}(DOUBLESTAR p2=primary {$factor_ = new Factor($DOUBLESTAR,$p1.obj,Factor.Operator.POW,$p2.obj)})?
 	| factor_operator primary {$factor_ = new Factor($factor_operator.pos,$primary.obj,$factor_operator.factorOp)};
 
 primary returns [Expression obj]
-@after{if ($obj==null) $obj=NoExpression}:
+@after{if ($obj==null) $obj=NoExpression} :
 	selected_name qualified_expression[$selected_name.name_] {$obj=$qualified_expression.expr}
 	| name {$obj=$name.name_}
 	| literal {$obj=$literal.literal_} 
@@ -1611,7 +1613,7 @@ qualified_expression[SelectedName typeName] returns [QualifiedExpression expr] :
 	APOSTROPHE aggregate
 	{$expr=new QualifiedExpression(typeName,$aggregate.aggregate_)};
 
-selected_name_list returns [Seq[SelectedName\] list]
+selected_name_list returns [Seq[SelectedName\] list=Seq()]
 @init{
 	val tmpList=new Buffer[SelectedName]()
 } :
@@ -1625,7 +1627,7 @@ selected_name returns [SelectedName name_]
 	name_prefix ( name_selected_part {parts += $name_selected_part.part.identifier})*
 	{$name_ =new SelectedName($name_prefix.id +: parts.result)};
 
-name_list returns [Seq[Name\] list]
+name_list returns [Seq[Name\] list=Seq()]
 @init{
 	val tmpList=new Buffer[Name]()
 } :
@@ -1741,11 +1743,11 @@ choice	returns [Choices.Choice choice_]
 	| discrete_range {choice_ =new Choices.Choice(position,Some(First($discrete_range.discreteRange)))}
 	| OTHERS {choice_ =new Choices.Choice(position,None)};
 
-choices returns [Seq[Choices.Choice\] choices_]
+choices returns [Seq[Choices.Choice\] choices_ =Seq()]
 @init{
 	val elements=new Buffer[Choices.Choice]()
 } :
-	c1=choice {elements += $c1.choice_}( BAR c2=choice {elements += $c2.choice_})*
+	c1=choice {elements += $c1.choice_}(BAR c2=choice {elements += $c2.choice_})*
 	{$choices_ = elements.result};
 
 /* VHDL 2008 PSL
@@ -1760,17 +1762,16 @@ PSL_PSL_Directive : ;
 PSL_Verification_Unit : ;
 */	
 	
-identifier_list returns [Seq[Identifier\] list]
+identifier_list returns [Seq[Identifier\] list=Seq()]
 @init{
 	val identifiers=new Buffer[Identifier]()
 } :
 	id1=identifier {identifiers += $id1.id} (COMMA id2=identifier {identifiers += $id2.id} )* 
-	{$list=identifiers.result};
+	{$list=identifiers.result.filter(_ != Identifier.NoIdentifier)};
 
 identifier returns [Identifier id=Identifier.NoIdentifier] :
-	(BASIC_IDENTIFIER
-	| EXTENDED_IDENTIFIER)
-	{$id = if (input.LA(-1) == EXTENDED_IDENTIFIER) toIdentifier(input.LT(-1),false) else toIdentifier(input.LT(-1))};
+	BASIC_IDENTIFIER {$id=toIdentifier(input.LT(-1))}
+	| EXTENDED_IDENTIFIER {$id=toIdentifier(input.LT(-1),false)};
 	
 v2008_tool_directive : APOSTROPHE identifier GRAPHIC_CHARACTER*;
 

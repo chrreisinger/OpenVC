@@ -42,7 +42,12 @@ trait Locatable {
  */
 abstract sealed class ASTNode extends Locatable
 
-case object NoNode extends ASTNode with sequentialStatements.SequentialStatement with concurrentStatements.ConcurrentStatement with declarativeItems.DeclarativeItem with designUnits.ContextItem with designUnits.LibraryUnit {
+case object NoNode extends ASTNode with sequentialStatements.SequentialStatement
+with concurrentStatements.ConcurrentStatement
+with declarativeItems.DeclarativeItem
+with simultaneousStatements.SimultaneousStatement
+with designUnits.ContextItem
+with designUnits.LibraryUnit {
   val position = NoPosition
   val label = None
   val identifier = Identifier.NoIdentifier
@@ -1508,7 +1513,7 @@ package simultaneousStatements {
 import at.jku.ssw.openvc.ast.declarativeItems.DeclarativeItem
 import at.jku.ssw.openvc.ast.sequentialStatements.SequentialStatement
 
-abstract sealed class SimultaneousStatement extends concurrentStatements.ConcurrentStatement
+sealed trait SimultaneousStatement extends concurrentStatements.ConcurrentStatement
 
 final case class SimultaneousNullStatement(position: Position, label: Option[Identifier]) extends SimultaneousStatement
 

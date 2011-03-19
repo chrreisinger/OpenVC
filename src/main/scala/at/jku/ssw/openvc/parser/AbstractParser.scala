@@ -262,11 +262,11 @@ abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) 
         // The parser would have accepted any one of two or more tokens, but the actual token was not in that set and
         // was not a token that we could determine was spurious or from which we could determine that we just had a token missing.
         mb append " but I got confused when I saw " append getTokenErrorDisplay(e.token) append (getTokenType(classifyToken(e.token)))
-        mb append ".\n I was looking for one of: " append mse.expecting
+        if (mse.expecting != null) mb append ".\n I was looking for one of: " append mse.expecting
         // The start and end points come directly from the mismatched token.
         (e.token.asInstanceOf[CommonToken].getStartIndex, e.token.asInstanceOf[CommonToken].getStopIndex + 1)
       case _ =>
-        mb append super.getErrorMessage(e, vhdlTokenNames)
+        mb append " " append super.getErrorMessage(e, vhdlTokenNames)
         // The start and end points come directly from the mismatched token.
         (e.token.asInstanceOf[CommonToken].getStartIndex, e.token.asInstanceOf[CommonToken].getStopIndex + 1)
     }
