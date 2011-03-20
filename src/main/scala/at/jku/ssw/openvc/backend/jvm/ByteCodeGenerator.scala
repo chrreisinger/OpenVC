@@ -866,8 +866,8 @@ object ByteCodeGenerator {
         acceptExpressionOption(assertStmt.reportExpression)
         acceptExpressionOption(assertStmt.severityExpression, None, false)
         val desc = "Ljava/lang/String;" +
-          (if (assertStmt.reportExpression.isDefined) "Ljava/lang/String;" else "") +
-          (if (assertStmt.severityExpression.isDefined) "I" else "")
+          (if (assertStmt.reportExpression.isDefined) getJVMDataType(assertStmt.reportExpression.get) else "") +
+          (if (assertStmt.severityExpression.isDefined) getJVMDataType(assertStmt.severityExpression.get) else "")
         INVOKESTATIC(RUNTIME, "assertVHDL", "(" + desc + ")V")
         trueJumpLabel()
       }
@@ -1319,7 +1319,7 @@ object ByteCodeGenerator {
       LDC(context.designUnit)
       acceptExpression(reportStmt.reportExpression)
       acceptExpressionOption(reportStmt.severityExpression)
-      val desc = "Ljava/lang/String;Ljava/lang/String;" + (if (reportStmt.severityExpression.isDefined) "I" else "")
+      val desc = "Ljava/lang/String;" + getJVMDataType(reportStmt.reportExpression) + (if (reportStmt.severityExpression.isDefined) getJVMDataType(reportStmt.severityExpression.get) else "")
       INVOKESTATIC(RUNTIME, "report", "(" + desc + ")V")
     }
 

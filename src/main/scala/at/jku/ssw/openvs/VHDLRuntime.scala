@@ -315,11 +315,11 @@ object VHDLRuntime {
     val NOTE, WARNING, ERROR, FAILURE = Value
   }
 
-  private val DefaultAssertLevel = SEVERITY_LEVEL.ERROR.id
-  private val DefaultReportLevel = SEVERITY_LEVEL.NOTE.id
+  private val DefaultAssertLevel: Byte = SEVERITY_LEVEL.ERROR.id.asInstanceOf[Byte]
+  private val DefaultReportLevel: Byte = SEVERITY_LEVEL.NOTE.id.asInstanceOf[Byte]
   private val DefaultAssertionMessage = "Assertion violation"
 
-  private def levelToString(level: Int): String =
+  private def levelToString(level: Byte): String =
     SEVERITY_LEVEL(level) match {
       case SEVERITY_LEVEL.NOTE => "note: "
       case SEVERITY_LEVEL.WARNING => "warning: "
@@ -327,20 +327,20 @@ object VHDLRuntime {
       case SEVERITY_LEVEL.FAILURE => "failure: "
     }
 
-  def report(designUnit: String, message: String, level: Int): Unit =
+  def report(designUnit: String, message: String, level: Byte): Unit =
     println("report " + designUnit + " " + levelToString(level) + message)
 
   def report(designUnit: String, message: String): Unit = report(designUnit, message, DefaultReportLevel)
 
   @throws(classOf[VHDLRuntimeException])
-  def assertVHDL(designUnit: String, message: String, level: Int): Unit =
+  def assertVHDL(designUnit: String, message: String, level: Byte): Unit =
     throw new VHDLRuntimeException("assert " + designUnit + " " + levelToString(level) + message)
 
   @throws(classOf[VHDLRuntimeException])
   def assertVHDL(designUnit: String): Unit = assertVHDL(designUnit, DefaultAssertionMessage, DefaultAssertLevel)
 
   @throws(classOf[VHDLRuntimeException])
-  def assertVHDL(designUnit: String, level: Int): Unit = assertVHDL(designUnit, DefaultAssertionMessage, level)
+  def assertVHDL(designUnit: String, level: Byte): Unit = assertVHDL(designUnit, DefaultAssertionMessage, level)
 
   @throws(classOf[VHDLRuntimeException])
   def assertVHDL(designUnit: String, message: String): Unit = assertVHDL(designUnit, message, DefaultAssertLevel)
