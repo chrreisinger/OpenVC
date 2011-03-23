@@ -1151,7 +1151,7 @@ sequence_of_statements returns [Seq[SequentialStatement\] list=Seq()]
 	{syncToFollowSet(set)} (sequential_statement{tmpList +=$sequential_statement.stmt} {syncToFollowSet(set)})*
 	{$list=tmpList.result};
 
-sequential_statement returns [SequentialStatement stmt]
+sequential_statement returns [SequentialStatement stmt=NoNode]
 @after{$stmt=if ($stmt!=null) $stmt else NoNode} :
 	label=label_colon?
 	(wait_statement[$label.label] {$stmt=$wait_statement.waitStmt}
