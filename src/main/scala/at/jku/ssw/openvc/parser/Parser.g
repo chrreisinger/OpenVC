@@ -115,10 +115,10 @@ library_unit returns [LibraryUnit libraryUnit=NoNode]
 	//| {psl}?=>PSL_Verification_Unit
 	;
 	
-library_clause returns [LibraryClause libraryClause] : 
+library_clause returns [ContextItem libraryClause=NoNode] : 
 	LIBRARY identifier_list SEMICOLON {$libraryClause = new LibraryClause($LIBRARY,$identifier_list.list)}; 
 
-v2008_context_reference returns [ContextReference contextReference] :
+v2008_context_reference returns [ContextItem contextReference=NoNode] :
 	CONTEXT selected_name_list SEMICOLON {$contextReference = new ContextReference($CONTEXT,$selected_name_list.list)};
 
 //B.2 Library Unit Declarations
@@ -144,11 +144,11 @@ port_interface_list returns [Seq[InterfaceList.AbstractInterfaceElement\] list=S
 	decl1=interface_element_port {elements += $decl1.element} (SEMICOLON decl2=interface_element_port {elements += $decl2.element})*
 	{$list = elements.result};
     		
-entity_declaration returns [EntityDeclaration entityDecl]
+entity_declaration returns [LibraryUnit entityDecl=NoNode]
 @init{
  	val declarativeItems=new Buffer[DeclarativeItem]()
  	val concurrentStmt=new Buffer[ConcurrentStatement]()
- 	val syncMessage="package declarative item"
+ 	val syncMessage="entity declarative item"
 } :
 	entityToken=ENTITY start_identifier=identifier IS
 		(generic_clause SEMICOLON)?
@@ -197,7 +197,7 @@ entity_declarative_item returns [DeclarativeItem item=NoNode] :
 		| ams_terminal_declaration {$item=$ams_terminal_declaration.terminalDecl}
 		);
 		
-architecture_body returns [ArchitectureDeclaration archDecl]
+architecture_body returns [LibraryUnit archDecl=NoNode]
 @init{
 	val declarativeItems=new Buffer[DeclarativeItem]()
 	val syncMessage="block declarative item"
@@ -214,7 +214,7 @@ configuration_declarative_item returns [DeclarativeItem item=NoNode] :
 	| attribute_specification {$item=$attribute_specification.attributeSpec}
 	| group_declaration {$item=$group_declaration.groupDecl};
 		
-configuration_declaration returns [ConfigurationDeclaration configDecl]
+configuration_declaration returns [LibraryUnit configDecl=NoNode]
 @init{
  	val declarativeItems=new Buffer[DeclarativeItem]()
  	val syncMessage="configuration declarative item"
@@ -259,14 +259,14 @@ component_configuration returns [ComponentConfiguration componentConfig] :
 	END FOR SEMICOLON
 	{$componentConfig=new ComponentConfiguration($component_specification.spec,$binding_indication.indication,$block_configuration.blockConfig)};
 	
-v2008_context_declaration returns [ContextDeclaration contextDecl] :
+v2008_context_declaration returns [LibraryUnit contextDecl=NoNode] :
 	contextToken=CONTEXT start_identifier=identifier IS 
 		context_items
 	END CONTEXT? end_identifier=identifier? SEMICOLON
 	{$contextDecl=new ContextDeclaration($contextToken,$start_identifier.id,$context_items.contextItems,$end_identifier.id)};
 		
 //B.3 Declarations and Specifications
-package_declaration returns [PackageDeclaration packageDecl]
+package_declaration returns [LibraryUnit with DeclarativeItem packageDecl=NoNode]
 @init{
 	val declarativeItems=new Buffer[DeclarativeItem]()
 	val syncMessage="package declarative item"
@@ -305,7 +305,7 @@ package_declarative_item returns [DeclarativeItem item=NoNode] :
 		| ams_terminal_declaration {$item=$ams_terminal_declaration.terminalDecl}
 	);
 
-package_body returns [PackageBodyDeclaration packageBody]
+package_body returns [LibraryUnit with DeclarativeItem packageBody=NoNode]
 @init{
 	val declarativeItems = new Buffer[DeclarativeItem]()
 	val syncMessage="package declarative item"
@@ -334,7 +334,7 @@ package_body_declarative_item returns [DeclarativeItem item=NoNode] :
 	| group_template_declaration {$item=$group_template_declaration.groupTemplateDecl}
 	| group_declaration {$item=$group_declaration.groupDecl};
 
-v2008_package_instantiation_declaration returns [PackageInstantiationDeclaration packageInstantiationDecl] :
+v2008_package_instantiation_declaration returns [LibraryUnit with DeclarativeItem packageInstantiationDecl=NoNode] :
 	PACKAGE identifier IS NEW selected_name
 		generic_map_aspect? SEMICOLON
 	{$packageInstantiationDecl=new PackageInstantiationDeclaration($PACKAGE,$identifier.id,$selected_name.name_,$generic_map_aspect.list)};
@@ -343,7 +343,7 @@ designator returns [Identifier id=Identifier.NoIdentifier] :
 	identifier {$id=$identifier.id}
 	| STRING_LITERAL {$id=toIdentifier($STRING_LITERAL)}; //STRING_LITERAL is a operator symbol	
 	  
-subprogram_specification returns [SubprogramDeclaration decl] :
+subprogram_specification returns [DeclarativeItem decl=NoNode] :
 	PROCEDURE identifier
 	({vhdl2008}?=>generic_clause generic_map_aspect?)?
 	(({vhdl2008}?=>PARAMETER)? LPAREN parameter_interface_list_procedure RPAREN)? 
@@ -361,7 +361,7 @@ subprogram_declaration returns [DeclarativeItem subprogramDecl=NoNode] :
 	subprogram_specification SEMICOLON
 	{$subprogramDecl=$subprogram_specification.decl};
 	
-subprogram_body[SubprogramDeclaration subprogramDecl] returns [SubprogramDefinition subProgramDef]
+subprogram_body[DeclarativeItem subprogramDecl] returns [DeclarativeItem subProgramDef=NoNode]
 @init{
 	val declItems=new Buffer[DeclarativeItem]()
 	val syncMessage="subprogram declarative item"
@@ -377,6 +377,7 @@ subprogram_body[SubprogramDeclaration subprogramDecl] returns [SubprogramDefinit
 				new ProcedureDefinition($subprogramDecl.position,procDecl.identifier,procDecl.genericInterfaceList,procDecl.genericAssociationList,procDecl.parameterInterfaceList,declItems.result,$sequence_of_statements.list,endIdent)
 			case funcDecl : FunctionDeclaration =>
 				new FunctionDefinition($subprogramDecl.position,funcDecl.isPure,funcDecl.identifier,funcDecl.genericInterfaceList,funcDecl.genericAssociationList,funcDecl.parameterInterfaceList,funcDecl.returnType,declItems.result,$sequence_of_statements.list,endIdent)
+			case _ => NoNode	
 		}	
 	};
     	
@@ -440,21 +441,21 @@ ams_through_aspect returns [(Seq[Identifier\],Option[Expression\],Option[Express
 	{$through_aspect=($identifier_list.list,$toleranceExpression.expr,$defaultExpression.expr)};
 
 ams_quantity_declaration returns [DeclarativeItem quantityDecl=NoNode] :
- 	QUANTITY (terminal=ams_terminal_aspect {$quantityDecl=new BranchQuantityDeclaration($QUANTITY,None,None,$terminal.terminal_aspect)}
- 		  | identifier_list 
- 		  	(
+ 	QUANTITY (
+ 		  terminal=ams_terminal_aspect {$quantityDecl=new BranchQuantityDeclaration($QUANTITY,None,None,$terminal.terminal_aspect)}
+ 		  | identifier_list (
  			(TOLERANCE toleranceExpression=expression)? (VAR_ASSIGN defaultExpression=expression)? (across=ACROSS|through=THROUGH) ({$through==null}?=>ams_through_aspect)? terminal=ams_terminal_aspect
- 					{
- 						$quantityDecl = if (across!=null) new BranchQuantityDeclaration($QUANTITY,($identifier_list.list,Option($toleranceExpression.expr),Option($defaultExpression.expr)),$ams_through_aspect.through_aspect,$terminal.terminal_aspect)
- 								else new BranchQuantityDeclaration($QUANTITY,None,($identifier_list.list,Option($toleranceExpression.expr),Option($defaultExpression.expr)),$terminal.terminal_aspect)
- 					}
+ 				{
+ 					$quantityDecl = if (across!=null) new BranchQuantityDeclaration($QUANTITY,($identifier_list.list,Option($toleranceExpression.expr),Option($defaultExpression.expr)),$ams_through_aspect.through_aspect,$terminal.terminal_aspect)
+ 							else new BranchQuantityDeclaration($QUANTITY,None,($identifier_list.list,Option($toleranceExpression.expr),Option($defaultExpression.expr)),$terminal.terminal_aspect)
+ 				}
  			| COLON subtype_indication 
 	 			(
 	 			(VAR_ASSIGN expr=expression)? {$quantityDecl=new FreeQuantityDeclaration($QUANTITY,$identifier_list.list,$subtype_indication.subType,$expr.expr)}
 				| ams_source_aspect {$quantityDecl=new SourceQuantityDeclaration($QUANTITY,$identifier_list.list,$subtype_indication.subType,$ams_source_aspect.source_aspect)}
 				)
-			)
-		)SEMICOLON;	
+		  )
+		) SEMICOLON;	
 	
 ams_terminal_aspect returns [(Name,Option[Name\]) terminal_aspect] :
 	plus_terminal_name=name (TO minus_terminal_name=name)?
@@ -736,7 +737,7 @@ ams_nature_mark returns [SelectedName typeName] :
 protected_type_declaration[Identifier id,Position pos] returns [ProtectedTypeDeclaration protectedTypeDecl]
 @init{
 	val items=new Buffer[DeclarativeItem]()
-	val syncMessage="protected_type declarative item"
+	val syncMessage="protected type declarative item"
 } :
 	PROTECTED
 		sync[syncMessage] (protected_type_declarative_item{items += $protected_type_declarative_item.item} sync[syncMessage])*
@@ -752,7 +753,7 @@ protected_type_declarative_item returns [DeclarativeItem item=NoNode] :
 protected_type_body[Identifier id,Position pos] returns [ProtectedTypeBodyDeclaration protectedTypeBody]
 @init{
 	val items=new Buffer[DeclarativeItem]()
-	val syncMessage="protected type declarative item"
+	val syncMessage="protected type body declarative item"
 } :
 	PROTECTED BODY
 		sync[syncMessage] (protected_type_body_declarative_item{items += $protected_type_body_declarative_item.item} sync[syncMessage])*
@@ -875,7 +876,7 @@ generic_map_aspect returns [AssociationList list] :
 port_map_aspect returns [AssociationList list] :
 	PORT MAP LPAREN association_list RPAREN {$list=$association_list.list};
 					
-block_statement[Identifier label] returns [BlockStatement blockStmt]
+block_statement[Identifier label] returns [ConcurrentStatement blockStmt=NoNode]
 @init{
 	val declItems=new Buffer[DeclarativeItem]()
 	val syncMessage="block declarative item"
@@ -924,7 +925,7 @@ block_declarative_item returns [DeclarativeItem item=NoNode] :
 		| ams_terminal_declaration {$item=$ams_terminal_declaration.terminalDecl}
 	);
 		
-process_statement[Identifier label,Boolean postponed] returns [ProcessStatement processStmt]
+process_statement[Identifier label,Boolean postponed] returns [ConcurrentStatement processStmt=NoNode]
 @init{
 	val declItem=new Buffer[DeclarativeItem]()
 	val syncMessage="process declarative item"
@@ -955,19 +956,19 @@ process_declarative_item returns [DeclarativeItem item=NoNode] :
 	| group_template_declaration {$item=$group_template_declaration.groupTemplateDecl}
 	| group_declaration {$item=$group_declaration.groupDecl};
 		
-concurrent_procedure_call_statement[Identifier label,Boolean postponed] returns [ConcurrentProcedureCallStatement procedureCallStmt] :
+concurrent_procedure_call_statement[Identifier label,Boolean postponed] returns [ConcurrentStatement procedureCallStmt=NoNode] :
 	selected_name (LPAREN association_list RPAREN)? SEMICOLON
 	{$procedureCallStmt=new ConcurrentProcedureCallStatement($label,$postponed,$selected_name.name_,$association_list.list)};
 		
-concurrent_assertion_statement[Identifier label,Boolean postponed] returns [ConcurrentAssertionStatement assertStmt] :
+concurrent_assertion_statement[Identifier label,Boolean postponed] returns [ConcurrentStatement assertStmt=NoNode] :
 	ASSERT condition  (REPORT report_expression=expression)? (SEVERITY severity_expression=expression)? SEMICOLON
 	{$assertStmt=new ConcurrentAssertionStatement($ASSERT,$label,$postponed,$condition.con,$report_expression.expr,$severity_expression.expr)};
 							
-concurrent_signal_assignment_statement[Identifier label,Boolean postponed] returns [ConcurrentSignalAssignmentStatement concurrentSignalAssignStmt] :
+concurrent_signal_assignment_statement[Identifier label,Boolean postponed] returns [ConcurrentStatement concurrentSignalAssignStmt=NoNode] :
 	concurrent_conditional_signal_assignment[$label,$postponed]{$concurrentSignalAssignStmt=$concurrent_conditional_signal_assignment.signalAssignment}
 	| concurrent_selected_signal_assignment[$label,$postponed]{$concurrentSignalAssignStmt=$concurrent_selected_signal_assignment.signalAssignment};
 
-concurrent_conditional_signal_assignment[Identifier label,Boolean postponed] returns [ConcurrentConditionalSignalAssignment signalAssignment]
+concurrent_conditional_signal_assignment[Identifier label,Boolean postponed] returns [ConcurrentStatement signalAssignment=NoNode]
 @init{
  	val elements=new Buffer[ConcurrentConditionalSignalAssignment.When]()
 } :
@@ -978,7 +979,7 @@ concurrent_conditional_signal_assignment[Identifier label,Boolean postponed] ret
 conditional_waveforms[Buffer[ConcurrentConditionalSignalAssignment.When\] elements] :
 	waveform ( WHEN condition ( ELSE conditional_waveforms[elements] )? )? {elements += new ConcurrentConditionalSignalAssignment.When($waveform.waveForm,$condition.con)};
  		
-concurrent_selected_signal_assignment[Identifier label,Boolean postponed] returns [ConcurrentSelectedSignalAssignment signalAssignment] :
+concurrent_selected_signal_assignment[Identifier label,Boolean postponed] returns [ConcurrentStatement signalAssignment=NoNode] :
 	WITH expression SELECT ({vhdl2008}?=>QMARK)?
 		target LEQ GUARDED? delay_mechanism? selected_waveforms SEMICOLON
 		{$signalAssignment=new ConcurrentSelectedSignalAssignment($WITH,$label,$postponed,$expression.expr,$QMARK!=null,$target.target_,$GUARDED!=null,$delay_mechanism.mechanism,$selected_waveforms.waveforms)};
@@ -997,7 +998,7 @@ target returns [Target target_] :
 	name {$target_ = new Target(Left($name.name_))}
 	| aggregate {$target_ = new Target(Right($aggregate.aggregate_))};	
   		
-component_instantiation_statement[Identifier label] returns [ComponentInstantiationStatement stmt]
+component_instantiation_statement[Identifier label] returns [ConcurrentStatement stmt=NoNode]
 @init{
 	var componentType:ComponentInstantiationStatement.ComponentType.Value=null
 	val position=toPosition(input.LT(1))
@@ -1011,18 +1012,18 @@ component_instantiation_statement[Identifier label] returns [ComponentInstantiat
 	port_map_aspect? SEMICOLON
 	{$stmt=new ComponentInstantiationStatement(position,$label,componentType,$n.name_,$architecture_identifier.id,$generic_map_aspect.list,$port_map_aspect.list)};
 		
-generate_statement[Identifier label] returns [ConcurrentStatement generateStmt] :
+generate_statement[Identifier label] returns [ConcurrentStatement generateStmt=NoNode] :
 	for_generate_statement[$label] {$generateStmt=$for_generate_statement.forGenerateStmt}
 	| if_generate_statement[$label] {$generateStmt=$if_generate_statement.ifGenerateStmt}
 	| {vhdl2008}?=>v2008_case_generate_statement[$label] {$generateStmt=$v2008_case_generate_statement.caseGenerateStmt};
 	
-for_generate_statement[Identifier label] returns [ForGenerateStatement forGenerateStmt] :
+for_generate_statement[Identifier label] returns [ConcurrentStatement forGenerateStmt=NoNode] :
 	FOR loopIdentifier=identifier IN discrete_range GENERATE
 		body=generate_statement_body
 	END GENERATE end_generate_label=identifier? SEMICOLON
 	{$forGenerateStmt=new ForGenerateStatement($FOR,$label,$loopIdentifier.id,$discrete_range.discreteRange,$body.declarativeItems,$body.statementList,$body.endLabel,$end_generate_label.id)};
 		
-if_generate_statement[Identifier label] returns [IfGenerateStatement ifGenerateStmt]
+if_generate_statement[Identifier label] returns [ConcurrentStatement ifGenerateStmt=NoNode]
 @init{
 	val ifList=new Buffer[IfGenerateStatement.IfThenPart]()
 	var elsePart:Option[IfGenerateStatement.IfThenPart]=None
@@ -1040,7 +1041,7 @@ if_generate_statement[Identifier label] returns [IfGenerateStatement ifGenerateS
 	END GENERATE identifier? SEMICOLON
 	{$ifGenerateStmt=new IfGenerateStatement($IF,$label,ifList.result,elsePart,$identifier.id)};
 	
-v2008_case_generate_statement[Identifier label] returns [CaseGenerateStatement caseGenerateStmt] 
+v2008_case_generate_statement[Identifier label] returns [ConcurrentStatement caseGenerateStmt=NoNode] 
 @init{
 	val alternatives=new Buffer[CaseGenerateStatement.When]()
 } :
@@ -1066,7 +1067,7 @@ generate_statement_body returns [Seq[DeclarativeItem\] declarativeItems=Seq(),Se
 		$endLabel=$identifier.id
 	};
 
-ams_concurrent_break_statement[Identifier label] returns [ConcurrentBreakStatement breakStmt] :
+ams_concurrent_break_statement[Identifier label] returns [ConcurrentStatement breakStmt=NoNode] :
 	BREAK ams_break_element_list? (ON name_list)? (WHEN expression)? SEMICOLON
 	{$breakStmt=new ConcurrentBreakStatement($BREAK,$label,$ams_break_element_list.list,$name_list.list,$expression.expr)};
 
@@ -1085,11 +1086,11 @@ ams_simultaneous_statement_list returns [Seq[SimultaneousStatement\] list=Seq()]
 	(label_colon? ams_simultaneous_statement[$label_colon.label]{tmpList += $ams_simultaneous_statement.stmt})*
 	{$list=tmpList.result};
 			
-ams_simple_simultaneous_statement[Identifier label] returns [SimpleSimultaneousStatement stmt] :
+ams_simple_simultaneous_statement[Identifier label] returns [SimultaneousStatement stmt=NoNode] :
 	e1=simple_expression AMS_ASSIGN e2=simple_expression (TOLERANCE tolerance_expression=expression)? SEMICOLON
 	{$stmt=new SimpleSimultaneousStatement($label,$e1.simpleExpr,$e2.simpleExpr,$tolerance_expression.expr)};
 					
-ams_simultaneous_if_statement[Identifier label] returns [SimultaneousIfStatement ifStmt]
+ams_simultaneous_if_statement[Identifier label] returns [SimultaneousStatement ifStmt=NoNode]
 @init{
 	val ifList=new Buffer[SimultaneousIfStatement.IfUsePart]()
 } :
@@ -1104,7 +1105,7 @@ ams_simultaneous_if_statement[Identifier label] returns [SimultaneousIfStatement
 	END USE identifier? SEMICOLON
 	{$ifStmt=new SimultaneousIfStatement($IF,$label,ifList.result,$else_simultaneous_statement.list,$identifier.id)};
 						
-ams_simultaneous_case_statement[Identifier label] returns [SimultaneousCaseStatement caseStmt]
+ams_simultaneous_case_statement[Identifier label] returns [SimultaneousStatement caseStmt=NoNode]
 @init{
 	val alternatives=new Buffer[SimultaneousCaseStatement.When]()
 } :
@@ -1113,7 +1114,7 @@ ams_simultaneous_case_statement[Identifier label] returns [SimultaneousCaseState
 	END CASE identifier? SEMICOLON
 	{$caseStmt=new SimultaneousCaseStatement($caseToken,$label,$expression.expr,alternatives.result,$identifier.id)};
 		
-ams_simultaneous_procedural_statement[Identifier label] returns [SimultaneousProceduralStatement proceduralStmt]
+ams_simultaneous_procedural_statement[Identifier label] returns [SimultaneousStatement proceduralStmt=NoNode]
 @init{
 	val items=new Buffer[DeclarativeItem]()
 	val syncMessage="simultaneous procedural declarative item"
@@ -1138,7 +1139,7 @@ ams_simultaneous_procedural_declarative_item returns [DeclarativeItem item=NoNod
 	| group_template_declaration {$item=$group_template_declaration.groupTemplateDecl}
 	| group_declaration {$item=$group_declaration.groupDecl};
 	
-ams_simultaneous_null_statement[Identifier label] returns [SimultaneousNullStatement nullStmt] :
+ams_simultaneous_null_statement[Identifier label] returns [SimultaneousStatement nullStmt=NoNode] :
 	NULL SEMICOLON
 	{$nullStmt=new SimultaneousNullStatement($NULL,$label)};
 
@@ -1169,15 +1170,15 @@ sequential_statement returns [SequentialStatement stmt=NoNode]
 	| {ams}?=>ams_break_statement[$label.label] {$stmt=$ams_break_statement.breakStmt}
 	);
 	
-wait_statement[Identifier label] returns [WaitStatement waitStmt] :
+wait_statement[Identifier label] returns [SequentialStatement waitStmt=NoNode] :
 	WAIT (ON name_list)? (UNTIL condition)? (FOR expression)? SEMICOLON
 	{$waitStmt=new WaitStatement($WAIT,$label,$name_list.list,$condition.con,$expression.expr)};
 				
-assertion_statement[Identifier label] returns [AssertionStatement assertStmt] :
+assertion_statement[Identifier label] returns [SequentialStatement assertStmt=NoNode] :
 	ASSERT condition (REPORT report_expression=expression)? (SEVERITY severity_expression=expression)? SEMICOLON
 	{$assertStmt=new AssertionStatement($ASSERT,$label,$condition.con,$report_expression.expr,$severity_expression.expr)};
 			     
-report_statement[Identifier label] returns [ReportStatement reportStmt] :
+report_statement[Identifier label] returns [SequentialStatement reportStmt=NoNode] :
 	REPORT report_expression=expression (SEVERITY severity_expression=expression)? SEMICOLON
 	{$reportStmt=new ReportStatement($REPORT,$label,$report_expression.expr,$severity_expression.expr)};	
 
@@ -1186,7 +1187,7 @@ force_mode returns [InterfaceList.Mode.Value mode] :
 	| OUT {$mode=InterfaceList.Mode.OUT};
 
 v2008_conditional_expressions[Buffer[ConditionalVariableAssignment.When\] elements] :
-	expression ( WHEN condition ( ELSE v2008_conditional_expressions[$elements])? )? {$elements += new ConditionalVariableAssignment.When($expression.expr,$condition.con)};	
+	expression (WHEN condition (ELSE v2008_conditional_expressions[$elements])? )? {$elements += new ConditionalVariableAssignment.When($expression.expr,$condition.con)};
 
 v2008_selected_expression returns [SelectedVariableAssignment.When whenClause]: 
 	expression WHEN choices {whenClause = new SelectedVariableAssignment.When($expression.expr,$choices.choices_)};
@@ -1198,34 +1199,35 @@ v2008_selected_expressions returns [Seq[SelectedVariableAssignment.When\] expres
 	s1=v2008_selected_expression {elements += $s1.whenClause} (COMMA s2=v2008_selected_expression {elements += $s2.whenClause})*
 	{$expressions=elements.result};
 
-assignment_statement[Identifier label] returns [SequentialStatement assignmentStmt] :	
+assignment_statement[Identifier label] returns [SequentialStatement assignmentStmt=NoNode] :	
 	{vhdl2008}?=>(
 		     v2008_conditional_assignment[$label] {$assignmentStmt=$v2008_conditional_assignment.stmt}
 		     | v2008_selected_assignment[$label] {$assignmentStmt=$v2008_selected_assignment.stmt}
 		     )
 	| simple_assignment[$label] {$assignmentStmt=$simple_assignment.stmt};
 		
-simple_assignment[Identifier label] returns [SequentialStatement stmt] :
+simple_assignment[Identifier label] returns [SequentialStatement stmt=NoNode] :
 	target (
 		VAR_ASSIGN expression {$stmt=new SimpleVariableAssignmentStatement($VAR_ASSIGN,$label,$target.target_,$expression.expr)}
 		| LEQ delay_mechanism? waveform {$stmt=new SimpleWaveformAssignmentStatement($LEQ,$label,$target.target_,$delay_mechanism.mechanism,$waveform.waveForm)}
-	       )SEMICOLON;
+	) SEMICOLON;
 	
-v2008_conditional_assignment[Identifier label] returns [SequentialStatement stmt]
+v2008_conditional_assignment[Identifier label] returns [SequentialStatement stmt=NoNode]
 @init{
  	val waveforms=new Buffer[ConcurrentConditionalSignalAssignment.When]()
  	val expressions=new Buffer[ConditionalVariableAssignment.When]()
 } :
-	target (
-		LEQ (
-			RELEASE forceMode=force_mode? {$stmt=new SimpleReleaseAssignment($LEQ,$label,$target.target_,$forceMode.mode)}
-			| delay_mechanism? conditional_waveforms[waveforms] {$stmt=new ConditionalWaveformAssignment($LEQ,$label,$target.target_,$delay_mechanism.mechanism,waveforms.result.reverse)}
-			| FORCE forceMode=force_mode? v2008_conditional_expressions[expressions] {$stmt=new ConditionalForceAssignment($LEQ,$label,$target.target_,$forceMode.mode,expressions.result.reverse)}
+	target 
+	(
+	    LEQ (
+		    RELEASE forceMode=force_mode? {$stmt=new SimpleReleaseAssignment($LEQ,$label,$target.target_,$forceMode.mode)}
+		    | delay_mechanism? conditional_waveforms[waveforms] {$stmt=new ConditionalWaveformAssignment($LEQ,$label,$target.target_,$delay_mechanism.mechanism,waveforms.result.reverse)}
+		    | FORCE forceMode=force_mode? v2008_conditional_expressions[expressions] {$stmt=new ConditionalForceAssignment($LEQ,$label,$target.target_,$forceMode.mode,expressions.result.reverse)}
 		    )
-	        | VAR_ASSIGN v2008_conditional_expressions[expressions] {$stmt=new ConditionalVariableAssignment($VAR_ASSIGN,$label,$target.target_,expressions.result.reverse)}
-	       )SEMICOLON;
+	    | VAR_ASSIGN v2008_conditional_expressions[expressions] {$stmt=new ConditionalVariableAssignment($VAR_ASSIGN,$label,$target.target_,expressions.result.reverse)}
+	) SEMICOLON;
 		
-v2008_selected_assignment[Identifier label] returns [SequentialStatement stmt] :
+v2008_selected_assignment[Identifier label] returns [SequentialStatement stmt=NoNode] :
 	WITH expression SELECT QMARK? target 
 	(
 		LEQ (
@@ -1251,11 +1253,11 @@ waveform returns [Waveform waveForm]
 	e1=waveform_element{elements += $e1.element} (COMMA e2=waveform_element{elements += $e2.element})* {$waveForm=new Waveform(position,elements.result)}
 	| UNAFFECTED {$waveForm=new Waveform(position,Seq())};
 				
-procedure_call_statement[Identifier label] returns [ProcedureCallStatement procedureCallStmt] :
+procedure_call_statement[Identifier label] returns [SequentialStatement procedureCallStmt=NoNode] :
 	selected_name (LPAREN association_list RPAREN)? SEMICOLON
 	{$procedureCallStmt=new ProcedureCallStatement($label,$selected_name.name_,$association_list.list)};
 	
-if_statement[Identifier label] returns [IfStatement ifStmt]
+if_statement[Identifier label] returns [SequentialStatement ifStmt=NoNode]
 @init{
 	val ifList=new Buffer[IfStatement.IfThenPart]()
 } :
@@ -1270,7 +1272,7 @@ if_statement[Identifier label] returns [IfStatement ifStmt]
 	END IF identifier? SEMICOLON 
 	{$ifStmt=new IfStatement($ifToken,$label,ifList.result,$else_sequential_statement.list,$identifier.id)};
 
-case_statement[Identifier label] returns [CaseStatement caseStmt]
+case_statement[Identifier label] returns [SequentialStatement caseStmt=NoNode]
 @init{
 	val alternatives=new Buffer[CaseStatement.When]()
 } :
@@ -1283,7 +1285,7 @@ iteration_scheme returns [Either[Expression,(Identifier,DiscreteRange)\] scheme]
 	WHILE condition {$scheme=Left($condition.con)}
 	| FOR identifier IN discrete_range {$scheme=Right(($identifier.id,$discrete_range.discreteRange))};	
 			
-loop_statement[Identifier label] returns [SequentialStatement loopStmt]
+loop_statement[Identifier label] returns [SequentialStatement loopStmt=NoNode]
 @init{
 	val position=toPosition(input.LT(1))
 } :
@@ -1300,23 +1302,23 @@ loop_statement[Identifier label] returns [SequentialStatement loopStmt]
 		}
 	};
 
-next_statement[Identifier label] returns [NextStatement nextStmt] :
+next_statement[Identifier label] returns [SequentialStatement nextStmt=NoNode] :
 	NEXT identifier? (WHEN condition)? SEMICOLON 
 	{$nextStmt=new NextStatement($NEXT,$label,$identifier.id,$condition.con)};
 
-exit_statement[Identifier label] returns [ExitStatement exitStmt] :
+exit_statement[Identifier label] returns [SequentialStatement exitStmt=NoNode] :
 	EXIT identifier? (WHEN condition)? SEMICOLON 
 	{$exitStmt=new ExitStatement($EXIT,$label,$identifier.id,$condition.con)};
 
-return_statement[Identifier label] returns [ReturnStatement returnStmt] :
+return_statement[Identifier label] returns [SequentialStatement returnStmt=NoNode] :
 	RETURN expression? SEMICOLON 
 	{$returnStmt=new ReturnStatement($RETURN,$label,$expression.expr)};
 	
-null_statement[Identifier label] returns [NullStatement nullStmt] :
+null_statement[Identifier label] returns [SequentialStatement nullStmt=NoNode] :
 	NULL SEMICOLON
 	{$nullStmt=new NullStatement($NULL,$label)};
 
-ams_break_statement[Identifier label] returns [AMSBreakStatement breakStmt] :
+ams_break_statement[Identifier label] returns [SequentialStatement breakStmt=NoNode] :
 	BREAK ams_break_element_list? (WHEN expression)? SEMICOLON
 	{$breakStmt=new AMSBreakStatement($BREAK,$label,$ams_break_element_list.list,$expression.expr)};
 
@@ -1332,7 +1334,7 @@ ams_break_element returns [BreakElement breakElement] :
 	{breakElement=new BreakElement($quantity_name1.name_,$quantity_name2.name_,$expr.expr)};
 
 // B.7 Interfaces and Associations
-interface_element_generic returns [InterfaceList.AbstractInterfaceElement element] :
+interface_element_generic returns [InterfaceList.AbstractInterfaceElement element=InterfaceList.NoElement] :
 	interface_constant_declaration  {$element=$interface_constant_declaration.constElement}
 	| {vhdl2008}?=>(
 		| v2008_interface_type_declaration {$element=$v2008_interface_type_declaration.typeDecl}
@@ -1340,14 +1342,14 @@ interface_element_generic returns [InterfaceList.AbstractInterfaceElement elemen
 		| v2008_interface_package_declaration {$element=$v2008_interface_package_declaration.packageDecl}
 		);
 
-interface_element_port returns [InterfaceList.AbstractInterfaceElement element] :
+interface_element_port returns [InterfaceList.AbstractInterfaceElement element=InterfaceList.NoElement] :
 	interface_signal_declaration_port {$element=$interface_signal_declaration_port.signalElement}
 	| {ams}?=>(
 		ams_interface_terminal_declaration {$element=$ams_interface_terminal_declaration.terminalDecl}
 		| ams_interface_quantity_declaration {$element=$ams_interface_quantity_declaration.quantityDecl}
 		);
 	
-interface_element_procedure returns [InterfaceList.AbstractInterfaceElement element] :
+interface_element_procedure returns [InterfaceList.AbstractInterfaceElement element=InterfaceList.NoElement] :
 	interface_variable_or_constant_declaration  {$element=$interface_variable_or_constant_declaration.element}	
 	| interface_signal_declaration_procedure {$element=$interface_signal_declaration_procedure.signalElement}
 	| interface_file_declaration  {$element=$interface_file_declaration.fileElement}
@@ -1356,7 +1358,7 @@ interface_element_procedure returns [InterfaceList.AbstractInterfaceElement elem
 		| ams_interface_quantity_declaration {$element=$ams_interface_quantity_declaration.quantityDecl}
 		);
 		
-interface_element_function returns [InterfaceList.AbstractInterfaceElement element] :
+interface_element_function returns [InterfaceList.AbstractInterfaceElement element=InterfaceList.NoElement] :
 	interface_constant_declaration  {$element=$interface_constant_declaration.constElement}
 	| interface_signal_declaration_function {$element=$interface_signal_declaration_function.signalElement}
 	| interface_file_declaration  {$element=$interface_file_declaration.fileElement}
@@ -1379,7 +1381,7 @@ parameter_interface_list_function returns [Seq[InterfaceList.AbstractInterfaceEl
 	e1=interface_element_function {elements += $e1.element} (SEMICOLON e2=interface_element_function {elements += $e2.element})* 
 	{$list=elements.result};
 
-interface_variable_or_constant_declaration returns [InterfaceList.AbstractInterfaceElement element] :
+interface_variable_or_constant_declaration returns [InterfaceList.AbstractInterfaceElement element=InterfaceList.NoElement] :
 	VARIABLE identifier_list COLON interface_mode? subtype_indication (VAR_ASSIGN expression)?
 		{$element=new InterfaceList.InterfaceVariableDeclaration($identifier_list.list,$interface_mode.mode,$subtype_indication.subType,$expression.expr)}
 	| CONSTANT identifier_list COLON IN? subtype_indication (VAR_ASSIGN expression)? 
@@ -1391,19 +1393,19 @@ interface_variable_or_constant_declaration returns [InterfaceList.AbstractInterf
 			 else new InterfaceList.InterfaceConstantDeclaration($identifier_list.list,$subtype_indication.subType,$expression.expr)			 
 		};
 					
-interface_constant_declaration returns[InterfaceList.InterfaceConstantDeclaration constElement] :
+interface_constant_declaration returns[InterfaceList.AbstractInterfaceElement constElement=InterfaceList.NoElement] :
 	CONSTANT? identifier_list COLON IN? subtype_indication (VAR_ASSIGN expression)? 
 	{$constElement=new InterfaceList.InterfaceConstantDeclaration($identifier_list.list,$subtype_indication.subType,$expression.expr)};
 
-interface_signal_declaration_port returns [InterfaceList.InterfaceSignalDeclaration signalElement] :
+interface_signal_declaration_port returns [InterfaceList.AbstractInterfaceElement signalElement=InterfaceList.NoElement] :
 	SIGNAL? identifier_list COLON interface_mode? subtype_indication BUS? (VAR_ASSIGN expression)?
 	{$signalElement=new InterfaceList.InterfaceSignalDeclaration($identifier_list.list,$interface_mode.mode,$subtype_indication.subType,$BUS!=null,$expression.expr)};
 	
-interface_signal_declaration_procedure returns [InterfaceList.InterfaceSignalDeclaration signalElement] :
+interface_signal_declaration_procedure returns [InterfaceList.AbstractInterfaceElement signalElement=InterfaceList.NoElement] :
 	SIGNAL identifier_list COLON interface_mode? subtype_indication BUS? (VAR_ASSIGN expression)?
 	{$signalElement=new InterfaceList.InterfaceSignalDeclaration($identifier_list.list,$interface_mode.mode,$subtype_indication.subType,$BUS!=null,$expression.expr)};
 		
-interface_signal_declaration_function returns [InterfaceList.InterfaceSignalDeclaration signalElement] :
+interface_signal_declaration_function returns [InterfaceList.AbstractInterfaceElement signalElement=InterfaceList.NoElement] :
 	SIGNAL identifier_list COLON IN? subtype_indication BUS? (VAR_ASSIGN expression)?
 	{$signalElement=new InterfaceList.InterfaceSignalDeclaration($identifier_list.list,InterfaceList.Mode.IN,$subtype_indication.subType,$BUS!=null,$expression.expr)};
 	
@@ -1414,28 +1416,28 @@ interface_mode returns [InterfaceList.Mode.Value mode] :
 	| BUFFER {$mode=InterfaceList.Mode.BUFFER}
 	| LINKAGE {$mode=InterfaceList.Mode.LINKAGE};
 
-interface_file_declaration returns [InterfaceList.InterfaceFileDeclaration fileElement] :
+interface_file_declaration returns [InterfaceList.AbstractInterfaceElement fileElement=InterfaceList.NoElement] :
 	FILE identifier_list COLON subtype_indication
 	{$fileElement=new InterfaceList.InterfaceFileDeclaration($identifier_list.list,$subtype_indication.subType)};
 		
-ams_interface_terminal_declaration returns [InterfaceList.InterfaceTerminalDeclaration terminalDecl] :
+ams_interface_terminal_declaration returns [InterfaceList.AbstractInterfaceElement terminalDecl=InterfaceList.NoElement] :
 	TERMINAL identifier_list COLON ams_subnature_indication
 	{$terminalDecl=new InterfaceList.InterfaceTerminalDeclaration($identifier_list.list,$ams_subnature_indication.subNature)};
 
-ams_interface_quantity_declaration returns [InterfaceList.InterfaceQuantityDeclaration quantityDecl] :
+ams_interface_quantity_declaration returns [InterfaceList.AbstractInterfaceElement quantityDecl=InterfaceList.NoElement] :
 	QUANTITY identifier_list COLON (IN|out=OUT)? subtype_indication (VAR_ASSIGN expression)?
 	{
 		val mode = if ($out!=null) InterfaceList.Mode.OUT else InterfaceList.Mode.IN
 		$quantityDecl=new InterfaceList.InterfaceQuantityDeclaration($identifier_list.list,mode,$subtype_indication.subType,$expression.expr)
 	};
 	
-v2008_interface_type_declaration returns [InterfaceList.InterfaceTypeDeclaration typeDecl] : 
+v2008_interface_type_declaration returns [InterfaceList.AbstractInterfaceElement typeDecl=InterfaceList.NoElement] : 
 	TYPE identifier{$typeDecl=new InterfaceList.InterfaceTypeDeclaration($identifier.id)};
 
 v2008_interface_subprogram_default returns [Option[SelectedName\] default] : 
 	IS (selected_name {$default=Option($selected_name.name_)}| BOX{$default=None});
 
-v2008_interface_subprogram_declaration returns [InterfaceList.AbstractInterfaceElement subprogramDecl]: 
+v2008_interface_subprogram_declaration returns [InterfaceList.AbstractInterfaceElement subprogramDecl=InterfaceList.NoElement]: 
 		PROCEDURE identifier
 			(PARAMETER? LPAREN parameter_interface_list_procedure RPAREN)? v2008_interface_subprogram_default?
 		{$subprogramDecl=new InterfaceList.InterfaceProcedureDeclaration($identifier.id,$parameter_interface_list_procedure.list,$v2008_interface_subprogram_default.default)}
@@ -1443,7 +1445,7 @@ v2008_interface_subprogram_declaration returns [InterfaceList.AbstractInterfaceE
 			(PARAMETER? LPAREN parameter_interface_list_function RPAREN)? RETURN type_mark v2008_interface_subprogram_default?
 		{$subprogramDecl=new InterfaceList.InterfaceFunctionDeclaration($impure==null,$designator.id,$parameter_interface_list_function.list,$type_mark.typeName,$v2008_interface_subprogram_default.default)};
 		
-v2008_interface_package_declaration returns [InterfaceList.InterfacePackageDeclaration packageDecl] :
+v2008_interface_package_declaration returns [InterfaceList.AbstractInterfaceElement packageDecl=InterfaceList.NoElement] :
 	PACKAGE identifier IS NEW selected_name
 		GENERIC MAP LPAREN (association_list | BOX | DEFAULT) RPAREN
 	{
@@ -1475,7 +1477,7 @@ actual_part returns [Either[Expression,Identifier\] actual_part_ ] :
 	| OPEN {$actual_part_ = Right(toIdentifier($OPEN))};
 			
 // B.8 Expression and Names
-condition returns [Expression con] :
+condition returns [Expression con=NoExpression] :
 	expression {$con=$expression.expr};  
 
 expression returns [Expression expr]
@@ -1483,7 +1485,7 @@ expression returns [Expression expr]
 	 logical_expression {$expr=$logical_expression.expr}
 	 | {vhdl2008}?=> CONDITION_OPERATOR primary {$expr=new ConditionExpression($CONDITION_OPERATOR,$primary.obj)};	
 
-logical_expression returns [Expression expr]
+logical_expression returns [Expression expr=NoExpression]
 @after{if ($expr==null) $expr=NoExpression} :
 	r1=relation (	   
 	   NAND r2=relation {$expr=new LogicalExpression($NAND,$r1.rel,LogicalExpression.Operator.NAND,$r2.rel)}
@@ -1502,7 +1504,7 @@ logical_operator returns [LogicalExpression.Operator.Value logOp,Position pos]
 	//NAND and NOR are handled in expression
 	;
 
-relation returns [Expression rel]
+relation returns [Expression rel=NoExpression]
 @after{if ($rel==null) $rel=NoExpression} :
 	s1=shift_expression {$rel=$s1.shiftExpr}
 	(relational_operator s2=shift_expression {$rel=new Relation($relational_operator.pos,$s1.shiftExpr,$relational_operator.relOp,$s2.shiftExpr)})?;
@@ -1525,7 +1527,7 @@ relational_operator returns [Relation.Operator.Value relOp,Position pos]
 			| MGEQ {$relOp=Relation.Operator.MGEQ}
 			);
 	
-shift_expression returns [Expression shiftExpr]
+shift_expression returns [Expression shiftExpr=NoExpression]
 @after{if ($shiftExpr==null) $shiftExpr=NoExpression} :
 	s1=simple_expression { $shiftExpr=$s1.simpleExpr}
 	(shift_operator s2=simple_expression {$shiftExpr=new ShiftExpression($shift_operator.pos,$s1.simpleExpr,$shift_operator.shiftOp,$s2.simpleExpr)})?;
@@ -1541,7 +1543,7 @@ shift_operator returns [ShiftExpression.Operator.Value shiftOp,Position pos]
 	| ROL {$shiftOp=ShiftExpression.Operator.ROL}
 	| ROR {$shiftOp=ShiftExpression.Operator.ROR};
 		
-simple_expression returns [Expression simpleExpr]
+simple_expression returns [Expression simpleExpr=NoExpression]
 @after{if ($simpleExpr==null) $simpleExpr=NoExpression} :
 	s=sign? t1=term
 	{simpleExpr=if (s!=null) new SimpleExpression($s.pos,$s.signOp,$t1.term_,None,None) else $t1.term_}
@@ -1571,7 +1573,7 @@ multiplying_operator returns [Term.Operator.Value mulOp,Position pos]
 	| MOD {$mulOp=Term.Operator.MOD}
 	| REM {$mulOp=Term.Operator.REM};
 
-term returns [Expression term_]
+term returns [Expression term_=NoExpression]
 @after{if ($term_ ==null) $term_ = NoExpression} :
 	f1=factor {$term_ = $f1.factor_} 
 	(multiplying_operator f2=factor {$term_ = new Term($multiplying_operator.pos,$term_,$multiplying_operator.mulOp,$f2.factor_)})*;
@@ -1590,12 +1592,12 @@ factor_operator returns [Factor.Operator.Value factorOp,Position pos]
 			| XNOR {$factorOp=Factor.Operator.XNOR}
 			);
 	
-factor returns [Expression factor_]
+factor returns [Expression factor_=NoExpression]
 @after{if ($factor_ ==null) $factor_ = NoExpression} :
 	p1=primary{$factor_ = $p1.obj}(DOUBLESTAR p2=primary {$factor_ = new Factor($DOUBLESTAR,$p1.obj,Factor.Operator.POW,$p2.obj)})?
 	| factor_operator primary {$factor_ = new Factor($factor_operator.pos,$primary.obj,$factor_operator.factorOp)};
 
-primary returns [Expression obj]
+primary returns [Expression obj=NoExpression]
 @after{if ($obj==null) $obj=NoExpression} :
 	selected_name qualified_expression[$selected_name.name_] {$obj=$qualified_expression.expr}
 	| name {$obj=$name.name_}
@@ -1603,13 +1605,13 @@ primary returns [Expression obj]
 	| allocator {$obj=$allocator.newExpression}
 	| aggregate {$obj=$aggregate.aggregate_}; //LPAREN expression RPAREN handled by aggregate
 
-allocator returns [Expression newExpression] :
+allocator returns [Expression newExpression=NoExpression] :
 	NEW selected_name (
 		qualified_expression[$selected_name.name_] {$newExpression=new NewExpression($NEW,Left($qualified_expression.expr))}
 	 	| index_constraint? {$newExpression=new NewExpression($NEW,Right(new SubTypeIndication(None,$selected_name.name_,if ($index_constraint.ranges==null) None else Right($index_constraint.ranges),None)))}
 	 	);
 	
-qualified_expression[SelectedName typeName] returns [QualifiedExpression expr] :
+qualified_expression[SelectedName typeName] returns [Expression expr=NoExpression] :
 	APOSTROPHE aggregate
 	{$expr=new QualifiedExpression(typeName,$aggregate.aggregate_)};
 
@@ -1624,8 +1626,8 @@ selected_name returns [SelectedName name_]
 @init{
 	val parts=new Buffer[Identifier]()
 } :
-	name_prefix ( name_selected_part {parts += $name_selected_part.part.identifier})*
-	{$name_ =new SelectedName($name_prefix.id +: parts.result)};
+	name_prefix (name_selected_part {parts += $name_selected_part.part.identifier})*
+	{$name_ =new SelectedName(if ($name_prefix.id!=Identifier.NoIdentifier) $name_prefix.id +: parts.result else Seq())};
 
 name_list returns [Seq[Name\] list=Seq()]
 @init{
@@ -1693,7 +1695,7 @@ v2008_pathname_element :
 v2008_package_pathname :
 	AT library_identifier=identifier DOT (package_identifier=identifier DOT)* object_identifier=identifier;
 	
-literal returns [Expression literal_]
+literal returns [Expression literal_=NoExpression]
 @init{
 	var literalType:Literal.Type.Value=null
 	val position=toPosition(input.LT(1))

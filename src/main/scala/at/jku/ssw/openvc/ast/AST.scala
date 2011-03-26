@@ -264,6 +264,8 @@ object InterfaceList {
 
   sealed trait AbstractInterfaceElement
 
+  case object NoElement extends AbstractInterfaceElement
+  
   abstract sealed class InterfaceObjectDeclaration extends AbstractInterfaceElement with Locatable {
     val identifiers: Seq[Identifier]
     val expression: Option[Expression]
