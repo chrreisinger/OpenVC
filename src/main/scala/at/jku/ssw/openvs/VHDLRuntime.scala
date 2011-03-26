@@ -64,10 +64,12 @@ object VHDLRuntime {
     def ascending(dim: Int): Boolean
   }
 
-  final class RuntimeArray1D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](val data: Array[A], left: Int, right: Int) extends ArrayType {
+  final class RuntimeArray1D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](val data: Array[A], range: Range.Inclusive) extends ArrayType {
 
     def outOfRange(dim: Int) = throw new VHDLRuntimeException("dimension:" + dim + " is invalid in a one dimensional array")
 
+    val left: Int = range.start
+    val right: Int = range.end
     val isAscending = left < right
 
     @throws(classOf[VHDLRuntimeException])
@@ -131,7 +133,12 @@ object VHDLRuntime {
   }
 
   final class RuntimeArray2D[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A]
-  (val data: Array[Array[A]], private[this] val dim1Left: Int, private[this] val dim1Right: Int, private[this] val dim2Left: Int, private[this] val dim2Right: Int) extends ArrayType {
+  (val data: Array[Array[A]], range1: Range.Inclusive, range2: Range.Inclusive) extends ArrayType {
+
+    private[this] val dim1Left = range1.start
+    private[this] val dim1Right = range1.end
+    private[this] val dim2Left = range2.start
+    private[this] val dim2Right = range2.end
 
     def outOfRange(dim: Int) = throw new VHDLRuntimeException("dimension:" + dim + " is out of range 1 to 2")
 
@@ -381,25 +388,29 @@ object VHDLRuntime {
     return if ((mod < 0 && y > 0) || (mod > 0 && y < 0)) mod + y else mod
   }
 
-  def createEmptyRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A: ClassManifest](range: Range.Inclusive) =
-    new RuntimeArray1D(Array.ofDim[A](range.length), range.start, range.end)
+  def createRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](other: RuntimeArray1D[A], range: Range.Inclusive) =
+    new RuntimeArray1D(other.data, range)
 
-  def createRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](range: Range.Inclusive, other: RuntimeArray1D[A]) =
-    new RuntimeArray1D(other.data, range.start, range.end)
+  def createRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](other: Array[A], range: Range.Inclusive) =
+    new RuntimeArray1D(other, range)
 
-  def createRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](range: Range.Inclusive, other: Array[A]) =
-    new RuntimeArray1D(other, range.start, range.end)
+  def createRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](other: RuntimeArray2D[A], range1: Range.Inclusive, range2: Range.Inclusive) =
+    new RuntimeArray2D(other.data, range1, range2)
 
-  def createEmptyRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A: ClassManifest](range1: Range.Inclusive, range2: Range.Inclusive) =
-    new RuntimeArray2D(Array.ofDim[A](range1.length, range2.length), range1.start, range1.end, range2.start, range2.end)
+  def createRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](other: Array[Array[A]], range1: Range.Inclusive, range2: Range.Inclusive) =
+    new RuntimeArray2D(other, range1, range2)
 
-  def createRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](range1: Range.Inclusive, range2: Range.Inclusive, other: RuntimeArray2D[A]) =
-    new RuntimeArray2D(other.data, range1.start, range1.end, range2.start, range2.end)
-
-  def createRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](range1: Range.Inclusive, range2: Range.Inclusive, other: Array[Array[A]]) =
-    new RuntimeArray2D(other, range1.start, range1.end, range2.start, range2.end)
-
-  def getArrayIndex1D(index: Int, left: Int, right: Int): Int = if (left < right) index - left else left - index
+  def createRuntimeArrayFromAggregate[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A: ClassManifest](range: Range.Inclusive, values: Array[A], choices: Array[(AnyRef, A)], defaultValue: A) = {
+    val array = fill(range.size, defaultValue)
+    /*TODO Array.copy(values, 0, array, 0, values.length)
+    for (choice <- choices) {
+      choice._1 match {
+        case range: Range.Inclusive => java.util.Arrays.fill(array, range.start, range.end, choice._2)
+        case i: Int => array(i) = choice._2
+      }
+    }*/
+    new RuntimeArray1D(array, range)
+  }
 
   def fill[A: ClassManifest](n: Int, clazz: Class[A]) = Array.tabulate(n)(i => clazz.newInstance)
 

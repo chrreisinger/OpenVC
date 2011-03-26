@@ -140,8 +140,6 @@ object ByteCodeGenerator {
       if (enumeration == SymbolTable.booleanType || enumeration == SymbolTable.bitType) "Z"
       else if (enumeration.elements.size <= Byte.MaxValue) "B"
       else "C"
-    //case arrayType: ConstrainedArrayType => ("[" * arrayType.dimensions.size) + getJVMDataType(arrayType.elementType)
-    //case _: UnconstrainedArrayType => "L" + getJVMName(dataType) + ";"
     case _: ArrayType => "L" + getJVMName(dataType) + ";"
     case hasOwner: HasOwner => "L" + hasOwner.implementationName + ";" //handles RecordType and ProtectedType
     case _: FileType | _: RangeType => "L" + getJVMName(dataType) + ";"
@@ -334,26 +332,13 @@ object ByteCodeGenerator {
             import mv._
             loadSymbol(symbol)
             (symbol.dataType: @unchecked) match {
-              case constrainedArrayType: ConstrainedArrayType =>
-                for (((expr, i), dim) <- indexes.zipWithIndex.zip(constrainedArrayType.dimensions)) {
-                  acceptExpressionInner(expr, innerContext)
-                  if (dim.from != 0) {
-                    pushInt(dim.from)
-                    pushInt(dim.to)
-                    INVOKESTATIC(RUNTIME, "getArrayIndex1D", "(III)I")
-                  }
-                  indexes.size - 1 - i match {
-                    case 0 => arrayLoadInstruction(constrainedArrayType.elementType)
-                    case _ => AALOAD()
-                  }
-                }
-              case unconstrainedArrayType: UnconstrainedArrayType =>
+              case arrayType: ArrayType =>
                 indexes.foreach(acceptExpressionInner(_, innerContext))
-                unconstrainedArrayType.elementType match {
+                arrayType.elementType match {
                   case _: RecordType =>
                     INVOKEVIRTUAL(getJVMName(symbol), "getValue", "(" + ("I" * indexes.size) + ")" + "Ljava/lang/Object;")
-                    CHECKCAST(getJVMName(unconstrainedArrayType.elementType))
-                  case _ => INVOKEVIRTUAL(getJVMName(symbol), "getValue", "(" + ("I" * indexes.size) + ")" + getJVMDataType(unconstrainedArrayType.elementType))
+                    CHECKCAST(getJVMName(arrayType.elementType))
+                  case _ => INVOKEVIRTUAL(getJVMName(symbol), "getValue", "(" + ("I" * indexes.size) + ")" + getJVMDataType(arrayType.elementType))
                 }
             }
             expressionOption.foreach(acceptExpressionInner(_, innerContext))
@@ -438,20 +423,25 @@ object ByteCodeGenerator {
         import mv._
         (aggregate.dataType: @unchecked) match {
           case arrayType: ConstrainedArrayType =>
-            pushInt(aggregate.expressions.size)
-            arrayType.dimensions.size match {
-              case 1 => arrayType.elementType match {
-                case scalarType: ScalarType => NEWARRAY(getJVMArrayType(scalarType))
-                case dataType => ANEWARRAY(getJVMName(dataType))
-              }
-              case size => ANEWARRAY(("[" * (size - 1)) + getJVMDataType(arrayType.elementType))
+            if (aggregate.elements.exists(_.choices.isDefined)) {
+              error("not implemented")
             }
-            for ((expr, i) <- aggregate.expressions.zipWithIndex) {
-              DUP
-              pushInt(i)
-              acceptExpression(expr)
-              if (arrayType.dimensions.size == 1) arrayStoreInstruction(arrayType.elementType)
-              else AASTORE
+            else {
+              pushInt(aggregate.expressions.size)
+              arrayType.dimensions.size match {
+                case 1 => arrayType.elementType match {
+                  case scalarType: ScalarType => NEWARRAY(getJVMArrayType(scalarType))
+                  case dataType => ANEWARRAY(getJVMName(dataType))
+                }
+                case size => ANEWARRAY(("[" * (size - 1)) + getJVMDataType(arrayType.elementType))
+              }
+              for ((expr, i) <- aggregate.expressions.zipWithIndex) {
+                DUP
+                pushInt(i)
+                acceptExpression(expr)
+                if (arrayType.dimensions.size == 1) arrayStoreInstruction(arrayType.elementType)
+                else AASTORE
+              }
             }
           case recordType: RecordType =>
             NEW(recordType.implementationName)
@@ -1185,11 +1175,11 @@ object ByteCodeGenerator {
           case Right(discreteRanges) =>
             import context._
             import mv._
-            discreteRanges.foreach(loadDiscreteRange)
             acceptExpression(aliasDeclaration.name)
+            discreteRanges.foreach(loadDiscreteRange)
             val arrayType = subType.dataType.asInstanceOf[ArrayType]
             INVOKESTATIC(RUNTIME, "createRuntimeArray$" + getScalaSpecializedMethodSuffix(arrayType.elementType),
-              "(" + (ci(classOf[scala.Range.Inclusive]) * arrayType.dimensions.size) + getJVMDataType(arrayType) + ")" + getJVMDataType(arrayType))
+              "(" + getJVMDataType(arrayType) + (ci(classOf[scala.Range.Inclusive]) * arrayType.dimensions.size) + ")" + getJVMDataType(arrayType))
             ASTORE(aliasDeclaration.symbol.index)
           case _ => error("not possible")
         }
@@ -1381,26 +1371,13 @@ object ByteCodeGenerator {
         case ArrayAccessExpression(symbol, indexes, elementType, Some(expression)) =>
           loadSymbol(symbol)
           (symbol.dataType: @unchecked) match {
-            case constraintArray: ConstrainedArrayType =>
-              for (((expr, i), dim) <- indexes.zipWithIndex.zip(constraintArray.dimensions)) {
-                acceptExpression(expr)
-                if (dim.from != 0) {
-                  pushInt(dim.from)
-                  pushInt(dim.to)
-                  INVOKESTATIC(RUNTIME, "getArrayIndex1D", "(III)I")
-                }
-                indexes.size - 1 - i match {
-                  case 0 => arrayLoadInstruction(constraintArray.elementType)
-                  case _ => AALOAD()
-                }
-              }
-            case unconstrainedArrayType: UnconstrainedArrayType =>
+            case arrayType: ArrayType =>
               indexes.foreach(acceptExpression(_))
-              unconstrainedArrayType.elementType match {
+              arrayType.elementType match {
                 case _: RecordType =>
                   INVOKEVIRTUAL(getJVMName(symbol), "getValue", "(" + ("I" * indexes.size) + ")" + "Ljava/lang/Object;")
-                  CHECKCAST(getJVMName(unconstrainedArrayType.elementType))
-                case _ => INVOKEVIRTUAL(getJVMName(symbol), "getValue", "(" + ("I" * indexes.size) + ")" + getJVMDataType(unconstrainedArrayType.elementType))
+                  CHECKCAST(getJVMName(arrayType.elementType))
+                case _ => INVOKEVIRTUAL(getJVMName(symbol), "getValue", "(" + ("I" * indexes.size) + ")" + getJVMDataType(arrayType.elementType))
               }
           }
           loadTarget(expression)
@@ -1729,6 +1706,7 @@ object ByteCodeGenerator {
     }
 
     def loadDefaultSubTypeValue(subtype: SubTypeIndication)(implicit mv: RichMethodVisitor) {
+      loadDefaultValue(subtype.dataType)
       subtype.constraint.foreach {
         _ match {
           case Left(_) =>
@@ -1736,7 +1714,7 @@ object ByteCodeGenerator {
             discreteRanges.foreach(loadDiscreteRange)
             val arrayType = subtype.dataType.asInstanceOf[ArrayType]
             mv.INVOKESTATIC(RUNTIME, "createRuntimeArray$" + getScalaSpecializedMethodSuffix(arrayType.elementType),
-              "(" + (ci(classOf[scala.Range.Inclusive]) * arrayType.dimensions.size) + ("[" * arrayType.dimensions.size) + getJVMDataType(arrayType.elementType) + ")" + getJVMDataType(arrayType))
+              "(" + (("[" * arrayType.dimensions.size) + getJVMDataType(arrayType.elementType)) + (ci(classOf[scala.Range.Inclusive]) * arrayType.dimensions.size) + ")" + getJVMDataType(arrayType))
 
         }
       }
@@ -1746,17 +1724,6 @@ object ByteCodeGenerator {
       (dataType: @unchecked) match {
         case scalarType: ScalarType => mv.pushAnyVal(scalarType.left)
         //case enumType: EnumerationType => GETSTATIC(enumType.implementationName, enumType.elements.head.replace("\'", ""), getJVMDataType(enumType))
-        /*case constrainedArrayType: ConstrainedArrayType =>
-          constrainedArrayType.dimensions.foreach {
-            dim =>
-              pushInt((dim.from - dim.to).abs)
-              pushInt(dim.from)
-              pushInt(dim.to)
-          }
-          val name = getJVMName(constrainedArrayType)
-          INVOKESTATIC(RUNTIME, "create" + name.split("/").last, "(" + ("I" * (3 * constrainedArrayType.dimensions.size)) + ")" + "L" + name + ";")
-        case unconstrainedArrayType: UnconstrainedArrayType => ACONST_NULL //TODO
-        */
         case arrayType: ConstrainedArrayType =>
           arrayType.dimensions.foreach(dim => mv.pushInt(dim.size))
           arrayType.elementType match {
@@ -1796,7 +1763,7 @@ object ByteCodeGenerator {
           case _ => ALOAD(0)
         }
         f(symbol)
-        storeSymbol(symbol)
+        storeSymbol(symbol, NoType)
       }
     }
 
@@ -1811,9 +1778,8 @@ object ByteCodeGenerator {
               checkIsInRange(symbol.dataType)
             case None =>
               mv.createDebugLineNumberInformation(variableDeclaration)
-              loadDefaultValue(symbol.dataType)
+              loadDefaultSubTypeValue(variableDeclaration.subType)
           }
-          loadDefaultSubTypeValue(variableDeclaration.subType)
       }
     }
 

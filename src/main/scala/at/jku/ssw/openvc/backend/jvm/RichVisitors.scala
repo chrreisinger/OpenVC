@@ -443,31 +443,11 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
     })
   }
 
-  def arrayLoadInstruction(dataType: DataType) {
-    this.visitInsn((dataType: @unchecked) match {
-      case _: IntegerType => Opcodes.IALOAD
-      case _: RealType => Opcodes.DALOAD
-      case _: PhysicalType => Opcodes.LALOAD
-      case enumeration: EnumerationType =>
-        if (enumeration.elements.size <= Byte.MaxValue) Opcodes.BALOAD
-        else Opcodes.CALOAD
-      case _: ArrayType | _: RecordType | _: FileType | _: AccessType | _: ProtectedType => Opcodes.AALOAD
-    })
-  }
-
   def loadSymbol(symbol: RuntimeSymbol) {
     (symbol.owner: @unchecked) match {
       case _: ArchitectureSymbol | _: EntitySymbol | _: ProcessSymbol | _: TypeSymbol => GETFIELD(symbol.owner.implementationName, symbol.name, getJVMDataType(symbol))
       case packageSymbol: PackageSymbol => GETSTATIC(packageSymbol.implementationName, symbol.name, getJVMDataType(symbol))
       case _: SubprogramSymbol => loadInstruction(symbol.dataType, symbol.index)
-    }
-  }
-
-  def storeSymbol(symbol: RuntimeSymbol) {
-    (symbol.owner: @unchecked) match {
-      case _: ArchitectureSymbol | _: EntitySymbol | _: ProcessSymbol | _: TypeSymbol => PUTFIELD(symbol.owner.implementationName, symbol.name, getJVMDataType(symbol))
-      case packageSymbol: PackageSymbol => PUTSTATIC(packageSymbol.implementationName, symbol.name, getJVMDataType(symbol))
-      case _: SubprogramSymbol => storeInstruction(symbol)
     }
   }
 
@@ -500,10 +480,8 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
   }
 
   def pushBoolean(value: Boolean) {
-    value match {
-      case false => ICONST_0
-      case true => ICONST_1
-    }
+    if (value) ICONST_1
+    else ICONST_0
   }
 
   def pushInt(value: Int) {
