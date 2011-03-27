@@ -92,8 +92,7 @@ object SemanticAnalyzer extends Phase {
         case (et1: EnumerationType, et2: EnumerationType) => et1.baseType.getOrElse(et1) == et2.baseType.getOrElse(et2)
         case (NullType, _: AccessType) => true
         case (_: AccessType, NullType) => true
-        case (at1: ConstrainedArrayType, at2: UnconstrainedArrayType) => at1.elementType == at2.elementType && at1.dimensions.size == at2.dimensions.size
-        case (at1: UnconstrainedArrayType, at2: ConstrainedArrayType) => at1.elementType == at2.elementType && at1.dimensions.size == at2.dimensions.size
+        case (at1: ArrayType, at2: ArrayType) => at1.elementType == at2.elementType && at1.dimensions.size == at2.dimensions.size
         case _ => false
       }
     }
@@ -690,7 +689,7 @@ object SemanticAnalyzer extends Phase {
         }
         case r: RuntimeSymbol => ItemExpression(identifier.position, r)
         case _ =>
-          addError(identifier, "symbol %s unexpected here" + symbol.name)
+          addError(identifier, "symbol %s unexpected here", symbol.name)
           NoExpression
       }
       def matchParts(parts: Seq[Name.Part], symbol: Symbol): Option[Expression] = {
@@ -972,7 +971,6 @@ object SemanticAnalyzer extends Phase {
     newExpr
   }
 
-  @tailrec
   def insertSequentialStatementsLabels(context: Context, statements: Seq[SequentialStatement], owner: Symbol): Context = statements match {
     case Seq() => context
     case Seq(statement, xs@_*) =>
@@ -1069,7 +1067,7 @@ object SemanticAnalyzer extends Phase {
                         case None => subprograms
                         case Some((sub, expr)) => mapNamedElements(xs, buffer += element.copy(actualPart = Left(expr)), sub)
                       }
-                    case Right((name, part)) => error("not implemented")
+                    case Right((name, part)) => sys.error("not implemented")
                   }
                 }
                 val buffer = new Buffer[AssociationList.Element]()
@@ -1134,7 +1132,7 @@ object SemanticAnalyzer extends Phase {
                         if (map.contains(index)) addError(identifier, "parameter %s already has a value", symbol.name)
                         mapNamedElements(xs, map + (index -> checkParameterExpression(element, symbol)))
                     }
-                    case Right((name, part)) => error("not implemented")
+                    case Right((name, part)) => sys.error("not implemented")
                   }
                 }
                 val parametersMap = mapNamedElements(namedElements, mapPositionalElements(positionalElements.zip(symbols), SortedMap(), 0))
@@ -1195,7 +1193,7 @@ object SemanticAnalyzer extends Phase {
 
 
   def checkBlockConfiguration(context: Context, blockConfiguration: BlockConfiguration) {
-    error("not implemented")
+    sys.error("not implemented")
   }
 
   def checkPure(context: Context, node: ASTNode, owner: Symbol, symbol: Symbol) = owner match {
@@ -1284,6 +1282,7 @@ object SemanticAnalyzer extends Phase {
             import InterfaceList._
             import InterfaceList.Mode.{IN, LINKAGE}
             element match {
+              case InterfaceList.NoElement => (Seq(), InterfaceList.NoElement)
               case objectDecl: InterfaceObjectDeclaration =>
                 val subType = createType(context, objectDecl.subType)
                 val dataType = subType.dataType
@@ -1313,7 +1312,7 @@ object SemanticAnalyzer extends Phase {
                       case constantDeclaration: InterfaceConstantDeclaration =>
                         checkIfNotFileProtectedAccessType(objectDecl.subType, dataType)
                         (new ConstantSymbol(identifier, dataType, varIndex, owner, isOptional, isParameter = true), nextIndex)
-                      case _ => error("not implemented")
+                      case _ => sys.error("not implemented")
                     }
                     varIndex += indexChange
                     symbol
@@ -1323,7 +1322,7 @@ object SemanticAnalyzer extends Phase {
                   case signalDeclaration: InterfaceSignalDeclaration => signalDeclaration.copy(subType = subType, expression = expression)
                   case fileDeclaration: InterfaceFileDeclaration => fileDeclaration.copy(subType = subType)
                   case constantDeclaration: InterfaceConstantDeclaration => constantDeclaration.copy(subType = subType, expression = expression)
-                  case _ => error("not implemented")
+                  case _ => sys.error("not implemented")
                 }
                 (symbols, newElement)
             }
@@ -1446,10 +1445,10 @@ object SemanticAnalyzer extends Phase {
               case constSymbol: ConstantSymbol => new ConstantSymbol(identifier, dataType, index, owner)
               case varSymbol: VariableSymbol => new VariableSymbol(identifier, dataType, varSymbol.mode, index, owner)
               case signalSymbol: SignalSymbol => new SignalSymbol(identifier, dataType, signalSymbol.mode, signalSymbol.signalType, index, owner)
-              case fileSymbol: FileSymbol => error("not possible")
+              case fileSymbol: FileSymbol => sys.error("not possible")
             }
             (aliasDeclaration.copy(subType = subTypeOption, name = expr, symbol = aliasSymbol), context.insertSymbol(aliasSymbol))
-          case None => (aliasDeclaration.copy(subType = subTypeOption), context.insertSymbol(AliasExpression(aliasDeclaration.identifier, expr)))
+          case _ => (aliasDeclaration.copy(subType = subTypeOption), context.insertSymbol(AliasExpression(aliasDeclaration.identifier, expr)))
         }
       case _: LabelSymbol =>
         addError(aliasDeclaration.name, "aliases for labels are not allowed")
@@ -1670,9 +1669,9 @@ object SemanticAnalyzer extends Phase {
       choice =>
         choice.rangeOrExpressionOrIdentifier match {
           case Some(rangeOrExpressionOrIdentifier) => rangeOrExpressionOrIdentifier match {
-            case First(discreteRange) => error("not implemented")
+            case First(discreteRange) => sys.error("not implemented")
             case Second(expression) => Relation(choice.position, expression, Relation.Operator.EQ, caseStmtExpression)
-            case Third(identifier) => error("not implemented")
+            case Third(identifier) => sys.error("not implemented")
           }
           case None => NoExpression
         }
@@ -1721,9 +1720,9 @@ object SemanticAnalyzer extends Phase {
         val choices = when.choices.map {
           choice => choice.rangeOrExpressionOrIdentifier match {
             case Some(rangeOrExpressionOrIdentifier) => rangeOrExpressionOrIdentifier match {
-              case First(range) => error("not implemented")
+              case First(range) => sys.error("not implemented")
               case Second(expression) => new Choices.Choice(position = choice.position, Some(Second(checkExpression(context, expression, caseStmtExpression.dataType))))
-              case Third(identifier) => error("not implemented")
+              case Third(identifier) => sys.error("not implemented")
             }
             case None =>
               if (when ne lastAlternative) {
@@ -1753,7 +1752,7 @@ object SemanticAnalyzer extends Phase {
           when.choices.collect(_ match {
             case choice: Choices.Choice if (!choice.isOthers) => choice.rangeOrExpressionOrIdentifier.get match {
               case Second(expression) => StaticExpressionCalculator.calcValue(expression)(math.Numeric.IntIsIntegral)
-              case _ => error("not implemented")
+              case _ => sys.error("not implemented")
             }
           })).flatten
 
@@ -1782,7 +1781,7 @@ object SemanticAnalyzer extends Phase {
       case ENTITY => context.findSymbol(componentInstantiationStmt.name, classOf[EntitySymbol]).map(entity => (entity, entity.generics, entity.ports))
       case CONFIGURATION =>
         context.findSymbol(componentInstantiationStmt.name, classOf[ConfigurationSymbol])
-        error("not implemented")
+        sys.error("not implemented")
     }) match {
       case Some((symbol, generics, ports)) =>
         val genericAssociationList = checkAssociationList(context, componentInstantiationStmt.genericAssociationList, generics, componentInstantiationStmt)
@@ -1880,7 +1879,7 @@ object SemanticAnalyzer extends Phase {
           def findType[A](dataType: String): A = newContext.symbolTable.scopes.last(dataType) match {
             case typeSymbol: TypeSymbol => typeSymbol.dataType.asInstanceOf[A]
             case subTypeSymbol: SubTypeSymbol => subTypeSymbol.dataType.asInstanceOf[A]
-            case _ => error("evil internal compiler error")
+            case _ => sys.error("evil internal compiler error")
           }
           SymbolTable.booleanType = findType("boolean")
           SymbolTable.bitType = findType("bit")
@@ -1933,7 +1932,7 @@ object SemanticAnalyzer extends Phase {
     val timeExpression = checkExpression(context, disconnectionSpec.timeExpression, SymbolTable.timeType)
     disconnectionSpec.signalListOrIdentifier match {
       case Left(signalList) => checkSignalList(context, signalList)
-      case Right(identifier) => error("not implemented") //identifier is ALL or OTHERS
+      case Right(identifier) => sys.error("not implemented") //identifier is ALL or OTHERS
     }
     (disconnectionSpec.copy(timeExpression = timeExpression), context)
   }
@@ -1951,7 +1950,7 @@ object SemanticAnalyzer extends Phase {
     require(c2.symbolTable.depth == 2)
     for (node <- concurrentStatements) {
       val process = node.asInstanceOf[ProcessStatement]
-      if (!process.symbol.isPassive) addError(process, "this concurrent statement is not passive, and only passive statement are allowed in a entitySymbol declaration")
+      if (!process.symbol.isPassive) addError(process, "this concurrent statement is not passive, and only passive statements are allowed in a entity declaration")
     }
     c2.symbolTable.writeToFile(configuration.libraryOutputDirectory + entityDeclaration.identifier.text)
     (entityDeclaration.copy(genericInterfaceList = genericInterfaceList, portInterfaceList = portInterfaceList, declarativeItems = declarativeItems, concurrentStatements = concurrentStatements, symbol = entity), context)
@@ -2046,7 +2045,7 @@ object SemanticAnalyzer extends Phase {
   def visitGroupDeclaration(groupDeclaration: GroupDeclaration, owner: Symbol, context: Context): ReturnType = {
     val symbol = new GroupSymbol(groupDeclaration.identifier, owner)
     context.findSymbol(groupDeclaration.groupTemplateName, classOf[GroupTemplateSymbol]) match {
-      case _ => error("not implemented") //TODO
+      case _ => sys.error("not implemented") //TODO
     }
     (groupDeclaration, context.insertSymbol(symbol))
   }
@@ -2169,7 +2168,6 @@ object SemanticAnalyzer extends Phase {
     }
   }
 
-  @tailrec
   def toLinearList(sequentialStatements: Seq[SequentialStatement], buffer: Buffer[SequentialStatement] = new Buffer[SequentialStatement]()): Seq[SequentialStatement] =
     sequentialStatements match {
       case Seq() => buffer.result()
@@ -2280,7 +2278,7 @@ object SemanticAnalyzer extends Phase {
             addError(name.identifier, "%s is not a signal", name.identifier.text)
             (simpleWaveformAssignment, context)
         }
-      case Right(aggregate) => error("not implemented") // TODO stmt.target.aggregate
+      case Right(aggregate) => sys.error("not implemented") // TODO stmt.target.aggregate
     }
   }
 
@@ -2488,6 +2486,7 @@ object SemanticAnalyzer extends Phase {
                   }
               }
           }
+        case Seq() => Seq()
         case _ => addError(name, "not a valid name").toList
       }
   }.flatten match {
@@ -2509,7 +2508,7 @@ object SemanticAnalyzer extends Phase {
           }
           val expression = checkExpression(context, stmt.expression, nameExpression.dataType)
           (stmt.copy(expression = expression, target = stmt.target.copy(expression = nameExpression)), context)
-        case Right(aggregate) => error("not implemented") // TODO stmt.target.aggregate
+        case Right(aggregate) => sys.error("not implemented") // TODO stmt.target.aggregate
       }
   }
 

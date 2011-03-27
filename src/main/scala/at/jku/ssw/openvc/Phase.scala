@@ -32,5 +32,5 @@ abstract class Phase {
 object NoPhase extends Phase {
   val name = "<no phase>"
 
-  def apply(unit: CompilationUnit) = error("NoPhase.run")
+  def apply(unit: CompilationUnit) = sys.error("NoPhase.run")
 }

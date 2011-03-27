@@ -37,14 +37,14 @@ sealed abstract class Position extends Ordered[Position] {
    * @param characterOffset the offset
    * @return the new position
    */
-  def addCharacterOffset(characterOffset: Int): Position = error("Position.addCharacterOffset")
+  def addCharacterOffset(characterOffset: Int): Position = sys.error("Position.addCharacterOffset")
 
   /**
    * returns a new position with a line offset
    * @param lineOffset the offset
    * @return the new position
    */
-  def addLineOffset(lineOffset: Int): Position = error("Position.addLineOffset")
+  def addLineOffset(lineOffset: Int): Position = sys.error("Position.addLineOffset")
 
   /**the line in the source file */
   def line: Int
@@ -89,11 +89,11 @@ final case class RangePosition(point: OffsetPosition, start: Int, end: Int) exte
 object NoPosition extends Position {
   override val isDefined = false
 
-  def line = error("NoPosition.line")
+  def line = sys.error("NoPosition.line")
 
-  def column = error("NoPosition.column")
+  def column = sys.error("NoPosition.column")
 
-  def start = error("NoPosition.startIndex")
+  def start = sys.error("NoPosition.startIndex")
 
-  def end = error("NoPosition.stopIndex")
+  def end = sys.error("NoPosition.stopIndex")
 }

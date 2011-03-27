@@ -62,7 +62,7 @@ abstract sealed class Symbol extends Serializable with Locatable {
 @SerialVersionUID(2245320974016552352L)
 case object NoSymbol extends Symbol {
   @transient lazy val identifier = Identifier("NoSymbol")
-  lazy val owner = error("cannot happen")
+  lazy val owner = sys.error("cannot happen")
 }
 
 @SerialVersionUID(7944297999105157076L)
@@ -105,13 +105,13 @@ final case class EnumerationSymbol(@transient identifier: Identifier, dataType: 
 @SerialVersionUID(-7441552410085677009L)
 final case class ListOfEnumerations(@transient identifier: Identifier, enumerations: Seq[EnumerationSymbol]) extends Symbol {
   val owner = NoSymbol
-  override lazy val attributes = error("cannot happen")
+  override lazy val attributes = sys.error("cannot happen")
 }
 
 @SerialVersionUID(7013029205564976456L)
 final case class ListOfSubprograms(@transient identifier: Identifier, subprograms: Seq[SubprogramSymbol]) extends Symbol {
   val owner = NoSymbol
-  override lazy val attributes = error("cannot happen")
+  override lazy val attributes = sys.error("cannot happen")
 }
 
 @SerialVersionUID(-1709551041398947956L)

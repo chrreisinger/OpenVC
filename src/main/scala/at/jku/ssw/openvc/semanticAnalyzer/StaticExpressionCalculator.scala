@@ -32,7 +32,7 @@ object StaticExpressionCalculator {
         case Some(right) =>
           for (l <- calcValue(left);
                r <- calcValue(right)) yield op.get match {
-            case AddOperator.CONCATENATION => error("not implemented")
+            case AddOperator.CONCATENATION => sys.error("not implemented")
             case AddOperator.MINUS => numeric.minus(l, r)
             case AddOperator.PLUS => numeric.plus(l, r)
           }
@@ -48,7 +48,7 @@ object StaticExpressionCalculator {
       import Factor.Operator._
 
       op match {
-        case NOT => error("not implemented")
+        case NOT => sys.error("not implemented")
         case POW => for (l <- calcValue(left);
                          r <- calcValue(right.get)) yield math.pow(numeric.toDouble(l), numeric.toDouble(r)).asInstanceOf[A]
         case ABS =>
@@ -74,7 +74,7 @@ object StaticExpressionCalculator {
            r <- calcValue(right)) yield op match {
         case DIV => numeric.quot(l, r)
         case MUL => numeric.times(l, r)
-        case MOD | REM => error("not implemented")
+        case MOD | REM => sys.error("not implemented")
       }
     case e@AttributeExpression(_, symbol, attribute, None, None) =>
       e.dataType match {

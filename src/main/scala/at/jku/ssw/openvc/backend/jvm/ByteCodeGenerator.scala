@@ -388,7 +388,7 @@ object ByteCodeGenerator {
                         }
                       case "base" => //nothing
                       case "pos" | "val" | "succ" | "leftof" | "rightof" =>
-                        error("not implemented")
+                        sys.error("not implemented")
                       /*scalarType match {
                         case _: IntegerType => mv.INVOKESTATIC(RUNTIME, attributeAccess.attribute.name, "(I)I")
                         case _: RealType => mv.INVOKESTATIC(RUNTIME, attributeAccess.attribute.name, "(D)D")
@@ -413,7 +413,7 @@ object ByteCodeGenerator {
                     INVOKEVIRTUAL(getJVMName(symbol), attributeAccess.attribute.name, "(I)" + getJVMDataType(attributeAccess.attribute.dataType))
                 }
             }
-          case userDefinedAttributeSymbol: UserDefinedAttributeSymbol => error("not implemented")
+          case userDefinedAttributeSymbol: UserDefinedAttributeSymbol => sys.error("not implemented")
         }
         acceptExpressionOption(attributeAccess.expression)
       }
@@ -424,7 +424,7 @@ object ByteCodeGenerator {
         (aggregate.dataType: @unchecked) match {
           case arrayType: ConstrainedArrayType =>
             if (aggregate.elements.exists(_.choices.isDefined)) {
-              error("not implemented")
+              sys.error("not implemented")
             }
             else {
               pushInt(aggregate.expressions.size)
@@ -836,7 +836,7 @@ object ByteCodeGenerator {
           case (_: RealType, _: PhysicalType) => L2D
           case (_: PhysicalType, _: IntegerType) => I2L
           case (_: PhysicalType, _: RealType) => D2L
-          case _ => error("not implemented")
+          case _ => sys.error("not implemented")
         }
       }
     }
@@ -974,7 +974,7 @@ object ByteCodeGenerator {
       //import context._
 
       //mv.createDebugLineNumberInformation(waitStmt)
-      //error("not implemented")
+      //sys.error("not implemented")
     }
 
     /**
@@ -1155,7 +1155,7 @@ object ByteCodeGenerator {
       acceptNodes(rest, context)
     }
 
-    def visitComponentInstantiationStatement(componentInstantiationStmt: ComponentInstantiationStatement) = error("not implemented")
+    def visitComponentInstantiationStatement(componentInstantiationStmt: ComponentInstantiationStatement) = sys.error("not implemented")
 
     def visitComponentDeclaration(componentDeclaration: ComponentDeclaration, context: Context) {
       val ports = componentDeclaration.symbol.ports
@@ -1181,7 +1181,7 @@ object ByteCodeGenerator {
             INVOKESTATIC(RUNTIME, "createRuntimeArray$" + getScalaSpecializedMethodSuffix(arrayType.elementType),
               "(" + getJVMDataType(arrayType) + (ci(classOf[scala.Range.Inclusive]) * arrayType.dimensions.size) + ")" + getJVMDataType(arrayType))
             ASTORE(aliasDeclaration.symbol.index)
-          case _ => error("not possible")
+          case _ => sys.error("not possible")
         }
       }
     }
@@ -1426,7 +1426,7 @@ object ByteCodeGenerator {
               acceptExpression(stmt.expression)
               checkIsInRange(targetType)
               mv.storeSymbol(target, targetType)
-            case Right(aggregate) => error("not implemented")
+            case Right(aggregate) => sys.error("not implemented")
           }
       }
     }
@@ -1679,7 +1679,7 @@ object ByteCodeGenerator {
       import context._
 
       mv.createDebugLineNumberInformation(signalAssignStmt)
-      error("not implemented")
+      sys.error("not implemented")
     }
 
     def loadScalaManifest(dataType: DataType)(implicit mv: RichMethodVisitor) {
@@ -1784,7 +1784,7 @@ object ByteCodeGenerator {
     }
 
     def visitSignalDeclaration(signalDeclaration: SignalDeclaration, context: Context) =
-      error("not implemented")
+      sys.error("not implemented")
 
     def visitConstantDeclaration(constantDeclaration: ConstantDeclaration, context: Context) {
       for (defaultExpression <- constantDeclaration.value) initSymbols(constantDeclaration.symbols, context) {
