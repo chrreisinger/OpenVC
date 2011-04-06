@@ -339,7 +339,7 @@ v2008_package_instantiation_declaration returns [LibraryUnit with DeclarativeIte
 		generic_map_aspect? SEMICOLON
 	{$packageInstantiationDecl=new PackageInstantiationDeclaration($PACKAGE,$identifier.id,$selected_name.name_,$generic_map_aspect.list)};
 
-designator returns [Identifier id=Identifier.NoIdentifier] :
+designator returns [Identifier id=NoIdentifier] :
 	identifier {$id=$identifier.id}
 	| STRING_LITERAL {$id=toIdentifier($STRING_LITERAL)}; //STRING_LITERAL is a operator symbol	
 	  
@@ -491,7 +491,7 @@ alias_declaration returns [DeclarativeItem aliasDecl=NoNode] :
 	ALIAS alias_designator (COLON subtype_indication)? IS name signature? SEMICOLON
 	{$aliasDecl=new AliasDeclaration($ALIAS,$alias_designator.id,$subtype_indication.subType,$name.name_,$signature.signature_)}; 
 
-alias_designator returns [Identifier id=Identifier.NoIdentifier] :
+alias_designator returns [Identifier id=NoIdentifier] :
 	identifier {$id=$identifier.id}
 	| CHARACTER_LITERAL{$id=toIdentifier($CHARACTER_LITERAL)}
 	| STRING_LITERAL{$id=toIdentifier($STRING_LITERAL)};	
@@ -629,7 +629,7 @@ use_clause returns [UseClause useClause] :
 	{$useClause=new UseClause($USE,$selected_name_list.list)};	
 	
 // B.4 Type Definitions
-enumeration_literal returns [Identifier id=Identifier.NoIdentifier] :
+enumeration_literal returns [Identifier id=NoIdentifier] :
 	identifier {$id=$identifier.id}
 	| CHARACTER_LITERAL {$id=toIdentifier($CHARACTER_LITERAL)};
 	
@@ -1627,7 +1627,7 @@ selected_name returns [SelectedName name_]
 	val parts=new Buffer[Identifier]()
 } :
 	name_prefix (name_selected_part {parts += $name_selected_part.part.identifier})*
-	{$name_ =new SelectedName(if ($name_prefix.id!=Identifier.NoIdentifier) $name_prefix.id +: parts.result else Seq())};
+	{$name_ =new SelectedName(if ($name_prefix.id!=NoIdentifier) $name_prefix.id +: parts.result else Seq())};
 
 name_list returns [Seq[Name\] list=Seq()]
 @init{
@@ -1643,7 +1643,7 @@ name returns [Name name_]
 	name_prefix (name_part {parts += $name_part.part})* {$name_ =new Name($name_prefix.id,parts.result)}
 	| {vhdl2008}?=>v2008_external_name; //TODO
 
-name_prefix returns [Identifier id=Identifier.NoIdentifier] :
+name_prefix returns [Identifier id=NoIdentifier] :
 	identifier {$id=$identifier.id}
  	| STRING_LITERAL{id=toIdentifier($STRING_LITERAL)};
  	
@@ -1654,7 +1654,7 @@ name_part returns [Name.Part part] :
 	| name_slice_part {$part = $name_slice_part.part}; 
 			
 name_selected_part returns [Name.SelectedPart part] 
-@init{$part=new Name.SelectedPart(Identifier.NoIdentifier)}:
+@init{$part=new Name.SelectedPart(NoIdentifier)}:
 	DOT (
 	identifier{$part= new Name.SelectedPart($identifier.id)}
 	| CHARACTER_LITERAL {$part= new Name.SelectedPart(toIdentifier($CHARACTER_LITERAL))}
@@ -1769,9 +1769,9 @@ identifier_list returns [Seq[Identifier\] list=Seq()]
 	val identifiers=new Buffer[Identifier]()
 } :
 	id1=identifier {identifiers += $id1.id} (COMMA id2=identifier {identifiers += $id2.id} )* 
-	{$list=identifiers.result.filter(_ != Identifier.NoIdentifier)};
+	{$list=identifiers.result.filter(_ != NoIdentifier)};
 
-identifier returns [Identifier id=Identifier.NoIdentifier] :
+identifier returns [Identifier id=NoIdentifier] :
 	BASIC_IDENTIFIER {$id=toIdentifier(input.LT(-1))}
 	| EXTENDED_IDENTIFIER {$id=toIdentifier(input.LT(-1),false)};
 	

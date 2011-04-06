@@ -50,7 +50,7 @@ with designUnits.ContextItem
 with designUnits.LibraryUnit {
   val position = NoPosition
   val label = None
-  val identifier = Identifier.NoIdentifier
+  val identifier = NoIdentifier
   val endIdentifier = None
   val symbol = NoSymbol
 }
