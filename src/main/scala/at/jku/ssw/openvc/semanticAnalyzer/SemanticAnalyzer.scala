@@ -55,6 +55,8 @@ object SemanticAnalyzer extends Phase {
     "**" -> "$times$times", "abs" -> "abs", "not" -> "not" //miscellaneous_operator
   )
 
+  private[this] val reverseOperatorMangleMap = operatorMangleMap.map(_.swap)
+
   private[this] val entityClassToSymbolMap = {
     import EntityClass._
     Map(
@@ -240,7 +242,11 @@ object SemanticAnalyzer extends Phase {
                         subprogramSymbol +: listOfSubprograms.subprograms.filter(_ ne s)
                       }
                       else {
-                        addError(symbol, "subprogram %s already declared", symbol.name)
+                        val name = reverseOperatorMangleMap.get(symbol.name) match {
+                          case Some(operator) => '"' + operator + '"'
+                          case None => symbol.name
+                        }
+                        addError(symbol, "subprogram %s already declared", name)
                         listOfSubprograms.subprograms
                       }
                   }
@@ -1105,7 +1111,7 @@ object SemanticAnalyzer extends Phase {
                           }
                         case (formalSignalSymbol: SignalSymbol, actualSymbol) => addErrorPosition(expression.firstPosition, "expected a signal parameter")
                         case (formalFileSymbol: FileSymbol, actualSymbol) => if (!actualSymbol.isInstanceOf[FileSymbol]) addErrorPosition(expression.firstPosition, "expected a file parameter")
-                        case (formalConstantSymbol: ConstantSymbol, actualSymbol) => if (!actualSymbol.isInstanceOf[ConstantSymbol] && !actualSymbol.isInstanceOf[VariableSymbol]) addErrorPosition(expression.firstPosition, "expected a constant or variable parameter")
+                        case (formalConstantSymbol: ConstantSymbol, actualSymbol) => if (actualSymbol.isInstanceOf[FileSymbol]) addErrorPosition(expression.firstPosition, "expected a constant, signal or variable parameter")
                         case (formalVariableSymbol: VariableSymbol, actualVariableSymbol: VariableSymbol) => //TODO
                         case (formalVariableSymbol: VariableSymbol, actualSymbol) => addErrorPosition(expression.firstPosition, "expected a variable parameter")
                       }

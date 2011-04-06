@@ -865,7 +865,8 @@ object ByteCodeGenerator {
       assertStmt.condition match {
         //do not generate condition code for assert statements like assert false ..., assert true ...
         case Literal(_, _, _, dataType, value) if ((value == 0 || value == 1) && dataType == SymbolTable.booleanType) =>
-          if (value == 1) generateAssertCode() //only generate code for assert true ... because assert false can never be true, so the assert statement is dead code
+          if (value == 0) generateAssertCode() //only generate code for assert false ... because assert true can never be false, so the assert statement is dead code
+          else NOP()
         case _ =>
           acceptExpression(assertStmt.condition, Some(new ExpressionContext(trueJumpLabel = trueJumpLabel, falseJumpLabel = falseJumpLabel, kind = ExpressionContext.JumpKind.TrueJump)))
           generateAssertCode()
