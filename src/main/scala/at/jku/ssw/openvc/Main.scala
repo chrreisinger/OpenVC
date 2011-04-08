@@ -58,6 +58,7 @@ object Main {
           Simulator.runClass(this.getClass.getClassLoader, configuration.outputDirectory, configuration.designLibrary + ".alu_tb_body", "main$1106182723", List("std.jar", "ieee.jar"))
       }
     } catch {
+      case fileNotFoundException: java.io.FileNotFoundException => println("could not find file: " + fileNotFoundException.getMessage)
       case ex@(_: java.lang.reflect.InvocationTargetException | _: java.lang.ExceptionInInitializerError) if (ex.getStackTrace.exists(element => element != null && (element.getFileName.endsWith(".vhd") || element.getFileName.endsWith(".vhdl")))) =>
         ex.getCause match {
           case exception@(_: VHDLRuntimeException | _: java.lang.NullPointerException) =>
