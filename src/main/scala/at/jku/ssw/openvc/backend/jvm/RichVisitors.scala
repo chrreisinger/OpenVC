@@ -409,7 +409,7 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
       this.visitMaxs(1000, 1000)
       this.visitEnd()
     } catch {
-      case ex: NegativeArraySizeException => throw ex //only used, so that i can set a breakpoint here, when i generate bad code and this bad code causes an exception
+      case ex: Throwable => throw ex //only used, so that i can set a breakpoint here, when i generate bad code and this bad code causes an exception
     }
   }
 
