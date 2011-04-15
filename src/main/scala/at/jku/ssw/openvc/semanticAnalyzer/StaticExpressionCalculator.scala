@@ -22,74 +22,84 @@ import at.jku.ssw.openvc.ast.expressions._
 import at.jku.ssw.openvc.symbolTable.dataTypes.{EnumerationType, ScalarType}
 
 object StaticExpressionCalculator {
-  private implicit def toOption[A](value: A) = Option(value)
+  def calcValue[A <: AnyVal](expression: Expression)(implicit numeric: Integral[A]): Option[A] = {
+    import numeric.{mkNumericOps, mkOrderingOps}
+    implicit def toOption[A](value: A) = Option(value)
+    expression match {
+      case SimpleExpression(_, signOption, left, op, rightOption, _) =>
+        import SimpleExpression._
 
-  def calcValue[A <: AnyVal](expression: Expression)(implicit numeric: Integral[A]): Option[A] = expression match {
-    case SimpleExpression(_, signOption, left, op, rightOption, _) =>
-      import SimpleExpression._
+        val value = rightOption match {
+          case Some(right) =>
+            for (l <- calcValue(left);
+                 r <- calcValue(right)) yield op.get match {
+              case AddOperator.CONCATENATION => sys.error("not implemented")
+              case AddOperator.MINUS => l - r
+              case AddOperator.PLUS => l + r
+            }
+          case None => calcValue(left)
+        }
+        signOption match {
+          case None => value
+          case Some(sign) =>
+            if (sign == SignOperator.MINUS) value.flatMap(numeric.negate)
+            else value
+        }
+      case Factor(_, left, op, right, _) =>
+        import Factor.Operator._
 
-      val value = rightOption match {
-        case Some(right) =>
-          for (l <- calcValue(left);
-               r <- calcValue(right)) yield op.get match {
-            case AddOperator.CONCATENATION => sys.error("not implemented")
-            case AddOperator.MINUS => numeric.minus(l, r)
-            case AddOperator.PLUS => numeric.plus(l, r)
-          }
-        case None => calcValue(left)
-      }
-      signOption match {
-        case None => value
-        case Some(sign) =>
-          if (sign == SignOperator.MINUS) value.flatMap(numeric.negate)
-          else value
-      }
-    case Factor(_, left, op, right, _) =>
-      import Factor.Operator._
+        op match {
+          case NOT => sys.error("not implemented")
+          case POW => for (l <- calcValue(left);
+                           r <- calcValue(right.get)) yield math.pow(numeric.toDouble(l), numeric.toDouble(r)).asInstanceOf[A]
+          case ABS =>
+            require(right.isEmpty)
+            calcValue(left).flatMap(numeric.abs)
+        }
+      case literal: Literal =>
+        import Literal.Type._
 
-      op match {
-        case NOT => sys.error("not implemented")
-        case POW => for (l <- calcValue(left);
-                         r <- calcValue(right.get)) yield math.pow(numeric.toDouble(l), numeric.toDouble(r)).asInstanceOf[A]
-        case ABS =>
-          require(right.isEmpty)
-          calcValue(left).flatMap(numeric.abs)
-      }
-    case literal: Literal =>
-      import Literal.Type._
+        literal.literalType match {
+          case INTEGER_LITERAL =>
+            if (numeric == Numeric.LongIsIntegral) literal.toLong.asInstanceOf[A]
+            else literal.toInt.asInstanceOf[A]
+          case REAL_LITERAL => literal.toDouble.asInstanceOf[A]
+          case CHARACTER_LITERAL =>
+            literal.dataType match {
+              case enumType: EnumerationType => enumType.value(literal.text.replace("'", "")).asInstanceOf[A]
+              case _ => None
+            }
+          case _ => None
+        }
+      case Term(_, left, op, right, _) =>
+        import Term.Operator._
 
-      literal.literalType match {
-        case INTEGER_LITERAL => literal.toLong.asInstanceOf[A]
-        case REAL_LITERAL => literal.toDouble.asInstanceOf[A]
-        case CHARACTER_LITERAL =>
-          literal.dataType match {
-            case enumType: EnumerationType => enumType.intValue(literal.text.replace("'", "")).asInstanceOf[A]
-            case _ => None
-          }
-      }
-    case Term(_, left, op, right, _) =>
-      import Term.Operator._
-
-      for (l <- calcValue(left);
-           r <- calcValue(right)) yield op match {
-        case DIV => numeric.quot(l, r)
-        case MUL => numeric.times(l, r)
-        case MOD | REM => sys.error("not implemented")
-      }
-    case e@AttributeExpression(_, symbol, attribute, None, None) =>
-      e.dataType match {
-        case scalar: ScalarType =>
-          attribute.name match {
-            case "left" => scalar.left.asInstanceOf[A]
-            case "right" => scalar.right.asInstanceOf[A]
-            case "low" => scalar.lowerBound.asInstanceOf[A]
-            case "high" => scalar.upperBound.asInstanceOf[A]
-            case "ascending" => scalar.isAscending.asInstanceOf[A]
-          }
-        case _ => None
-      }
-    case e =>
-      println("not implemented:" + e.position + " " + e.getClass.getCanonicalName + "\n")
-      None
+        for (l <- calcValue(left);
+             r <- calcValue(right)) yield op match {
+          case DIV => l / r
+          case MUL => l * r
+          case REM => l % r
+          case MOD =>
+            val mod = l % r
+            if ((mod < numeric.zero && r > numeric.zero) || (mod > numeric.zero && r < numeric.zero)) mod + r else mod
+        }
+      case e@AttributeExpression(_, symbol, attribute, None, None) =>
+        e.dataType match {
+          case scalar: ScalarType =>
+            attribute.name match {
+              case "left" => scalar.left.asInstanceOf[A]
+              case "right" => scalar.right.asInstanceOf[A]
+              case "low" => scalar.lowerBound.asInstanceOf[A]
+              case "high" => scalar.upperBound.asInstanceOf[A]
+              case "ascending" => scalar.isAscending.asInstanceOf[A]
+              case _ => None
+            }
+          case _ => None
+        }
+      case NoExpression => None
+      case e =>
+        println("not implemented:" + e.position + " " + e.getClass.getCanonicalName + "\n")
+        None
+    }
   }
 }
