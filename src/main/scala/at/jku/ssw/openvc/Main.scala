@@ -55,7 +55,7 @@ object Main {
           }
           files.map(file => VHDLCompiler.compile(new CompilationUnit(SourceFile.fromFile(file), configuration))).foreach(unit => unit.printErrors(new PrintWriter(System.out)))
           Simulator.loadFiles(this.getClass.getClassLoader, configuration.outputDirectory, listFiles(new File(configuration.libraryOutputDirectory), classFilter, true).map(file => file.getPath.substring(file.getPath.indexOf('\\') + 1).split('.').head.replace('\\', '.')), List("std.jar", "ieee.jar"))
-          Simulator.runClass(this.getClass.getClassLoader, configuration.outputDirectory, configuration.designLibrary + ".alu_tb_body", "main$1106182723", List("std.jar", "ieee.jar"))
+          Simulator.runClass(this.getClass.getClassLoader, configuration.outputDirectory, configuration.designLibrary + ".alu_tb_body", "main$-1404437944", List("std.jar", "ieee.jar"))
       }
     } catch {
       case fileNotFoundException: java.io.FileNotFoundException => println("could not find file: " + fileNotFoundException.getMessage)
