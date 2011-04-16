@@ -1607,8 +1607,8 @@ primary returns [Expression obj=NoExpression]
 
 allocator returns [Expression newExpression=NoExpression] :
 	NEW selected_name (
-		qualified_expression[$selected_name.name_] {$newExpression=new NewExpression($NEW,Left($qualified_expression.expr))}
-	 	| index_constraint? {$newExpression=new NewExpression($NEW,Right(new SubTypeIndication(None,$selected_name.name_,if ($index_constraint.ranges==null) None else Right($index_constraint.ranges),None)))}
+		qualified_expression[$selected_name.name_] {$newExpression=new Allocator($NEW,Left($qualified_expression.expr))}
+	 	| index_constraint? {$newExpression=new Allocator($NEW,Right(new SubTypeIndication(None,$selected_name.name_,if ($index_constraint.ranges==null) None else Right($index_constraint.ranges),None)))}
 	 	);
 	
 qualified_expression[SelectedName typeName] returns [Expression expr=NoExpression] :

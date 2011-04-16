@@ -94,6 +94,7 @@ object SemanticAnalyzer extends Phase {
         case (et1: EnumerationType, et2: EnumerationType) => et1.baseType.getOrElse(et1) == et2.baseType.getOrElse(et2)
         case (NullType, _: AccessType) => true
         case (_: AccessType, NullType) => true
+        case (at1: AccessType, at2: AccessType) => at1.pointerType == at2.pointerType
         case (at1: ArrayType, at2: ArrayType) => at1.elementType == at2.elementType && at1.dimensionality == at2.dimensionality
         case _ => false
       }
@@ -382,7 +383,7 @@ object SemanticAnalyzer extends Phase {
         visitLogicalExpression(logicalExpr.copy(left = acceptExpressionInner(logicalExpr.left), right = acceptExpressionInner(logicalExpr.right)))
       case simpleExpr: SimpleExpression =>
         visitSimpleExpression(simpleExpr.copy(left = acceptExpressionInner(simpleExpr.left), rightOption = acceptExpressionInnerOption(simpleExpr.rightOption)))
-      case newExpr: NewExpression => visitNewExpression(newExpr)
+      case newExpr: Allocator => visitAllocator(newExpr)
       case literal: Literal => visitLiteral(literal)
       case physicalLiteral: PhysicalLiteral => visitPhysicalLiteral(physicalLiteral)
     }
@@ -834,19 +835,18 @@ object SemanticAnalyzer extends Phase {
       }
     }
 
-    def visitNewExpression(newExpression: NewExpression): Expression =
-    // TODO Auto-generated method stub
-      newExpression.qualifiedExpressionOrSubTypeIndication match {
+    def visitAllocator(allocator: Allocator): Expression =
+      allocator.qualifiedExpressionOrSubTypeIndication match {
         case Left(qualifiedExpression) => expectedType match {
-          case accessType: AccessType => NewExpression(newExpression.position, Left(checkExpression(context, qualifiedExpression, accessType.pointerType)))
+          case accessType: AccessType => Allocator(allocator.position, Left(checkExpression(context, qualifiedExpression, accessType.pointerType)), accessType)
           case otherType =>
-            addError(qualifiedExpression, "%s is not a access type", otherType.name)
+            addError(qualifiedExpression, "access type not allowed here")
             NoExpression
         }
         case Right(subType) =>
           val newSubType = createType(context, subType)
           if (newSubType.dataType.isInstanceOf[UnconstrainedArrayType]) addError(newSubType, "array type %s is not constrained", newSubType.typeName)
-          NewExpression(newExpression.position, Right(newSubType))
+          Allocator(allocator.position, Right(newSubType), new AccessType(newSubType.dataType.name, newSubType.baseType))
       }
 
     def visitQualifiedExpression(qualifiedExpression: QualifiedExpression): Expression = {
@@ -1395,19 +1395,20 @@ object SemanticAnalyzer extends Phase {
     baseType match {
       case IncompleteType =>
         if (isAccessTypeDefinition) subTypeIndication.constraint.foreach(constraint => addError(subTypeIndication.typeName, "can not use an incomplete type with constraints"))
-        subTypeIndication.copy(constraint = None, dataType = baseType)
+        subTypeIndication.copy(constraint = None, dataType = baseType, baseType = baseType)
       case _ => subTypeIndication.constraint match {
         case None =>
-          val dataType = if (subTypeName == "subtype" && resolutionFunction.isEmpty) baseType
-          else baseType match {
-            case i: IntegerType => IntegerType(subTypeName, i.left, i.right, i.baseType.orElse(Some(i)), resolutionFunction)
-            case r: RealType => RealType(subTypeName, r.left, r.right, r.baseType.orElse(Some(r)), resolutionFunction)
-            case e: EnumerationType => EnumerationType(subTypeName, e.elements, e.baseType.orElse(Some(e)), e.owner, resolutionFunction)
-            case _ =>
-              addError(subTypeIndication.typeName, "expected a integer,real or enumeration type")
-              baseType
-          }
-          subTypeIndication.copy(dataType = dataType)
+          val dataType =
+            if (subTypeName == "subtype" && resolutionFunction.isEmpty) baseType
+            else baseType match {
+              case i: IntegerType => IntegerType(subTypeName, i.left, i.right, i.baseType.orElse(Some(i)), resolutionFunction)
+              case r: RealType => RealType(subTypeName, r.left, r.right, r.baseType.orElse(Some(r)), resolutionFunction)
+              case e: EnumerationType => EnumerationType(subTypeName, e.elements, e.baseType.orElse(Some(e)), e.owner, resolutionFunction)
+              case _ =>
+                addError(subTypeIndication.typeName, "expected a integer,real or enumeration type")
+                baseType
+            }
+          subTypeIndication.copy(dataType = dataType, baseType = baseType)
         case Some(constraint) => constraint match {
           case Left(range) =>
             val dataType = baseType match {
@@ -1418,13 +1419,13 @@ object SemanticAnalyzer extends Phase {
                 addError(range, "you can not create a access subtype with a range constraint")
               case _ => addError(subTypeIndication.typeName, "expected a integer,real or enumeration type")
             }
-            subTypeIndication.copy(constraint = Option(Left(range)), dataType = dataType.getOrElse(NoType))
+            subTypeIndication.copy(constraint = Option(Left(range)), dataType = dataType.getOrElse(NoType), baseType = baseType)
           case Right(arrayConstraint) => baseType match {
             case unconstrainedArrayType: UnconstrainedArrayType =>
               if (unconstrainedArrayType.dimensionality != arrayConstraint.size)
                 addError(subTypeIndication.typeName, "expected %s found %s discrete ranges for a array constraint", unconstrainedArrayType.dimensionality.toString, arrayConstraint.size.toString)
               val discreteRanges = arrayConstraint.zip(unconstrainedArrayType.dimensions).map(x => checkDiscreteRange(context, x._1, x._2.elementType))
-              subTypeIndication.copy(constraint = Option(Right(discreteRanges)), dataType = new ConstrainedArrayType(unconstrainedArrayType.name, unconstrainedArrayType.elementType, discreteRanges.map(_.dataType)))
+              subTypeIndication.copy(constraint = Option(Right(discreteRanges)), baseType = baseType, dataType = new ConstrainedArrayType(unconstrainedArrayType.name, unconstrainedArrayType.elementType, discreteRanges.map(_.dataType)))
             case dataType =>
               if (dataType != NoType) addError(subTypeIndication.typeName, "you can only use a array constraint for unconstraint array subtypes")
               subTypeIndication

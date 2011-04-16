@@ -326,7 +326,7 @@ object ByteCodeGenerator {
               case _ => visitLogicalExpression(logicalExpr.copy(left = toRelation(logicalExpr.left), right = toRelation(logicalExpr.right)), innerContext)
             }
           case simpleExpr: SimpleExpression => visitSimpleExpression(simpleExpr)
-          case newExpr: NewExpression => visitNewExpression(newExpr)
+          case newExpr: Allocator => visitAllocator(newExpr)
           case literal: Literal => visitLiteral(literal)
           case physicalLiteral: PhysicalLiteral => visitPhysicalLiteral(physicalLiteral)
 
@@ -536,15 +536,19 @@ object ByteCodeGenerator {
         }
       }
 
-      def visitNewExpression(newExpression: NewExpression) {
-        newExpression.qualifiedExpressionOrSubTypeIndication match {
+      def visitAllocator(allocator: Allocator) {
+        allocator.qualifiedExpressionOrSubTypeIndication match {
           case Left(qualifiedExpression) => acceptExpression(qualifiedExpression)
           case Right(subTypeIndication) =>
-            import mv._
-            val dataTypeName = getMutableScalarAccessName(newExpression.dataType.asInstanceOf[ScalarType])
-            NEW(dataTypeName)
-            DUP
-            INVOKESPECIAL(dataTypeName, "<init>", "()V")
+            allocator.dataType.asInstanceOf[AccessType].pointerType match {
+              case scalarType: ScalarType =>
+                val dataTypeName = getMutableScalarAccessName(scalarType)
+                mv.NEW(dataTypeName)
+                mv.DUP
+                loadDefaultSubTypeValue(subTypeIndication)
+                mv.INVOKESPECIAL(dataTypeName, "<init>", "(" + getJVMDataType(scalarType) + ")V")
+              case _ => loadDefaultSubTypeValue(subTypeIndication)
+            }
         }
       }
 

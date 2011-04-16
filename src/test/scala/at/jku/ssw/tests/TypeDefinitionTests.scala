@@ -69,6 +69,25 @@ final class TypeDefinitionTests extends GenericTest {
     """
   }
 
+  compileCodeInPackageAndLoad("access type delcaration and variable declarations") {
+    """
+      type Node is record
+        x : integer;
+        y : real;
+      end record;
+      type     nodePointer is access Node;
+      type     intPointer is access integer;
+      type     bitVectorPointer is access bit_vector;
+      variable a : nodePointer      := new Node;
+      variable b : nodePointer      := new Node'(100, 100.0);
+      variable c : nodePointer      := new Node'(y => 100.0, x => 100);
+      variable e : intPointer;
+      variable f : intPointer       := null;
+      variable g : intPointer       := new integer;
+      variable h : bitVectorPointer := new bit_vector(1 to 10);
+    """
+  }
+
   compileCodeInPackageAndLoad("incomplete type delcaration") {
     """
       type CELL; -- An incomplete type declaration.

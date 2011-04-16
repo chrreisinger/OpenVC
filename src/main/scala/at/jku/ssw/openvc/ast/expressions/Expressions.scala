@@ -591,12 +591,7 @@ final case class SimpleExpression(position: Position, signOperator: Option[Simpl
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.allocator]]
  * @param qualifiedExpressionOrSubTypeIndication either the qualified expression or the subtype indication
  */
-final case class NewExpression(position: Position, qualifiedExpressionOrSubTypeIndication: Either[Expression, SubTypeIndication]) extends Expression {
-  val dataType = qualifiedExpressionOrSubTypeIndication match {
-    case Left(expression) => expression.dataType
-    case Right(subType) => subType.dataType
-  }
-}
+final case class Allocator(position: Position, qualifiedExpressionOrSubTypeIndication: Either[Expression, SubTypeIndication], dataType: DataType = NoType) extends Expression
 
 object Literal {
   type Type = Type.Value

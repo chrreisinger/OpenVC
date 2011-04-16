@@ -151,9 +151,10 @@ final class DiscreteRange(val rangeOrSubTypeIndication: Either[Range, SubTypeInd
  * @param typeName the name of the type or subtype
  * @param constraint the optional contraint for the new subtype
  * @param dataType the new created data Type for this sub type indication
+ * @param baseType the base type = type type specified with typeName
  * @param amsToleranceExpression the AMS tolerance expression
  */
-final case class SubTypeIndication(resolutionFunction: Option[SelectedName], typeName: SelectedName, constraint: Option[Either[Range, Seq[DiscreteRange]]], amsToleranceExpression: Option[Expression], dataType: DataType = NoType) extends Locatable {
+final case class SubTypeIndication(resolutionFunction: Option[SelectedName], typeName: SelectedName, constraint: Option[Either[Range, Seq[DiscreteRange]]], amsToleranceExpression: Option[Expression], dataType: DataType = NoType, baseType: DataType = NoType) extends Locatable {
   val position = resolutionFunction.getOrElse(typeName).position
 }
 
