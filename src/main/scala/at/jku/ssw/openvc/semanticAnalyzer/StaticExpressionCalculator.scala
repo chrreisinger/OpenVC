@@ -19,7 +19,8 @@
 package at.jku.ssw.openvc.semanticAnalyzer
 
 import at.jku.ssw.openvc.ast.expressions._
-import at.jku.ssw.openvc.symbolTable.dataTypes.{EnumerationType, ScalarType}
+import at.jku.ssw.openvc.symbolTable.dataTypes.{EnumerationType, ScalarType, PhysicalType}
+import at.jku.ssw.openvc.symbolTable.symbols.ConstantSymbol
 
 object StaticExpressionCalculator {
   def calcValue[A <: AnyVal](expression: Expression)(implicit numeric: Integral[A]): Option[A] = {
@@ -51,7 +52,7 @@ object StaticExpressionCalculator {
         op match {
           case NOT => sys.error("not implemented")
           case POW => for (l <- calcValue(left);
-                           r <- calcValue(right.get)) yield math.pow(numeric.toDouble(l), numeric.toDouble(r)).asInstanceOf[A]
+                           r <- calcValue(right.get)) yield numeric.fromInt(math.pow(numeric.toDouble(l), numeric.toDouble(r)).toInt)
           case ABS =>
             require(right.isEmpty)
             calcValue(left).flatMap(numeric.abs)
@@ -96,6 +97,19 @@ object StaticExpressionCalculator {
             }
           case _ => None
         }
+      case literal@PhysicalLiteral(_, _, _, literalType, symbol) =>
+        if (symbol != null) {
+          val dataType = literal.dataType.asInstanceOf[PhysicalType]
+          literalType match {
+            case Literal.Type.INTEGER_LITERAL => (literal.toLong * dataType.units(literal.unitSymbol.name)).asInstanceOf[A]
+            case Literal.Type.REAL_LITERAL => (literal.toDouble * dataType.units(literal.unitSymbol.name)).toLong.asInstanceOf[A]
+            case _ => None
+          }
+        } else None
+      case ItemExpression(_, symbol) => symbol match {
+        case constantSymbol: ConstantSymbol => constantSymbol.value.map(_.asInstanceOf[A])
+        case _ => None
+      }
       case NoExpression => None
       case e =>
         println("not implemented:" + e.position + " " + e.getClass.getCanonicalName + "\n")

@@ -1810,6 +1810,15 @@ object SemanticAnalyzer extends Phase {
       addError(constantDeclaration, "deferred constant are only in package header allowed")
 
     val value = checkExpressionOption(context, constantDeclaration.value, subType.dataType)
+    val symbolValue = value.flatMap {
+      expr =>
+        subType.dataType match {
+          case discreteType: DiscreteType => StaticExpressionCalculator.calcValue(expr)(IntIsIntegral)
+          case physicalType: PhysicalType => StaticExpressionCalculator.calcValue(expr)(LongIsIntegral)
+          case realType: RealType => StaticExpressionCalculator.calcValue(expr)(DoubleAsIfIntegral)
+          case _ => None
+        }
+    }
     val multiplier = getNextIndex(subType.dataType) //+2 for real and physical, +1 for all other constants
     val symbols = constantDeclaration.identifiers.zipWithIndex.map {
       case (identifier, i) => context.symbolTable.findInCurrentScope(identifier.text, classOf[ConstantSymbol]) match {
@@ -1817,7 +1826,7 @@ object SemanticAnalyzer extends Phase {
           if (constantSymbol.dataType != subType.dataType) addError(constantDeclaration.subType, "expected a expression of type %s, found %s", constantSymbol.dataType.name, subType.dataType.name)
           constantSymbol.copy(isDefined = constantDeclaration.value.isDefined)
         case _ =>
-          new ConstantSymbol(identifier, subType.dataType, context.varIndex + (i * multiplier), owner, false, constantDeclaration.value.isDefined, constantDeclaration.value.isEmpty)
+          new ConstantSymbol(identifier, subType.dataType, context.varIndex + (i * multiplier), owner, false, constantDeclaration.value.isDefined, constantDeclaration.value.isEmpty, value = symbolValue)
       }
     }
     (constantDeclaration.copy(value = value, subType = subType, symbols = symbols), context.insertSymbols(symbols))

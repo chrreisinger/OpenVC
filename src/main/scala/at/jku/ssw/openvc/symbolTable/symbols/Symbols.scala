@@ -259,7 +259,7 @@ abstract sealed class RuntimeSymbol extends Symbol {
 
 @SerialVersionUID(6644707794631509820L)
 //isDefined is used for deferred constants
-final case class ConstantSymbol(@transient identifier: Identifier, dataType: DataType, index: Int, owner: Symbol, isOptional: Boolean = false, isDefined: Boolean = true, isDeferred: Boolean = false, isParameter: Boolean = false) extends RuntimeSymbol {
+final case class ConstantSymbol(@transient identifier: Identifier, dataType: DataType, index: Int, owner: Symbol, isOptional: Boolean = false, isDefined: Boolean = true, isDeferred: Boolean = false, isParameter: Boolean = false, value: Option[AnyVal] = None) extends RuntimeSymbol {
   def makeCopy(identifier: Identifier, dataType: DataType, owner: Symbol = this) = this.copy(identifier = identifier, dataType = dataType, owner = owner)
 }
 
