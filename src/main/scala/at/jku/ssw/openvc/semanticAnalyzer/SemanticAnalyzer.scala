@@ -19,7 +19,7 @@
 package at.jku.ssw.openvc.semanticAnalyzer
 
 import scala.collection.{SortedMap, immutable}
-import math.Numeric.{LongIsIntegral, DoubleAsIfIntegral}
+import math.Numeric.{LongIsIntegral, IntIsIntegral, DoubleAsIfIntegral}
 import annotation.tailrec
 
 import at.jku.ssw.openvc._
@@ -94,7 +94,7 @@ object SemanticAnalyzer extends Phase {
         case (et1: EnumerationType, et2: EnumerationType) => et1.baseType.getOrElse(et1) == et2.baseType.getOrElse(et2)
         case (NullType, _: AccessType) => true
         case (_: AccessType, NullType) => true
-        case (at1: ArrayType, at2: ArrayType) => at1.elementType == at2.elementType && at1.dimensions.size == at2.dimensions.size
+        case (at1: ArrayType, at2: ArrayType) => at1.elementType == at2.elementType && at1.dimensionality == at2.dimensionality
         case _ => false
       }
     }
@@ -408,7 +408,7 @@ object SemanticAnalyzer extends Phase {
               case _ =>
                 val expressions = expectedType match {
                   case arrayType: ConstrainedArrayType =>
-                    val dataType = arrayType.dimensions.size match {
+                    val dataType = arrayType.dimensionality match {
                       case 1 => arrayType.elementType
                       case size => ConstrainedArrayType(arrayType.name, arrayType.elementType, arrayType.dimensions.tail) //TODO check if for each dimension is a row
                     }
@@ -419,7 +419,7 @@ object SemanticAnalyzer extends Phase {
                         require(element.choices.isEmpty)
                         mapPositionalElements(xs, map + (i -> checkExpression(context, element.expression, dataType)), i + 1)
                     }
-                    require(namedElements.isEmpty) //TODO
+                    //require(namedElements.isEmpty) //TODO
                     mapPositionalElements(positionalElements, immutable.SortedMap(), 0).values.toSeq
                   case recordType: RecordType =>
                     @tailrec
@@ -505,7 +505,7 @@ object SemanticAnalyzer extends Phase {
           }
         case Factor.Operator.NOT =>
           factor.left.dataType match {
-            case arrayType: ArrayType if (arrayType.dimensions.size == 1 && (arrayType.elementType == SymbolTable.bitType || arrayType.elementType == SymbolTable.booleanType)) => factor.left.dataType
+            case arrayType: ArrayType if (arrayType.dimensionality == 1 && (arrayType.elementType == SymbolTable.bitType || arrayType.elementType == SymbolTable.booleanType)) => factor.left.dataType
             case otherType =>
               if (otherType == SymbolTable.bitType || otherType == SymbolTable.booleanType) factor.left.dataType
               else NoType
@@ -558,7 +558,7 @@ object SemanticAnalyzer extends Phase {
         case INTEGER_LITERAL => literal.copy(dataType = SymbolTable.universalIntegerType, value = literal.toInt)
         case REAL_LITERAL => literal.copy(dataType = SymbolTable.universalRealType, value = literal.toDouble)
         case STRING_LITERAL => expectedType match {
-          case arrayType: ArrayType if (arrayType.elementType.isInstanceOf[EnumerationType] && arrayType.dimensions.size == 1) =>
+          case arrayType: ArrayType if (arrayType.elementType.isInstanceOf[EnumerationType] && arrayType.dimensionality == 1) =>
             val enumType = arrayType.elementType.asInstanceOf[EnumerationType]
             for ((c, i) <- literal.text.replace("\"", "").zipWithIndex) {
               if (!enumType.contains(c.toString))
@@ -580,7 +580,7 @@ object SemanticAnalyzer extends Phase {
                 case symbols => addError(literal, "ambiguous character literal, found %s matching symbols", symbols.size.toString)
               }
           } match {
-            case Some(enumerationSymbol) => literal.copy(dataType = enumerationSymbol.dataType, value = enumerationSymbol.dataType.intValue(enumerationSymbol.name.replace("'", "")))
+            case Some(enumerationSymbol) => literal.copy(dataType = enumerationSymbol.dataType, value = enumerationSymbol.dataType.value(enumerationSymbol.name.replace("'", "")))
             case None => literal
           }
         case BIT_STRING_LITERAL =>
@@ -673,7 +673,7 @@ object SemanticAnalyzer extends Phase {
       def isBooleanOrBit(dataType: DataType): Boolean = dataType == SymbolTable.bitType || dataType == SymbolTable.booleanType
       if (isBooleanOrBit(logicalExpr.left.dataType) && logicalExpr.left.dataType == logicalExpr.right.dataType) logicalExpr.copy(dataType = logicalExpr.left.dataType)
       else (logicalExpr.left.dataType, logicalExpr.right.dataType) match {
-        case (left: ArrayType, right: ArrayType) if (left.dimensions.size == 1 && right.dimensions.size == 1 && isCompatible(left, right) && isBooleanOrBit(left.elementType)) => logicalExpr.copy(dataType = logicalExpr.left.dataType)
+        case (left: ArrayType, right: ArrayType) if (left.dimensionality == 1 && right.dimensionality == 1 && isCompatible(left, right) && isBooleanOrBit(left.elementType)) => logicalExpr.copy(dataType = logicalExpr.left.dataType)
         case _ => findOverloadedOperator(logicalExpr.operator.toString, logicalExpr, logicalExpr.left, logicalExpr.right).getOrElse(logicalExpr)
       }
     }
@@ -688,7 +688,7 @@ object SemanticAnalyzer extends Phase {
         case list: ListOfSubprograms => visitFunctionCallExpression(FunctionCallExpression(identifier, None), list, Option(expectedType))
         case unitSymbol: UnitSymbol => PhysicalLiteral(identifier.position, "1", new SelectedName(Seq(identifier)), Literal.Type.INTEGER_LITERAL, unitSymbol)
         case ListOfEnumerations(_, enumerations) => enumerations.find(enumSymbol => isCompatible(enumSymbol.dataType, expectedType)) match {
-          case Some(enumSymbol) => Literal(identifier.position, identifier.text, Literal.Type.INTEGER_LITERAL, enumSymbol.dataType, value = enumSymbol.dataType.intValue(enumSymbol.name.replace("'", "")))
+          case Some(enumSymbol) => Literal(identifier.position, identifier.text, Literal.Type.INTEGER_LITERAL, enumSymbol.dataType, value = enumSymbol.dataType.value(enumSymbol.name.replace("'", "")))
           case _ =>
             addError(identifier, "enumeration %s not found in type %s", identifier.text, expectedType.name)
             NoExpression
@@ -724,7 +724,7 @@ object SemanticAnalyzer extends Phase {
                             val expression = acceptExpression(indexes.head, NoType, context)
                             (dataType, expression.dataType) match {
                               case (_: NumericType, _: NumericType) =>
-                              case (arr: ArrayType, arr2: ArrayType) if (isCompatible(arr.elementType, arr2.elementType) && arr.dimensions.size == arr2.dimensions.size) => // TODO check if cast is allowed
+                              case (arr: ArrayType, arr2: ArrayType) if (isCompatible(arr.elementType, arr2.elementType) && arr.dimensionality == arr2.dimensionality) => // TODO check if cast is allowed
                               case (firstType, secondType) => addError(expression, "invalid type cast from type %s to type %s", firstType.name, secondType.name)
                             }
                             Option(TypeCastExpression(expression, dataType))
@@ -732,8 +732,8 @@ object SemanticAnalyzer extends Phase {
                           else addError(name, "invalid type cast expression")
                         case r: RuntimeSymbol => r.dataType match {
                           case array: ArrayType =>
-                            if (indexes.size != array.dimensions.size)
-                              addError(part, "invalid indices count, found %s expected %s", indexes.size.toString, array.dimensions.size.toString)
+                            if (indexes.size != array.dimensionality)
+                              addError(part, "invalid indices count, found %s expected %s", indexes.size.toString, array.dimensionality.toString)
                             val expressions = indexes.zip(array.dimensions).map(x => checkExpression(context, x._1, x._2.elementType))
                             Option(new ArrayAccessExpression(r, expressions, array.elementType, matchParts(xs, r.makeCopy(Identifier(part.position, "array"), array.elementType, symbol))))
                           case _ => addError(part, "%s is not a array", r.name)
@@ -843,7 +843,10 @@ object SemanticAnalyzer extends Phase {
             addError(qualifiedExpression, "%s is not a access type", otherType.name)
             NoExpression
         }
-        case Right(subType) => NewExpression(newExpression.position, Right(createType(context, subType)))
+        case Right(subType) =>
+          val newSubType = createType(context, subType)
+          if (newSubType.dataType.isInstanceOf[UnconstrainedArrayType]) addError(newSubType, "array type %s is not constrained", newSubType.typeName)
+          NewExpression(newExpression.position, Right(newSubType))
       }
 
     def visitQualifiedExpression(qualifiedExpression: QualifiedExpression): Expression = {
@@ -879,7 +882,7 @@ object SemanticAnalyzer extends Phase {
 
     def visitShiftExpression(shiftExpr: ShiftExpression): Expression =
       (shiftExpr.left.dataType match {
-        case arrayType: ArrayType if (arrayType.dimensions.size == 1 && (arrayType.elementType == SymbolTable.bitType) || arrayType.elementType == SymbolTable.booleanType) =>
+        case arrayType: ArrayType if (arrayType.dimensionality == 1 && (arrayType.elementType == SymbolTable.bitType) || arrayType.elementType == SymbolTable.booleanType) =>
           if (shiftExpr.right.dataType != SymbolTable.integerType && shiftExpr.right.dataType != SymbolTable.universalIntegerType) NoType
           else shiftExpr.left.dataType
         case _ => NoType
@@ -1154,15 +1157,15 @@ object SemanticAnalyzer extends Phase {
         }
     }
 
-  def checkDiscreteRange(context: Context, discreteRange: DiscreteRange): DiscreteRange =
+  def checkDiscreteRange(context: Context, discreteRange: DiscreteRange, dataType: DataType = NoType): DiscreteRange =
     discreteRange.rangeOrSubTypeIndication match {
       case Left(range) =>
-        val newRange = checkRange(context, range)
+        val newRange = checkRange(context, range, dataType)
         newRange.dataType match {
           case rangeType: RangeType =>
             if (!rangeType.elementType.isInstanceOf[DiscreteType] && rangeType.elementType != NoType) addError(newRange, "expected a discrete range")
-            val (low: Int, high: Int) = calcRangeValues(range)(LongIsIntegral).getOrElse((Int.MinValue, Int.MaxValue))
-            new DiscreteRange(Left(newRange), dataType = new ConstrainedRangeType(rangeType.elementType, low.toInt, high.toInt))
+            val (low, high) = calcRangeValues(newRange)(IntIsIntegral).getOrElse((Int.MinValue, Int.MaxValue))
+            new DiscreteRange(Left(newRange), dataType = new ConstrainedRangeType(rangeType.elementType, low, high))
           case _ => new DiscreteRange(Left(newRange))
         }
       case Right(subTypeIndication) =>
@@ -1173,9 +1176,9 @@ object SemanticAnalyzer extends Phase {
             subTypeIndication.constraint.flatMap {
               _ match {
                 case Left(sourceRange) =>
-                  val range = checkRange(context, sourceRange)
-                  val (low: Long, high: Long) = calcRangeValues(range)(LongIsIntegral).getOrElse((Int.MinValue, Int.MaxValue))
-                  Option(new DiscreteRange(Right(subTypeIndication.copy(dataType = dataType, constraint = Option(Left(range)))), dataType = new ConstrainedRangeType(dataType, low.toInt, high.toInt)))
+                  val range = checkRange(context, sourceRange, dataType)
+                  val (low, high) = calcRangeValues(range)(IntIsIntegral).getOrElse((Int.MinValue, Int.MaxValue))
+                  Option(new DiscreteRange(Right(subTypeIndication.copy(dataType = dataType, constraint = Option(Left(range)))), dataType = new ConstrainedRangeType(dataType, low, high)))
                 case _ => addError(subTypeIndication.typeName, "expected a subtype indication with a range constraint, found a index constraint")
               }
             }.getOrElse(new DiscreteRange(Right(subTypeIndication.copy(dataType = dataType)), dataType = new ConstrainedRangeType(dataType, discreteType.left, discreteType.right)))
@@ -1228,15 +1231,15 @@ object SemanticAnalyzer extends Phase {
       case Right(_) => None
     }
 
-  def checkRange(context: Context, range: Range): Range = range.expressionsOrName match {
+  def checkRange(context: Context, range: Range, dataType: DataType = NoType): Range = range.expressionsOrName match {
     //TODO check if range expression are locally static expressions
     case Left((sourceFromExpression, direction, sourceToExpression)) =>
-      val fromExpression = checkExpression(context, sourceFromExpression, NoType)
-      val toExpression = checkExpression(context, sourceToExpression, fromExpression.dataType)
+      val fromExpression = checkExpression(context, sourceFromExpression, dataType)
+      val toExpression = checkExpression(context, sourceToExpression, if (dataType != NoType) dataType else fromExpression.dataType)
       if (!isCompatible(fromExpression.dataType, toExpression.dataType)) addError(toExpression, "data type %s is not comaptible with %s", toExpression.dataType.name, fromExpression.dataType)
       new Range(Left((fromExpression, direction, toExpression)), dataType = new UnconstrainedRangeType(fromExpression.dataType))
     case Right(attributeName) =>
-      val expr = acceptExpression(attributeName, NoType, context)
+      val expr = acceptExpression(attributeName, dataType, context)
       expr.dataType match {
         case rangeType: RangeType => new Range(Right(expr), rangeType)
         case dataType =>
@@ -1363,17 +1366,17 @@ object SemanticAnalyzer extends Phase {
         if (lowerBound < baseTypeLowerBound) addError(sourceRange, "lower bound %s is smaller than the lower bound of the base type %s", lowerBound.toString, baseTypeLowerBound.toString)
         if (upperBound > baseTypeUpperBound) addError(sourceRange, "upper bound %s is greater than the upper bound of the base type %s", upperBound.toString, baseTypeUpperBound.toString)
       }
-      val range = checkRange(context, sourceRange)
+      val range = checkRange(context, sourceRange, baseType)
       val dataType = range.dataType.elementType
       if (dataType.getClass eq baseType.getClass) {
         (baseType: @unchecked) match {
           case intBaseType: IntegerType =>
-            val (low: Long, high: Long) = calcRangeValues(range)(LongIsIntegral).getOrElse((intBaseType.lowerBound, intBaseType.upperBound))
-            val intType = new IntegerType(subTypeName, low.toInt, high.toInt, intBaseType.baseType.orElse(Some(intBaseType)), resolutionFunction) //if this is a subtype of a subtype we want the real base type
+            val (low, high) = calcRangeValues(range)(IntIsIntegral).getOrElse((intBaseType.lowerBound, intBaseType.upperBound))
+            val intType = new IntegerType(subTypeName, low, high, intBaseType.baseType.orElse(Some(intBaseType)), resolutionFunction) //if this is a subtype of a subtype we want the real base type
             check(intType.lowerBound, intBaseType.lowerBound, intType.upperBound, intBaseType.upperBound)
             Option(intType)
           case realBaseType: RealType =>
-            val (low: Double, high: Double) = calcRangeValues(range)(DoubleAsIfIntegral).getOrElse((realBaseType.lowerBound, realBaseType.upperBound))
+            val (low, high) = calcRangeValues(range)(DoubleAsIfIntegral).getOrElse((realBaseType.lowerBound, realBaseType.upperBound))
             val realType = new RealType(subTypeName, low, high, realBaseType.baseType.orElse(Some(realBaseType)), resolutionFunction)
             check(realType.lowerBound, realBaseType.lowerBound, realType.upperBound, realBaseType.upperBound)(DoubleAsIfIntegral)
             Option(realType)
@@ -1418,10 +1421,12 @@ object SemanticAnalyzer extends Phase {
             subTypeIndication.copy(constraint = Option(Left(range)), dataType = dataType.getOrElse(NoType))
           case Right(arrayConstraint) => baseType match {
             case unconstrainedArrayType: UnconstrainedArrayType =>
-              val discreteRanges = arrayConstraint.map(checkDiscreteRange(context, _))
+              if (unconstrainedArrayType.dimensionality != arrayConstraint.size)
+                addError(subTypeIndication.typeName, "expected %s found %s discrete ranges for a array constraint", unconstrainedArrayType.dimensionality.toString, arrayConstraint.size.toString)
+              val discreteRanges = arrayConstraint.zip(unconstrainedArrayType.dimensions).map(x => checkDiscreteRange(context, x._1, x._2.elementType))
               subTypeIndication.copy(constraint = Option(Right(discreteRanges)), dataType = new ConstrainedArrayType(unconstrainedArrayType.name, unconstrainedArrayType.elementType, discreteRanges.map(_.dataType)))
             case dataType =>
-              if (dataType != NoType) addError(subTypeIndication.typeName, "you can not use a array constraint for non array subtypes")
+              if (dataType != NoType) addError(subTypeIndication.typeName, "you can only use a array constraint for unconstraint array subtypes")
               subTypeIndication
           }
         }
@@ -2290,6 +2295,7 @@ object SemanticAnalyzer extends Phase {
 
   def visitSignalDeclaration(signalDeclaration: SignalDeclaration, owner: Symbol, context: Context): ReturnType = {
     val subType = createType(context, signalDeclaration.subType)
+    if (subType.dataType.isInstanceOf[UnconstrainedArrayType]) addError(subType, "array type %s is not constrained", subType.typeName)
     checkIfNotFileProtectedAccessType(signalDeclaration.subType, subType.dataType)
     val defaultExpression = checkExpressionOption(context, signalDeclaration.defaultExpression, subType.dataType)
     val symbols = signalDeclaration.identifiers.zipWithIndex.map {
@@ -2348,18 +2354,18 @@ object SemanticAnalyzer extends Phase {
             else Some(unitsMap(unit) * unitDef.literal.toLong)
             buildUnitsMap(xs, unitsMap + (unitDef.identifier.text -> value.getOrElse(0)))
         }
-        val (low: Long, high: Long) = calcRangeValues(range)(LongIsIntegral).getOrElse((Long.MinValue, Long.MaxValue))
-        val phyType = new PhysicalType(name, low, high, buildUnitsMap(physicalType.elements, Map(physicalType.baseIdentifier.text -> 1)))
+        val (low, high) = calcRangeValues(range)(LongIsIntegral).getOrElse((Long.MinValue, Long.MaxValue))
+        val phyType = new PhysicalType(name, low, high, buildUnitsMap(physicalType.elements, Map(physicalType.baseIdentifier.text -> 1L)))
         val symbols = new UnitSymbol(physicalType.baseIdentifier, phyType, owner) +: physicalType.elements.map(element => new UnitSymbol(element.identifier, phyType, owner))
         (physicalType.copy(range = range, dataType = phyType), symbols)
       case integerOrRealType: IntegerOrFloatingPointTypeDefinition =>
         val range = checkRange(context, integerOrRealType.range)
         val dataType = range.dataType.elementType match {
           case _: IntegerType =>
-            val (low: Long, high: Long) = calcRangeValues(range)(LongIsIntegral).getOrElse((Int.MinValue, Int.MaxValue))
-            new IntegerType(name, low.toInt, high.toInt, None)
+            val (low, high) = calcRangeValues(range)(IntIsIntegral).getOrElse((Int.MinValue, Int.MaxValue))
+            new IntegerType(name, low, high, None)
           case _: RealType =>
-            val (low: Double, high: Double) = calcRangeValues(range)(DoubleAsIfIntegral).getOrElse((Double.MinValue, Double.MaxValue))
+            val (low, high) = calcRangeValues(range)(DoubleAsIfIntegral).getOrElse((Double.MinValue, Double.MaxValue))
             new RealType(name, low, high, None)
           case otherType =>
             addError(range, "expected a expression of type integer or real, found %s", otherType.name)
@@ -2383,13 +2389,14 @@ object SemanticAnalyzer extends Phase {
       case recordType: RecordTypeDefinition =>
         checkIdentifiers(recordType.identifier, recordType.endIdentifier)
         checkDuplicateIdentifiers(recordType.elements.flatMap(_.identifiers), "duplicate record field %s")
-        val elements = recordType.elements.flatMap {
+        val (fields, elements) = recordType.elements.map {
           element =>
             val subType = createType(context, element.subType)
+            if (subType.dataType.isInstanceOf[UnconstrainedArrayType]) addError(subType, "array type %s is not constrained", subType.typeName)
             checkIfNotFileProtectedType(subType)
-            element.identifiers.map(id => id.text -> subType.dataType)
-        }
-        (recordType.copy(dataType = new RecordType(name, elements, owner)), Seq())
+            (element.identifiers.map(id => id.text -> subType.dataType), new RecordTypeDefinition.Element(element.identifiers, subType))
+        }.unzip
+        (recordType.copy(elements = elements, dataType = new RecordType(name, fields.flatten, owner)), Seq())
       case accessType: AccessTypeDefinition =>
         val subType = createType(context, accessType.subType, isAccessTypeDefinition = true)
         checkIfNotFileProtectedType(subType)
@@ -2400,7 +2407,7 @@ object SemanticAnalyzer extends Phase {
       case fileTypeDefinition: FileTypeDefinition =>
         val dataType = context.findType(fileTypeDefinition.typeName)
         checkIfNotFileProtectedAccessType(fileTypeDefinition.typeName, dataType)
-        if (dataType.isInstanceOf[ArrayType] && dataType.asInstanceOf[ArrayType].dimensions.size != 1)
+        if (dataType.isInstanceOf[ArrayType] && dataType.asInstanceOf[ArrayType].dimensionality != 1)
           addError(fileTypeDefinition.typeName, "the type can not be a multidimension array type")
         val fileType = new FileType(name, dataType)
 
@@ -2521,6 +2528,7 @@ object SemanticAnalyzer extends Phase {
 
   def visitVariableDeclaration(variableDeclaration: VariableDeclaration, owner: Symbol, context: Context): ReturnType = {
     val subType = createType(context, variableDeclaration.subType)
+    if (subType.dataType.isInstanceOf[UnconstrainedArrayType]) addError(variableDeclaration.subType, "array type %s is not constrained", variableDeclaration.subType.typeName)
     owner match {
       case _: ArchitectureSymbol | _: PackageSymbol | _: EntitySymbol =>
         if (!variableDeclaration.isShared) addError(variableDeclaration, "non shared variables are not allowed in architecture, package and entity declarations")

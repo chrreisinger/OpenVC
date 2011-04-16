@@ -89,6 +89,7 @@ abstract sealed class CompositeType extends DataType
 abstract sealed class ArrayType extends CompositeType {
   val elementType: DataType
   val dimensions: Seq[RangeType]
+  lazy val dimensionality = dimensions.size
   override lazy val attributes = Map(
     ("left" -> new PreDefinedAttributeSymbol("left", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
     ("right" -> new PreDefinedAttributeSymbol("right", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
@@ -156,7 +157,7 @@ final case class EnumerationType(name: String, elements: Seq[String], baseType: 
   private[this] val lastElement = elements.last
 
   private[this] val internalMap = baseType match {
-    case Some(base) => elements.zip(base.intValue(firstElement) to base.intValue(lastElement)).toMap
+    case Some(base) => elements.zip(base.value(firstElement) to base.value(lastElement)).toMap
     case None => elements.zipWithIndex.toMap
   }
 
@@ -168,7 +169,7 @@ final case class EnumerationType(name: String, elements: Seq[String], baseType: 
 
   def contains(element: String): Boolean = internalMap.contains(element)
 
-  def intValue(element: String): Int = internalMap(element)
+  def value(element: String): Int = internalMap(element)
 }
 
 @SerialVersionUID(8486753470499674454L)

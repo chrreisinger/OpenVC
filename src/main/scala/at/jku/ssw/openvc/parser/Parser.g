@@ -633,14 +633,14 @@ enumeration_literal returns [Identifier id=NoIdentifier] :
 	identifier {$id=$identifier.id}
 	| CHARACTER_LITERAL {$id=toIdentifier($CHARACTER_LITERAL)};
 	
-enumeration_type_definition[Identifier id,Position pos] returns [EnumerationTypeDefinition enumTypeDef]
+enumeration_type_definition[Identifier id,Position pos] returns [DeclarativeItem enumTypeDef=NoNode]
 @init{
 	val elements=new Buffer[Identifier]()
 } :
 	LPAREN e1=enumeration_literal {elements += $e1.id}(COMMA e2=enumeration_literal {elements += $e2.id})* RPAREN
 	{$enumTypeDef=new EnumerationTypeDefinition($pos,$id,elements.result)};
 
-numeric_type_definition[Identifier id,Position pos] returns [AbstractTypeDeclaration numericTypeDef] 
+numeric_type_definition[Identifier id,Position pos] returns [DeclarativeItem numericTypeDef=NoNode]
 @init{
 	val elements=new Buffer[PhysicalTypeDefinition.Element]()
 } :
@@ -659,7 +659,7 @@ numeric_type_definition[Identifier id,Position pos] returns [AbstractTypeDeclara
 index_subtype_definition returns [SelectedName typeMark] :
 	type_mark RANGE BOX {$typeMark=$type_mark.typeName};
 				
-array_type_definition[Identifier id,Position pos] returns [ArrayTypeDefinition arrayTypeDef]
+array_type_definition[Identifier id,Position pos] returns [DeclarativeItem arrayTypeDef=NoNode]
 @init{
 	val unConstraintList=new Buffer[SelectedName]()
 } :
@@ -673,7 +673,7 @@ array_type_definition[Identifier id,Position pos] returns [ArrayTypeDefinition a
 				else new ArrayTypeDefinition($pos,$id,Right($index_constraint.ranges),$subtype_indication.subType)
 	};
 		
-record_type_definition[Identifier id,Position pos] returns [RecordTypeDefinition recordTypeDef]
+record_type_definition[Identifier id,Position pos] returns [DeclarativeItem recordTypeDef=NoNode]
 @init{
 	val elements=new Buffer[RecordTypeDefinition.Element]()
 } :
@@ -685,11 +685,11 @@ record_type_definition[Identifier id,Position pos] returns [RecordTypeDefinition
 	END RECORD identifier?
 	{$recordTypeDef=new RecordTypeDefinition($pos,$id,elements.result,$identifier.id)};
 
-access_type_definition[Identifier id,Position pos] returns [AccessTypeDefinition accessTypeDef] :
+access_type_definition[Identifier id,Position pos] returns [DeclarativeItem accessTypeDef=NoNode] :
 	ACCESS subtype_indication 
 	{$accessTypeDef=new AccessTypeDefinition($pos,$id,$subtype_indication.subType)};
 	
-file_type_definition[Identifier id,Position pos] returns [FileTypeDefinition fileTypeDef] :
+file_type_definition[Identifier id,Position pos] returns [DeclarativeItem fileTypeDef=NoNode] :
 	FILE OF type_mark 
 	{$fileTypeDef=new FileTypeDefinition($pos,$id,$type_mark.typeName)};
 
@@ -734,7 +734,7 @@ ams_subnature_indication returns [SubNatureIndication subNature] :
 ams_nature_mark returns [SelectedName typeName] :
 	 selected_name {$typeName=$selected_name.name_};
 		
-protected_type_declaration[Identifier id,Position pos] returns [ProtectedTypeDeclaration protectedTypeDecl]
+protected_type_declaration[Identifier id,Position pos] returns [DeclarativeItem protectedTypeDecl=NoNode]
 @init{
 	val items=new Buffer[DeclarativeItem]()
 	val syncMessage="protected type declarative item"
@@ -750,7 +750,7 @@ protected_type_declarative_item returns [DeclarativeItem item=NoNode] :
 	| attribute_specification {$item=$attribute_specification.attributeSpec}
 	| use_clause {$item=$use_clause.useClause};
 
-protected_type_body[Identifier id,Position pos] returns [ProtectedTypeBodyDeclaration protectedTypeBody]
+protected_type_body[Identifier id,Position pos] returns [DeclarativeItem protectedTypeBody=NoNode]
 @init{
 	val items=new Buffer[DeclarativeItem]()
 	val syncMessage="protected type body declarative item"
