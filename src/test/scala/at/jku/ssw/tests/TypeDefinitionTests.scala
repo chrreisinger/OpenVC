@@ -38,13 +38,19 @@ final class TypeDefinitionTests extends GenericTest {
 
   compileCodeInPackageAndLoad("array type declaration") {
     """
-      -- Examples of constrained array declarations:
-      type MY_WORD is array (0 to 31) of BIT ;
+      constant n         : integer := 4;
+      type     MY_WORD is array (0 to 31) of bit;
       -- A memory word type with an ascending range.
-      type DATA_IN is array (7 downto 0) of FIVE_LEVEL_LOGIC ;
+      type     DATA_IN is array (7 downto 0) of boolean;
       -- An input port type with a descending range.
-      -- Example of unconstrained array declarations:
-      type MEMORY is array (INTEGER range <>) of MY_WORD ;
+      -- Example of unconstrained array declarations :
+      type     MEMORY is array (integer range <>) of MY_WORD;
+      -- A memory array type.
+      -- Examples of array object declarations :
+      variable DATA_LINE : DATA_IN;
+      -- Defines a data input line.
+      variable MY_MEMORY : MEMORY (0 to 2**n-1);
+      variable l, r      : bit_vector(0 to 10);
     """
   }
 
