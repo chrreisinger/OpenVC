@@ -784,9 +784,9 @@ subtype_declaration returns [DeclarativeItem subTypeDecl=NoNode] :
 	{$subTypeDecl=new SubTypeDeclaration($SUBTYPE,$identifier.id,$subtype_indication.subType)};
 	
 subtype_indication returns [SubTypeIndication subType] :
-	{vhdl2008}?=>((v2008_resolution_indication selected_name)=>v2008_resolution_indication)? selected_name v2008_constraint? ({ams}?=> TOLERANCE expression)? //TODO
-		{$subType=new SubTypeIndication($v2008_resolution_indication.resolutionIndication,$selected_name.name_,$v2008_constraint.constraint_,$expression.expr)}
-	| n1=selected_name n2=selected_name? constraint? ({ams}?=> TOLERANCE expression)?
+	//TODO {vhdl2008}?=>((v2008_resolution_indication selected_name)=>v2008_resolution_indication)? selected_name v2008_constraint? ({ams}?=> TOLERANCE expression)?
+	//	{$subType=new SubTypeIndication($v2008_resolution_indication.resolutionIndication,$selected_name.name_,$v2008_constraint.constraint_,$expression.expr)}
+	n1=selected_name n2=selected_name? constraint? ({ams}?=> TOLERANCE expression)?
 		{
 		$subType=if (n2!=null) new SubTypeIndication($n1.name_,$n2.name_,$constraint.constraint_,$expression.expr)
 			else new SubTypeIndication(None,$n1.name_,$constraint.constraint_,$expression.expr)
