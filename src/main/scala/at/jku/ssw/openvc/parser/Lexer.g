@@ -241,9 +241,9 @@ PROCEDURAL : {ams}?=>'procedural';
 // Lexer rules
 WS : ( '\t' | ' ' | '\r' | '\n' )+ {skip()};
 
-//mulitline comment with nested comments, http://www.antlr.org/wiki/pages/viewpage.action?pageId=1573
+//multiline comment with nested comments, http://www.antlr.org/wiki/pages/viewpage.action?pageId=1573
 NESTED_ML_COMMENT :
-	'/*' (options {greedy=false;} : NESTED_ML_COMMENT | . )*  '*/' {skip()};
+	{vhdl2008}?=> '/*' (options {greedy=false;} : NESTED_ML_COMMENT | . )*  '*/' {skip()};
 
 //A comment can appear on any line of a VHDL description and may contain any character except the format effectors vertical tab, carriage return, line feed, and form feed.
 LINECOMMENT : '--' ~('\r'|'\n'|'\u000C')* {skip()};

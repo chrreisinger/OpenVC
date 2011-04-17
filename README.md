@@ -13,3 +13,4 @@ To compile the project start the [sbt](http://code.google.com/p/simple-build-too
 * matching relational operator
 * Context declarations
 * improved bit string literals
+* block comments (C-style comments /* */)
