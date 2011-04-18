@@ -46,11 +46,11 @@ final case class CompilationUnit(source: SourceFile,
   def addWarnings(warnings: Seq[CompilerMessage]) {warningBuffer ++= warnings}
 
   def printErrors(writer: PrintWriter) {
+    lazy val sourceLines = source.getLines().toIndexedSeq
     if (errors.nonEmpty || warnings.nonEmpty) {
       writer.println("errors:" + errors.size + " warnings:" + warnings.size)
     }
     def printMessages(prefix: String, messages: Seq[CompilerMessage]) {
-      val sourceLines = source.getLines().toIndexedSeq
       for (msg <- messages) {
         writer.println(prefix + source.fileName + ": line:" + msg.position.line + " col:" + msg.position.column + " " + msg.message)
         if (msg.position != NoPosition) {
