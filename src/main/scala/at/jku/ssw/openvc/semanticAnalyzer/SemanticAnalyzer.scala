@@ -2534,22 +2534,22 @@ object SemanticAnalyzer extends Phase {
     case symbolList => (useClause, context.insertSymbols(symbolList, false))
   }
 
-  def visitVariableAssignmentStatement(varAssignStmt: VariableAssignmentStatement, owner: Symbol, context: Context): ReturnType = varAssignStmt match {
-    case stmt: SimpleVariableAssignmentStatement =>
-      stmt.target.nameOrAggregate match {
-        case Left(name) =>
-          val nameExpression = acceptExpression(name, NoType, context)
-          nameExpression match {
-            case w: WithSymbol if (w.symbol.isInstanceOf[VariableSymbol]) =>
-              val varSymbol = w.symbol.asInstanceOf[VariableSymbol]
-              if (varSymbol.mode == InterfaceList.Mode.IN) addError(varAssignStmt, "can not write variable %s with modifier IN", varSymbol.name)
-              checkPure(context, varAssignStmt, owner, varSymbol)
-            case _ => addError(name.identifier, "%s is not a variable", name.identifier.text)
-          }
-          val expression = checkExpression(context, stmt.expression, nameExpression.dataType)
-          (stmt.copy(expression = expression, target = stmt.target.copy(expression = nameExpression)), context)
-        case Right(aggregate) => sys.error("not implemented") // TODO stmt.target.aggregate
-      }
+  def visitVariableAssignmentStatement(variableAssignmentStatement: VariableAssignmentStatement, owner: Symbol, context: Context): ReturnType = {
+    val simpleVariableAssignment = variableAssignmentStatement.asInstanceOf[SimpleVariableAssignmentStatement]
+    simpleVariableAssignment.target.nameOrAggregate match {
+      case Left(name) =>
+        val nameExpression = acceptExpression(name, NoType, context)
+        nameExpression match {
+          case w: WithSymbol if (w.symbol.isInstanceOf[VariableSymbol]) =>
+            val varSymbol = w.symbol.asInstanceOf[VariableSymbol]
+            if (varSymbol.mode == InterfaceList.Mode.IN) addError(simpleVariableAssignment, "can not write variable %s with modifier IN", varSymbol.name)
+            checkPure(context, simpleVariableAssignment, owner, varSymbol)
+          case _ => addError(name.identifier, "%s is not a variable", name.identifier.text)
+        }
+        val expression = checkExpression(context, simpleVariableAssignment.expression, nameExpression.dataType)
+        (simpleVariableAssignment.copy(expression = expression, target = simpleVariableAssignment.target.copy(expression = nameExpression)), context)
+      case Right(aggregate) => sys.error("not implemented") // TODO stmt.target.aggregate
+    }
   }
 
 
