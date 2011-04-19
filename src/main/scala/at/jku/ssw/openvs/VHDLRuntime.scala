@@ -205,8 +205,6 @@ object VHDLRuntime {
       1 / math.pow(base, math.abs(exponent))
     else math.pow(base, exponent)
 
-  def concatenate(s1: String, s2: String): String = s1.concat(s2)
-
   def mod(x: Int, y: Int): Int = {
     val mod = x % y
     if ((mod < 0 && y > 0) || (mod > 0 && y < 0)) mod + y else mod
@@ -285,6 +283,26 @@ object VHDLRuntime {
 
   def createRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A: ClassManifest](range1: VHDLRange, range2: VHDLRange, range3: VHDLRange, range4: VHDLRange, range5: VHDLRange, value: A) =
     new RuntimeArray5D(ArrayImpl.fill[A](range1.size, range2.size, range3.size, range4.size, range5.size)(value), range1, range2, range3, range4, range5)
+
+  def createRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](array: Array[A], range: VHDLRange) =
+    new RuntimeArray1D(ArrayImpl(array: _*), range)
+
+  def slice[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](array: RuntimeArray1D[A], range: VHDLRange) =
+    new RuntimeArray1D(array.data.slice(indexPosition(array.range, range.start), indexPosition(array.range, range.end) + range.step), range)
+
+  def concatenate[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](left: RuntimeArray1D[A], right: RuntimeArray1D[A], rangeStart: Int) =
+    new RuntimeArray1D(left.data ++ right.data, new VHDLRange(rangeStart, rangeStart + ((left.range.size + right.range.size - 1) * left.range.step), left.range.step))
+
+  def concatenate[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](left: A, right: RuntimeArray1D[A], rangeStart: Int) =
+    new RuntimeArray1D(left +: right.data, new VHDLRange(rangeStart, rangeStart + (right.range.size * right.range.step), right.range.step)) //prepend
+
+  def concatenate[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](left: RuntimeArray1D[A], right: A, rangeStart: Int) =
+    new RuntimeArray1D(left.data :+ right, new VHDLRange(rangeStart, rangeStart + (left.range.size * left.range.step), left.range.step)) //append
+
+  def concatenate[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](left: A, right: A, rangeStart: Int) =
+    new RuntimeArray1D(ArrayImpl(left, right), null) //TODO
+
+  def concatenate(s1: String, s2: String, newRange: VHDLRange): String = s1.concat(s2)
 
   def NOT(data: Array[Boolean]): Array[Boolean] = data.map(!_)
 

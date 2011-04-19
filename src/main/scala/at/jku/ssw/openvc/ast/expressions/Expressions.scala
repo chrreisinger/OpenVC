@@ -307,11 +307,11 @@ final case class AttributeExpression(position: Position, symbol: Symbol, attribu
   }
 }
 
-final case class SliceAccessExpression(symbol: RuntimeSymbol, range: DiscreteRange, rangeType: DataType, expression: Option[Expression]) extends Expression with WithSymbol {
+final case class SliceAccessExpression(symbol: RuntimeSymbol, range: DiscreteRange, sliceDataType: DataType, expression: Option[Expression]) extends Expression with WithSymbol {
   val position = range.position
   val dataType = expression match {
     case Some(expr) => expr.dataType
-    case None => rangeType
+    case None => sliceDataType
   }
 }
 

@@ -123,7 +123,10 @@ object SemanticAnalyzer extends Phase {
     None
   }
 
-  def addWarning(stmt: Locatable, msg: String, messageParameters: AnyRef*) = semanticWarnings += new CompilerMessage(stmt.position, String.format(msg, messageParameters.toArray: _*))
+  def addWarning(stmt: Locatable, msg: String, messageParameters: AnyRef*): Option[Nothing] = {
+    semanticWarnings += new CompilerMessage(stmt.position, String.format(msg, messageParameters.toArray: _*))
+    None
+  }
 
   def checkIdentifiersOption(startOption: Option[Identifier], endOption: Option[Identifier]) {
     startOption match {
@@ -789,7 +792,12 @@ object SemanticAnalyzer extends Phase {
                 }
               case Name.SlicePart(range) =>
                 symbol match {
-                  case r: RuntimeSymbol if (r.dataType.isInstanceOf[ArrayType]) => Option(new SliceAccessExpression(r, range, r.dataType, matchParts(xs, r.makeCopy(Identifier(part.position, "range"), r.dataType, symbol))))
+                  case r: RuntimeSymbol if (r.dataType.isInstanceOf[ArrayType]) =>
+                    val arrayType = r.dataType.asInstanceOf[ArrayType]
+                    val discreteRange = checkDiscreteRange(context, range, arrayType.dimensions.head.elementType)
+                    val dimensions = discreteRange.dataType +: arrayType.dimensions.tail.asInstanceOf[Seq[ConstrainedRangeType]]
+                    val sliceDataType = new ConstrainedArrayType(arrayType.name, arrayType.elementType, dimensions)
+                    Option(new SliceAccessExpression(r, discreteRange, sliceDataType, matchParts(xs, r.makeCopy(Identifier(part.position, "range"), sliceDataType, symbol))))
                   case s => addError(part, "%s is not a array", s.name)
                 }
               case Name.SelectedPart(identifier) => symbol match {
@@ -1157,10 +1165,10 @@ object SemanticAnalyzer extends Phase {
         }
     }
 
-  def checkDiscreteRange(context: Context, discreteRange: DiscreteRange, dataType: DataType = NoType): DiscreteRange =
+  def checkDiscreteRange(context: Context, discreteRange: DiscreteRange, targetDataType: DataType = NoType): DiscreteRange =
     discreteRange.rangeOrSubTypeIndication match {
       case Left(range) =>
-        val newRange = checkRange(context, range, dataType)
+        val newRange = checkRange(context, range, targetDataType)
         newRange.dataType match {
           case rangeType: RangeType =>
             if (!rangeType.elementType.isInstanceOf[DiscreteType] && rangeType.elementType != NoType) addError(newRange, "expected a discrete range")
@@ -1172,6 +1180,7 @@ object SemanticAnalyzer extends Phase {
         val dataType = context.findType(subTypeIndication.typeName)
         dataType match {
           case discreteType: DiscreteType =>
+            if (!isCompatible(dataType, targetDataType)) addError(subTypeIndication, "found data type %s expected %s", dataType.name, targetDataType.name)
             for (resolutionFunction <- subTypeIndication.resolutionFunction) addError(resolutionFunction, "a subtype indication in a discrete range can not have a resolution function")
             subTypeIndication.constraint.flatMap {
               _ match {
@@ -1220,11 +1229,11 @@ object SemanticAnalyzer extends Phase {
         (StaticExpressionCalculator.calcValue(fromExpression)(numeric), StaticExpressionCalculator.calcValue(toExpression)(numeric)) match {
           case (Some(x), Some(y)) => direction match {
             case Range.Direction.To =>
-              if (x > y) addError(fromExpression, "the left value is bigger then the right value")
+              if (x > y) addWarning(fromExpression, "the left value is bigger then the right value")
               else Option((x, y))
             case Range.Direction.Downto =>
-              if (x < y) addError(fromExpression, "the left value is smaller then the right value")
-              else Option((y, x))
+              if (x < y) addWarning(fromExpression, "the left value is smaller then the right value")
+              else Option((x, y))
           }
           case _ => None
         }
@@ -1239,7 +1248,7 @@ object SemanticAnalyzer extends Phase {
       if (!isCompatible(fromExpression.dataType, toExpression.dataType)) addError(toExpression, "data type %s is not comaptible with %s", toExpression.dataType.name, fromExpression.dataType)
       new Range(Left((fromExpression, direction, toExpression)), dataType = new UnconstrainedRangeType(fromExpression.dataType))
     case Right(attributeName) =>
-      val expr = acceptExpression(attributeName, dataType, context)
+      val expr = checkExpression(context, attributeName, dataType)
       expr.dataType match {
         case rangeType: RangeType => new Range(Right(expr), rangeType)
         case dataType =>
@@ -1424,7 +1433,15 @@ object SemanticAnalyzer extends Phase {
             case unconstrainedArrayType: UnconstrainedArrayType =>
               if (unconstrainedArrayType.dimensionality != arrayConstraint.size)
                 addError(subTypeIndication.typeName, "expected %s found %s discrete ranges for a array constraint", unconstrainedArrayType.dimensionality.toString, arrayConstraint.size.toString)
-              val discreteRanges = arrayConstraint.zip(unconstrainedArrayType.dimensions).map(x => checkDiscreteRange(context, x._1, x._2.elementType))
+              val discreteRanges = arrayConstraint.zip(unconstrainedArrayType.dimensions).map {
+                x =>
+                  val discreteRange = checkDiscreteRange(context, x._1, x._2.elementType)
+                  if (discreteRange.dataType != null) {
+                    if (discreteRange.dataType.from < x._2.elementType.asInstanceOf[DiscreteType].left) addError(discreteRange, "value %s is out of range for type %s", discreteRange.dataType.from.toString(), x._2.elementType.name)
+                    if (discreteRange.dataType.to > x._2.elementType.asInstanceOf[DiscreteType].right) addError(discreteRange, "value %s is out of range for type %s", discreteRange.dataType.to.toString(), x._2.elementType.name)
+                  }
+                  discreteRange
+              }
               subTypeIndication.copy(constraint = Option(Right(discreteRanges)), baseType = baseType, dataType = new ConstrainedArrayType(unconstrainedArrayType.name, unconstrainedArrayType.elementType, discreteRanges.map(_.dataType)))
             case dataType =>
               if (dataType != NoType) addError(subTypeIndication.typeName, "you can only use a array constraint for unconstraint array subtypes")

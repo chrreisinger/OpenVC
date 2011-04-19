@@ -110,25 +110,13 @@ object ByteCodeGenerator {
     case _ => getJVMDataType(symbol.dataType)
   }
 
-  def getScalaSpecializedClassSuffix(dataType: DataType): String = (dataType: @unchecked) match {
-    case _: IntegerType => "mcI$sp"
-    case _: RealType => "mcD$sp"
-    case _: PhysicalType => "mcL$sp"
-    case enumeration: EnumerationType =>
-      if (enumeration == SymbolTable.booleanType || enumeration == SymbolTable.bitType) "mcZ$sp"
-      else if (enumeration.elements.size <= Byte.MaxValue) "mcB$sp"
-      else "mcC$sp"
+  def getScalaSpecializedClassSuffix(dataType: DataType): String = dataType match {
+    case scalarType: ScalarType => "$mc" + getJVMDataType(scalarType) + "$sp"
     case _ => ""
   }
 
-  def getScalaSpecializedMethodSuffix(dataType: DataType): String = (dataType: @unchecked) match {
-    case _: IntegerType => "mIc$sp"
-    case _: RealType => "mDc$sp"
-    case _: PhysicalType => "mLc$sp"
-    case enumeration: EnumerationType =>
-      if (enumeration == SymbolTable.booleanType || enumeration == SymbolTable.bitType) "mZc$sp"
-      else if (enumeration.elements.size <= Byte.MaxValue) "mBc$sp"
-      else "mCc$sp"
+  def getScalaSpecializedMethodSuffix(dataType: DataType): String = dataType match {
+    case scalarType: ScalarType => "$m" + getJVMDataType(scalarType) + "c$sp"
     case _ => ""
   }
 
@@ -173,10 +161,7 @@ object ByteCodeGenerator {
   def getJVMName(dataType: DataType): String = dataType match {
     case arrayType: ArrayType =>
       if (dataType == SymbolTable.stringType) "java/lang/String"
-      else {
-        val suffix = getScalaSpecializedClassSuffix(arrayType.elementType)
-        OPENVS + "RuntimeArray" + arrayType.dimensionality + (if (suffix != "") "D$" + suffix else "D")
-      }
+      else OPENVS + "RuntimeArray" + arrayType.dimensionality + "D" + getScalaSpecializedClassSuffix(arrayType.elementType)
     case accessType: AccessType =>
       accessType.pointerType match {
         case scalarType: ScalarType => getMutableScalarAccessName(scalarType)
@@ -351,6 +336,14 @@ object ByteCodeGenerator {
             if (symbol.owner != NoSymbol && !symbol.owner.isInstanceOf[RuntimeSymbol]) loadSymbol(symbol)
             GETFIELD(symbol.dataType.implementationName, field.text, getJVMDataType(fieldDataType))
             expressionOption.foreach(acceptExpressionInner(_, innerContext))
+          case SliceAccessExpression(symbol, discreteRange, sliceDataType, expressionOption) =>
+            mv.GETSTATIC(RUNTIME + "$", "MODULE$", "L" + RUNTIME + "$;")
+            mv.loadSymbol(symbol)
+            loadDiscreteRange(discreteRange)
+            val arrayType = ci(classOf[at.jku.ssw.openvs.RuntimeArray1D[_]])
+            mv.INVOKEVIRTUAL(RUNTIME + "$", "slice" + getScalaSpecializedMethodSuffix(sliceDataType.asInstanceOf[ArrayType].elementType), "(" + arrayType + ci(classOf[VHDLRange]) + ")" + arrayType)
+            mv.CHECKCAST(getJVMName(symbol.dataType))
+            expressionOption.foreach(acceptExpressionInner(_, innerContext))
           case e =>
             println(e.getClass.getName + " " + e.position)
             throw new IllegalArgumentException()
@@ -521,7 +514,9 @@ object ByteCodeGenerator {
           case STRING_LITERAL =>
             if (literal.dataType == SymbolTable.stringType) LDC(literal.text)
             else {
-              val dataType = literal.dataType.asInstanceOf[ArrayType].elementType.asInstanceOf[EnumerationType]
+              GETSTATIC(RUNTIME + "$", "MODULE$", "L" + RUNTIME + "$;")
+              val arrayType = literal.dataType.asInstanceOf[ArrayType]
+              val dataType = arrayType.elementType.asInstanceOf[EnumerationType]
               pushInt(literal.text.length)
               NEWARRAY(getJVMArrayType(dataType))
               for ((c, i) <- literal.text.zipWithIndex) {
@@ -530,6 +525,9 @@ object ByteCodeGenerator {
                 pushInt(dataType.value(c.toString))
                 arrayStoreInstruction(dataType)
               }
+              ACONST_NULL //TODO load range
+              INVOKEVIRTUAL(RUNTIME + "$", "createRuntimeArray" + getScalaSpecializedMethodSuffix(arrayType.elementType), "(" + "[" + getJVMDataType(arrayType.elementType) + ci(classOf[VHDLRange]) + ")" + ci(classOf[at.jku.ssw.openvs.RuntimeArray1D[_]]))
+              CHECKCAST(getJVMName(arrayType))
             }
           case INTEGER_LITERAL | REAL_LITERAL | CHARACTER_LITERAL => pushAnyVal(literal.value)
           case NULL_LITERAL => ACONST_NULL
@@ -732,6 +730,7 @@ object ByteCodeGenerator {
         import SimpleExpression._
         import mv._
 
+        if (simpleExpr.addOperator.isDefined && simpleExpr.addOperator.get == AddOperator.CONCATENATION) GETSTATIC(RUNTIME + "$", "MODULE$", "L" + RUNTIME + "$;")
         acceptExpressionInner(simpleExpr.left)
         acceptExpressionInnerOption(simpleExpr.rightOption)
         for (addOperator <- simpleExpr.addOperator) {
@@ -748,7 +747,17 @@ object ByteCodeGenerator {
                 case _: RealType => DSUB
                 case _: PhysicalType => LSUB
               }
-            case AddOperator.CONCATENATION => INVOKESTATIC(RUNTIME, "concatenate", "(" + getJVMDataType(simpleExpr.left) + getJVMDataType(simpleExpr.rightOption.get) + ")" + getJVMDataType(simpleExpr))
+            case AddOperator.CONCATENATION =>
+              pushAnyVal(simpleExpr.dataType.asInstanceOf[ArrayType].dimensions.head.elementType.asInstanceOf[DiscreteType].left)
+              val arrayType = ci(classOf[at.jku.ssw.openvs.RuntimeArray1D[_]])
+              val (left, right, elementType) = (simpleExpr.left.dataType, simpleExpr.rightOption.get.dataType) match {
+                case (a: ArrayType, _: ArrayType) => (arrayType, arrayType, a.elementType)
+                case (dataType: DataType, _: ArrayType) => (getJVMDataType(dataType), arrayType, dataType)
+                case (_: ArrayType, dataType: DataType) => (arrayType, getJVMDataType(dataType), dataType)
+                case (leftType: DataType, rightType: DataType) => (getJVMDataType(leftType), getJVMDataType(rightType), leftType)
+              }
+              INVOKEVIRTUAL(RUNTIME + "$", "concatenate" + getScalaSpecializedMethodSuffix(elementType), "(" + left + right + "I)" + arrayType)
+              CHECKCAST(getJVMName(simpleExpr.dataType))
           }
         }
         for (signOperator <- simpleExpr.signOperator) {
@@ -1189,7 +1198,7 @@ object ByteCodeGenerator {
             discreteRanges.foreach(loadDiscreteRange)
             val arrayType = subType.dataType.asInstanceOf[ArrayType]
             val dataType = "L" + OPENVS + "RuntimeArray" + arrayType.dimensionality + "D;"
-            INVOKEVIRTUAL(RUNTIME + "$", "createRuntimeArray$" + getScalaSpecializedMethodSuffix(arrayType.elementType),
+            INVOKEVIRTUAL(RUNTIME + "$", "createRuntimeArray" + getScalaSpecializedMethodSuffix(arrayType.elementType),
               "(" + dataType + (ci(classOf[VHDLRange]) * arrayType.dimensionality) + ")" + dataType)
             CHECKCAST(getJVMName(arrayType))
             ASTORE(aliasDeclaration.symbol.index)
@@ -1747,7 +1756,7 @@ object ByteCodeGenerator {
               mv.pushAnyVal(scalarType.left)
               //no need to box since we specialized the methods so no doBox(scalarType)
               loadScalaManifest(arrayType.elementType)
-              mv.INVOKEVIRTUAL(RUNTIME + "$", "createRuntimeArray$" + getScalaSpecializedMethodSuffix(arrayType.elementType), "(" + (ci(classOf[VHDLRange]) * arrayType.dimensionality) + getJVMDataType(scalarType) + "Lscala/reflect/ClassManifest;)" + returnType)
+              mv.INVOKEVIRTUAL(RUNTIME + "$", "createRuntimeArray" + getScalaSpecializedMethodSuffix(arrayType.elementType), "(" + (ci(classOf[VHDLRange]) * arrayType.dimensionality) + getJVMDataType(scalarType) + "Lscala/reflect/ClassManifest;)" + returnType)
             case _: ConstrainedArrayType =>
               loadDefaultSubTypeValue(new SubTypeIndication(None, new SelectedName(Seq()), None, None, arrayType.elementType))
               mv.INVOKEVIRTUAL(RUNTIME + "$", "createRuntimeArray", "(" + (ci(classOf[VHDLRange]) * arrayType.dimensionality) + ci(classOf[at.jku.ssw.openvs.ArrayType]) + ")" + returnType)
@@ -1755,7 +1764,7 @@ object ByteCodeGenerator {
               //generates this code:record[] x = VHDLRuntime.createRuntimeArray(ranges, record.class, ClassManifest..MODULE$.classType(record.class));
               mv.LDC(Type.getType(getJVMDataType(dataType)))
               loadScalaManifest(dataType)
-              mv.INVOKEVIRTUAL(RUNTIME + "$", "createRuntimeArray$" + getScalaSpecializedMethodSuffix(arrayType.elementType), "(" + (ci(classOf[VHDLRange]) * arrayType.dimensionality) + "Ljava/lang/Class;Lscala/reflect/ClassManifest;)" + returnType)
+              mv.INVOKEVIRTUAL(RUNTIME + "$", "createRuntimeArray" + getScalaSpecializedMethodSuffix(arrayType.elementType), "(" + (ci(classOf[VHDLRange]) * arrayType.dimensionality) + "Ljava/lang/Class;Lscala/reflect/ClassManifest;)" + returnType)
           }
           mv.CHECKCAST(getJVMName(arrayType))
         case _: RecordType | _: ProtectedType =>

@@ -19,12 +19,17 @@
 package at.jku.ssw
 
 package object openvs {
+
+  import collection.mutable.ArrayBuffer
+
   type Dimension = Int
   type Index = Int
   type VHDLRange = Range.Inclusive
 
-  type ArrayImpl[A] = Array[A]
-  val ArrayImpl = Array
+  type ArrayImpl[A] = ArrayBuffer[A]
+  val ArrayImpl = ArrayBuffer
 
   def copyImpl[A](array: ArrayImpl[A]) = array.clone
+
+  def indexPosition(range: VHDLRange, index: Index) = if (range.start < range.end) (index - range.start) else (range.start - index)
 }

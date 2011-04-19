@@ -43,8 +43,6 @@ abstract class ArrayType {
 
   protected def reverse(range: VHDLRange) = new VHDLRange(range.end, range.start, -range.step)
 
-  protected def indexPosition(range: VHDLRange, index: Index) = if (range.start < range.end) (index - range.start) else (range.start - index)
-
   protected def isAscending(range: VHDLRange) = range.start < range.end
 
   protected def low(range: VHDLRange) = math.min(range.start, range.end)
