@@ -143,9 +143,11 @@ object ByteCodeGenerator {
     case _ => getJVMName(symbol.dataType)
   }
 
-  private def doBox(scalarType: ScalarType)(implicit mv: RichMethodVisitor) = mv.INVOKESTATIC(getBoxedName(scalarType), "valueOf", "(" + getJVMDataType(scalarType) + ")" + getBoxedType(scalarType))
+  private def doBox(scalarType: ScalarType)(implicit mv: RichMethodVisitor) {
+    mv.INVOKESTATIC(getBoxedName(scalarType), "valueOf", "(" + getJVMDataType(scalarType) + ")" + getBoxedType(scalarType))
+  }
 
-  private def doUnBox(scalarType: ScalarType)(implicit mv: RichMethodVisitor) = {
+  private def doUnBox(scalarType: ScalarType)(implicit mv: RichMethodVisitor) {
     val method = scalarType match {
       case _: IntegerType => "intValue"
       case _: RealType => "doubleValue"
@@ -240,8 +242,9 @@ object ByteCodeGenerator {
       }
     }
 
-    def acceptExpressionOption(expr: Option[Expression], contextOption: Option[ExpressionContext] = None, createDebugLineNumberInformation: Boolean = true)(implicit mv: RichMethodVisitor) =
+    def acceptExpressionOption(expr: Option[Expression], contextOption: Option[ExpressionContext] = None, createDebugLineNumberInformation: Boolean = true)(implicit mv: RichMethodVisitor) {
       expr.foreach(acceptExpression(_, contextOption, createDebugLineNumberInformation))
+    }
 
     def acceptExpression(expr: Expression, contextOption: Option[ExpressionContext] = None, createDebugLineNumberInformation: Boolean = true)(implicit mv: RichMethodVisitor) {
       if (createDebugLineNumberInformation) mv.createDebugLineNumberInformation(expr)
@@ -1024,7 +1027,7 @@ object ByteCodeGenerator {
       createConditionalJump(exitStmt, exitStmt.condition, context.loopLabels(exitStmt.loopStatement).breakLabel, context)
     }
 
-    def loadDiscreteRange(discreteRange: DiscreteRange)(implicit mv: RichMethodVisitor) =
+    def loadDiscreteRange(discreteRange: DiscreteRange)(implicit mv: RichMethodVisitor) {
       discreteRange.rangeOrSubTypeIndication match {
         case Left(range) =>
           range.expressionsOrName match {
@@ -1048,6 +1051,7 @@ object ByteCodeGenerator {
           if (scalarType.isAscending) ICONST_1 else ICONST_M1
           INVOKESPECIAL("scala/collection/immutable/Range$Inclusive", "<init>", "(III)V")
       }
+    }
 
     /*
     * generates a generic for in the form:
@@ -1415,22 +1419,24 @@ object ByteCodeGenerator {
       }
     }
 
-    def checkIsInRange(dataType: DataType)(implicit mv: RichMethodVisitor) = dataType match {
-      case scalarType: ScalarType =>
-        if (scalarType.isSubType) {
-          import mv._
+    def checkIsInRange(dataType: DataType)(implicit mv: RichMethodVisitor) {
+      dataType match {
+        case scalarType: ScalarType =>
+          if (scalarType.isSubType) {
+            import mv._
 
-          pushAnyVal(scalarType.lowerBound)
-          pushAnyVal(scalarType.upperBound)
-          scalarType match {
-            case _: IntegerType | _: RealType | _: PhysicalType =>
-              val typeString = getJVMDataType(scalarType)
-              INVOKESTATIC(RUNTIME, "checkIsInRange", "(" + (typeString * 3) + ")" + typeString)
-            case enumType: EnumerationType => INVOKESTATIC(enumType.baseType.get.implementationName, "checkIsInRange", "(III)I")
+            pushAnyVal(scalarType.lowerBound)
+            pushAnyVal(scalarType.upperBound)
+            scalarType match {
+              case _: IntegerType | _: RealType | _: PhysicalType =>
+                val typeString = getJVMDataType(scalarType)
+                INVOKESTATIC(RUNTIME, "checkIsInRange", "(" + (typeString * 3) + ")" + typeString)
+              case enumType: EnumerationType => INVOKESTATIC(enumType.baseType.get.implementationName, "checkIsInRange", "(III)I")
+            }
           }
-        }
-      //TODO add check for record and array types
-      case _ =>
+        //TODO add check for record and array types
+        case _ =>
+      }
     }
 
     def visitVariableAssignmentStatement(varAssignStmt: VariableAssignmentStatement, context: Context) {
@@ -2246,13 +2252,14 @@ object ByteCodeGenerator {
       }
     }
 
-    def loadParameters(associationListOption: Option[AssociationList])(implicit mv: RichMethodVisitor) =
+    def loadParameters(associationListOption: Option[AssociationList])(implicit mv: RichMethodVisitor) {
       for (associationList <- associationListOption) for ((expr, symbol) <- associationList.parameters.zip(associationList.symbols)) {
         acceptExpression(expr)
         //it is an error if, after applying any conversion function or type conversion present in the actual part of the applicable association element (see 4.3.2.2), the value of the actual parameter
         //does not belong to the subtype denoted by the subtype indication of the formal.
         checkIsInRange(symbol.dataType)
       }
+    }
 
     def createInnerClass(parentClass: RichClassWriter, fullClassName: String, className: String, annotation: Class[_], interfaces: Option[Array[String]] = None, createEmptyConstructor: Boolean = true, superClass: String = "java/lang/Object"): RichClassWriter = {
       parentClass.visitInnerClass(fullClassName, parentClass.className, className, Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC + Opcodes.ACC_FINAL)
