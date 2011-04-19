@@ -26,6 +26,7 @@ import at.jku.ssw.openvc.symbolTable.symbols._
 abstract sealed class DataType extends Serializable {
   val name: String
   val resolutionFunction: Option[FunctionSymbol] = None
+  val baseType: Option[DataType] = None
 
   lazy val attributes = Map[String, AttributeSymbol]()
 
@@ -124,7 +125,6 @@ abstract sealed class ScalarType extends DataType {
   val lowerBound: AnyVal
   val upperBound: AnyVal
   val isAscending: Boolean
-  val baseType: Option[ScalarType]
   lazy val isSubType = baseType.isDefined
   override val resolutionFunction: Option[FunctionSymbol]
   override lazy val attributes = Map(
@@ -152,7 +152,7 @@ sealed trait DiscreteType {
 }
 
 @SerialVersionUID(-2424799647169553170L)
-final case class EnumerationType(name: String, elements: Seq[String], baseType: Option[EnumerationType], owner: Symbol, override val resolutionFunction: Option[FunctionSymbol] = None) extends ScalarType with DiscreteType with HasOwner {
+final case class EnumerationType(name: String, elements: Seq[String], override val baseType: Option[EnumerationType], owner: Symbol, override val resolutionFunction: Option[FunctionSymbol] = None) extends ScalarType with DiscreteType with HasOwner {
   private[this] val firstElement = elements.head
   private[this] val lastElement = elements.last
 
@@ -176,14 +176,14 @@ final case class EnumerationType(name: String, elements: Seq[String], baseType: 
 abstract sealed class NumericType extends ScalarType
 
 @SerialVersionUID(5078439353614332831L)
-final case class IntegerType(name: String, left: Int, right: Int, baseType: Option[IntegerType], override val resolutionFunction: Option[FunctionSymbol] = None) extends NumericType with DiscreteType {
+final case class IntegerType(name: String, left: Int, right: Int, override val baseType: Option[IntegerType], override val resolutionFunction: Option[FunctionSymbol] = None) extends NumericType with DiscreteType {
   val lowerBound = math.min(left, right)
   val upperBound = math.max(left, right)
   val isAscending = left < right
 }
 
 @SerialVersionUID(5078432353614332831L)
-final case class RealType(name: String, left: Double, right: Double, baseType: Option[RealType], override val resolutionFunction: Option[FunctionSymbol] = None) extends NumericType {
+final case class RealType(name: String, left: Double, right: Double, override val baseType: Option[RealType], override val resolutionFunction: Option[FunctionSymbol] = None) extends NumericType {
   val lowerBound = math.min(left, right)
   val upperBound = math.max(left, right)
   val isAscending = left < right
@@ -194,7 +194,7 @@ final case class PhysicalType(name: String, left: Long, right: Long, units: Map[
   val lowerBound = math.min(left, right)
   val upperBound = math.max(left, right)
   val isAscending = left < right
-  val baseType = None
+  override val baseType = None
   override val resolutionFunction = None
 
   def containsUnit(unit: String) = units.contains(unit)
