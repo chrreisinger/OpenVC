@@ -34,12 +34,17 @@ import symbolTable._
 import symbols._
 import dataTypes._
 
-import at.jku.ssw.openvc.VHDLCompiler.Configuration
 import at.jku.ssw.openvc.backend.jvm.ByteCodeGenerator.getNextIndex
 import at.jku.ssw.openvc.CompilerMessage
 
 object SemanticAnalyzer extends Phase {
   val name = "semanticAnalyzer"
+
+  def apply(unit: CompilationUnit): CompilationUnit = unit.copy(astNode = new SemanticAnalyzer(unit).analyze())
+}
+
+final class SemanticAnalyzer(unit: CompilationUnit) {
+  import unit.{addError, addWarning, configuration}
 
   type SemanticCheckResult = (ASTNode, Seq[CompilerMessage], Seq[CompilerMessage])
   type Buffer[A] = immutable.VectorBuilder[A]
@@ -99,34 +104,6 @@ object SemanticAnalyzer extends Phase {
         case _ => false
       }
     }
-
-  //TODO remove me
-  var configuration: Configuration = null
-
-  val semanticErrors = new Buffer[CompilerMessage]
-  val semanticWarnings = new Buffer[CompilerMessage]
-
-  def apply(unit: CompilationUnit): CompilationUnit = {
-    this.configuration = unit.configuration
-    semanticErrors.clear()
-    semanticWarnings.clear()
-    val (newNode, context) = acceptNode(unit.astNode, NoSymbol, Context(new SymbolTable(0, List()), collection.immutable.Stack()))
-    unit.addErrors(semanticErrors.result())
-    unit.addWarnings(semanticWarnings.result())
-    unit.copy(astNode = newNode)
-  }
-
-  def addError(stmt: Locatable, msg: String, messageParameters: AnyRef*): Option[Nothing] = addErrorPosition(stmt.position, msg, messageParameters: _*)
-
-  def addErrorPosition(position: Position, msg: String, messageParameters: AnyRef*): Option[Nothing] = {
-    semanticErrors += new CompilerMessage(position, String.format(msg, messageParameters.toArray: _*))
-    None
-  }
-
-  def addWarning(stmt: Locatable, msg: String, messageParameters: AnyRef*): Option[Nothing] = {
-    semanticWarnings += new CompilerMessage(stmt.position, String.format(msg, messageParameters.toArray: _*))
-    None
-  }
 
   def checkIdentifiersOption(startOption: Option[Identifier], endOption: Option[Identifier]) {
     startOption match {
@@ -408,7 +385,7 @@ object SemanticAnalyzer extends Phase {
           (namedElements.find(element => element.choices.get.exists(choice => choice.isOthers)) match {
             case Some(othersElement) if ((othersElement ne namedElements.last) || !othersElement.choices.get.last.isOthers || othersElement.choices.get.size != 1) => addError(othersElement.choices.get.head, "the others choice must be the last single choice")
             case _ => namedElements.find(_.choices.isEmpty) match {
-              case Some(element) => addErrorPosition(element.expression.firstPosition, "can not use positional element after named element")
+              case Some(element) => addError(element.expression.firstPosition, "can not use positional element after named element")
               case _ =>
                 val expressions = expectedType match {
                   case arrayType: ConstrainedArrayType =>
@@ -566,7 +543,7 @@ object SemanticAnalyzer extends Phase {
             val enumType = arrayType.elementType.asInstanceOf[EnumerationType]
             for ((c, i) <- literal.text.replace("\"", "").zipWithIndex) {
               if (!enumType.contains(c.toString))
-                addErrorPosition(literal.position.addCharacterOffset(i + 1), "'%s' is not a element of enumeration type %s", c.toString, enumType.name)
+                addError(literal.position.addCharacterOffset(i + 1), "'%s' is not a element of enumeration type %s", c.toString, enumType.name)
             }
             //literal.copy(dataType = new ConstrainedRangeType(arrayType.elementType, 0, literal.text.length))//TODO
             literal.copy(dataType = arrayType)
@@ -984,7 +961,7 @@ object SemanticAnalyzer extends Phase {
       if (newExpr.dataType == SymbolTable.booleanType) newExpr
       else (if (newExpr.dataType != NoType) findOverloadedOperatorWithoutError(context, "??", newExpr, newExpr)
       else Option(newExpr)).getOrElse {
-        addErrorPosition(expr.firstPosition, "expected a boolean expression found %s", newExpr.dataType.name)
+        addError(expr.firstPosition, "expected a boolean expression found %s", newExpr.dataType.name)
         newExpr
       }
     }
@@ -993,7 +970,7 @@ object SemanticAnalyzer extends Phase {
   def checkExpression(context: Context, expr: Expression, dataType: DataType): Expression = {
     val newExpr = acceptExpression(expr, dataType, context)
     if (!isCompatible(newExpr.dataType, dataType)) {
-      addErrorPosition(expr.firstPosition, "expected a expression of type %s, found %s", dataType.name, newExpr.dataType.name)
+      addError(expr.firstPosition, "expected a expression of type %s, found %s", dataType.name, newExpr.dataType.name)
     }
     newExpr
   }
@@ -1047,7 +1024,7 @@ object SemanticAnalyzer extends Phase {
       case Some(list) =>
         val (positionalElements, namedElements) = list.elements.span(_.formalPart.isEmpty)
         namedElements.find(element => element.formalPart.isEmpty) match {
-          case Some(element) => (None, addErrorPosition(element.actualPosition, "can not use positional element after named element"))
+          case Some(element) => (None, addError(element.actualPosition, "can not use positional element after named element"))
           case _ =>
             parameters match {
               case Left(subprograms) =>
@@ -1067,7 +1044,7 @@ object SemanticAnalyzer extends Phase {
                       case Left(expression) =>
                         val expr = checkExpression(context, expression, NoType)
                         subprograms.filter(subprogram => isCompatible(subprogram.parameters(i).dataType, expr.dataType)) match {
-                          case Seq() => addErrorPosition(element.actualPosition, "no subprogram found, which takes a %s at parameter position %s", expr.dataType.name, i.toString)
+                          case Seq() => addError(element.actualPosition, "no subprogram found, which takes a %s at parameter position %s", expr.dataType.name, i.toString)
                           case sub => Option((sub, expr))
                         }
                     }) match {
@@ -1125,16 +1102,16 @@ object SemanticAnalyzer extends Phase {
                           if (formalSignalSymbol.mode != IN) addError(expression, "to provide a port with constant driving values the port must be of mode in")
                           //TODO checkIsStaticName
                           formalSignalSymbol.mode match {
-                            case IN => if (actualSignalSymbol.mode != IN && actualSignalSymbol.mode != INOUT && actualSignalSymbol.mode != BUFFER) addErrorPosition(expression.firstPosition, "For a formal port of mode in, the associated actual must be a port of mode in, inout, or buffer")
-                            case OUT => if (actualSignalSymbol.mode != OUT && actualSignalSymbol.mode != INOUT && actualSignalSymbol.mode != BUFFER) addErrorPosition(expression.firstPosition, "For a formal port of mode out, the associated actual must be a port of mode out, inout, or buffer")
-                            case INOUT => if (actualSignalSymbol.mode != INOUT && actualSignalSymbol.mode != BUFFER) addErrorPosition(expression.firstPosition, "For a formal port of mode inout, the associated actual must be a port of mode inout or buffer")
-                            case BUFFER => if (actualSignalSymbol.mode != OUT && actualSignalSymbol.mode != INOUT && actualSignalSymbol.mode != BUFFER) addErrorPosition(expression.firstPosition, "For a formal port of mode buffer, the associated actual must be a port of mode out, inout, or buffer")
+                            case IN => if (actualSignalSymbol.mode != IN && actualSignalSymbol.mode != INOUT && actualSignalSymbol.mode != BUFFER) addError(expression.firstPosition, "For a formal port of mode in, the associated actual must be a port of mode in, inout, or buffer")
+                            case OUT => if (actualSignalSymbol.mode != OUT && actualSignalSymbol.mode != INOUT && actualSignalSymbol.mode != BUFFER) addError(expression.firstPosition, "For a formal port of mode out, the associated actual must be a port of mode out, inout, or buffer")
+                            case INOUT => if (actualSignalSymbol.mode != INOUT && actualSignalSymbol.mode != BUFFER) addError(expression.firstPosition, "For a formal port of mode inout, the associated actual must be a port of mode inout or buffer")
+                            case BUFFER => if (actualSignalSymbol.mode != OUT && actualSignalSymbol.mode != INOUT && actualSignalSymbol.mode != BUFFER) addError(expression.firstPosition, "For a formal port of mode buffer, the associated actual must be a port of mode out, inout, or buffer")
                           }
-                        case (formalSignalSymbol: SignalSymbol, actualSymbol) => addErrorPosition(expression.firstPosition, "expected a signal parameter")
-                        case (formalFileSymbol: FileSymbol, actualSymbol) => if (!actualSymbol.isInstanceOf[FileSymbol]) addErrorPosition(expression.firstPosition, "expected a file parameter")
-                        case (formalConstantSymbol: ConstantSymbol, actualSymbol) => if (actualSymbol.isInstanceOf[FileSymbol]) addErrorPosition(expression.firstPosition, "expected a constant, signal or variable parameter")
+                        case (formalSignalSymbol: SignalSymbol, actualSymbol) => addError(expression.firstPosition, "expected a signal parameter")
+                        case (formalFileSymbol: FileSymbol, actualSymbol) => if (!actualSymbol.isInstanceOf[FileSymbol]) addError(expression.firstPosition, "expected a file parameter")
+                        case (formalConstantSymbol: ConstantSymbol, actualSymbol) => if (actualSymbol.isInstanceOf[FileSymbol]) addError(expression.firstPosition, "expected a constant, signal or variable parameter")
                         case (formalVariableSymbol: VariableSymbol, actualVariableSymbol: VariableSymbol) => //TODO
-                        case (formalVariableSymbol: VariableSymbol, actualSymbol) => addErrorPosition(expression.firstPosition, "expected a variable parameter")
+                        case (formalVariableSymbol: VariableSymbol, actualSymbol) => addError(expression.firstPosition, "expected a variable parameter")
                       }
                       case _ => if (symbol.isInstanceOf[SignalSymbol] && symbol.asInstanceOf[SignalSymbol].isPort) checkIsGloballyStaticExpression(expr)
                     }
@@ -2608,6 +2585,8 @@ object SemanticAnalyzer extends Phase {
     val (sequentialStatements, _) = acceptNodes(whileStmt.sequentialStatements, owner, context.insertLoopLabel(whileStmt.label, whileStmt.position))
     (whileStmt.copy(condition = condition, sequentialStatements = sequentialStatements), context)
   }
+
+  def analyze() = acceptNode(unit.astNode, NoSymbol, Context(new SymbolTable(0, List()), collection.immutable.Stack()))._1
 
   def acceptNode(node: ASTNode, owner: Symbol, context: Context): ReturnType = node match {
     case NoNode => (NoNode, context) //nothing

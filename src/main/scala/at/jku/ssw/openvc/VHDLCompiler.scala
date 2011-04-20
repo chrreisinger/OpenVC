@@ -18,7 +18,7 @@
 
 package at.jku.ssw.openvc
 
-import ast.{NoNode, ASTNode}
+import ast.{NoNode, ASTNode, Locatable}
 import util.{SourceFile, Position, NoPosition}
 import at.jku.ssw.openvc.VHDLCompiler.Configuration
 import collection.mutable.ListBuffer
@@ -43,7 +43,17 @@ final case class CompilationUnit(source: SourceFile,
 
   def addErrors(errors: Seq[CompilerMessage]) {errorBuffer ++= errors}
 
-  def addWarnings(warnings: Seq[CompilerMessage]) {warningBuffer ++= warnings}
+  def addError(stmt: Locatable, msg: String, messageParameters: AnyRef*): Option[Nothing] = addError(stmt.position, msg, messageParameters: _*)
+
+  def addError(position: Position, msg: String, messageParameters: AnyRef*): Option[Nothing] = {
+    errorBuffer += new CompilerMessage(position, String.format(msg, messageParameters.toArray: _*))
+    None
+  }
+
+  def addWarning(stmt: Locatable, msg: String, messageParameters: AnyRef*): Option[Nothing] = {
+    warningBuffer += new CompilerMessage(stmt.position, String.format(msg, messageParameters.toArray: _*))
+    None
+  }
 
   def printErrors(writer: PrintWriter) {
     lazy val sourceLines = source.getLines().toIndexedSeq
