@@ -726,12 +726,22 @@ object SemanticAnalyzer extends Phase {
                           if (indexes.size == 1) {
                             require(xs.isEmpty)
                             val expression = acceptExpression(indexes.head, NoType, context)
-                            (dataType, expression.dataType) match {
-                              case (_: NumericType, _: NumericType) =>
-                              case (arr: ArrayType, arr2: ArrayType) if (isCompatible(arr.elementType, arr2.elementType) && arr.dimensionality == arr2.dimensionality) => // TODO check if cast is allowed
-                              case (firstType, secondType) => addError(expression, "invalid type cast from type %s to type %s", firstType.name, secondType.name)
+                            expression match {
+                              case _: Allocator => addError(expression, "can not use an allocator inside a type conversion")
+                              case _: Aggregate => addError(expression, "can not use an aggregate inside a type conversion")
+                              case Literal(_, _, Literal.Type.NULL_LITERAL, _, _) => addError(expression, "can not use a null literal inside a type conversion")
+                              case Literal(_, _, Literal.Type.STRING_LITERAL, _, _) => addError(expression, "can not use a string literal inside a type conversion")
+                              case _ =>
                             }
-                            Option(TypeCastExpression(expression, dataType))
+                            val validConversion = (dataType, expression.dataType) match {
+                              case (_: AbstractNumericType, _: AbstractNumericType) => true
+                              case (at1: ArrayType, at2: ArrayType) =>
+                                if (at1.elementType == at2.elementType && at1.dimensionality == at2.dimensionality && at1.dimensions.forall(_.elementType.isInstanceOf[IntegerType]) && at2.dimensions.forall(_.elementType.isInstanceOf[IntegerType])) true
+                                else false
+                              case _ => false
+                            }
+                            if (!validConversion) addError(expression, "invalid type cast from type %s to type %s", dataType.name, expression.dataType.name)
+                            Option(TypeConversion(expression, dataType))
                           }
                           else addError(name, "invalid type cast expression")
                         case r: RuntimeSymbol => r.dataType match {

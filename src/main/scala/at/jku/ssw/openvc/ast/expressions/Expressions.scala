@@ -132,7 +132,7 @@ object Aggregate {
 final case class Aggregate(position: Position, elements: Seq[Aggregate.ElementAssociation], expressions: Seq[Expression] = Seq(), dataType: DataType = NoType) extends Expression
 
 /**
- * Represents a type cast expression
+ * Represents a type conversion
  *
  * grammar: <pre> ( expression ) </pre>
  *
@@ -140,7 +140,7 @@ final case class Aggregate(position: Position, elements: Seq[Aggregate.ElementAs
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @param expression the expression to cast to [[dataType]]
  */
-final case class TypeCastExpression(expression: Expression, dataType: DataType = NoType) extends Expression {
+final case class TypeConversion(expression: Expression, dataType: DataType = NoType) extends Expression {
   val position = expression.position
 }
 

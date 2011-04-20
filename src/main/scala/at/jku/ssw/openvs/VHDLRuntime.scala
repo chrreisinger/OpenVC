@@ -195,6 +195,12 @@ object VHDLRuntime {
     else value
 
   @throws(classOf[VHDLRuntimeException])
+  def checkIsInRange[A](array: RuntimeArray1D[A], low: Int, high: Int): RuntimeArray1D[A] =
+    if (array.range.start < low || array.range.end > high)
+      throw new VHDLRuntimeException("array index out of range:" + low + " " + high)
+    else array
+
+  @throws(classOf[VHDLRuntimeException])
   def pow(base: Int, exponent: Int): Int =
     if (exponent < 0)
       throw new VHDLRuntimeException("exponent:" + exponent + " is negative, that is not allowed")

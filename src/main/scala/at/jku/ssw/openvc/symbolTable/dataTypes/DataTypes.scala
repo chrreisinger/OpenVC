@@ -175,15 +175,18 @@ final case class EnumerationType(name: String, elements: Seq[String], override v
 @SerialVersionUID(8486753470499674454L)
 abstract sealed class NumericType extends ScalarType
 
+@SerialVersionUID(1231034493907974819L)
+sealed trait AbstractNumericType //marker trait
+
 @SerialVersionUID(5078439353614332831L)
-final case class IntegerType(name: String, left: Int, right: Int, override val baseType: Option[IntegerType], override val resolutionFunction: Option[FunctionSymbol] = None) extends NumericType with DiscreteType {
+final case class IntegerType(name: String, left: Int, right: Int, override val baseType: Option[IntegerType], override val resolutionFunction: Option[FunctionSymbol] = None) extends NumericType with DiscreteType with AbstractNumericType{
   val lowerBound = math.min(left, right)
   val upperBound = math.max(left, right)
   val isAscending = left < right
 }
 
 @SerialVersionUID(5078432353614332831L)
-final case class RealType(name: String, left: Double, right: Double, override val baseType: Option[RealType], override val resolutionFunction: Option[FunctionSymbol] = None) extends NumericType {
+final case class RealType(name: String, left: Double, right: Double, override val baseType: Option[RealType], override val resolutionFunction: Option[FunctionSymbol] = None) extends NumericType with AbstractNumericType{
   val lowerBound = math.min(left, right)
   val upperBound = math.max(left, right)
   val isAscending = left < right

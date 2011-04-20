@@ -286,7 +286,7 @@ object ByteCodeGenerator {
           case NoExpression => //nothing
           case term: Term => visitTerm(term)
           case aggregate: Aggregate => visitAggregate(aggregate)
-          case typeCastExpr: TypeCastExpression => visitTypeCastExpression(typeCastExpr)
+          case typeCastExpr: TypeConversion => visitTypeConversion(typeCastExpr)
           case relation: Relation => visitRelation(relation, innerContext)
           case factor: Factor => visitFactor(factor, innerContext)
           case shiftExpression: ShiftExpression =>
@@ -844,18 +844,31 @@ object ByteCodeGenerator {
         }
       }
 
-      def visitTypeCastExpression(typeCastExpr: TypeCastExpression) {
-        import mv._
-
-        acceptExpressionInner(typeCastExpr.expression)
-        (typeCastExpr.dataType, typeCastExpr.expression.dataType) match {
-          case (_: IntegerType, _: RealType) => D2I
-          case (_: IntegerType, _: PhysicalType) => L2I
-          case (_: RealType, _: IntegerType) => I2D
-          case (_: RealType, _: PhysicalType) => L2D
-          case (_: PhysicalType, _: IntegerType) => I2L
-          case (_: PhysicalType, _: RealType) => D2L
-          case _ => sys.error("not implemented")
+      def visitTypeConversion(typeConversion: TypeConversion) {
+        acceptExpressionInner(typeConversion.expression)
+        (typeConversion.dataType, typeConversion.expression.dataType) match {
+          case (_: IntegerType, _: RealType) => mv.D2I
+          case (_: IntegerType, _: IntegerType) => //nothing
+          case (_: RealType, _: IntegerType) => mv.I2D
+          case (_: RealType, _: RealType) => //nothing
+          case (_: ArrayType, _: ArrayType) =>
+          case _ => sys.error("not possible")
+        }
+        typeConversion.dataType match {
+          case _: AbstractNumericType => checkIsInRange(typeConversion.dataType)
+          case arrayType: UnconstrainedArrayType =>
+          /*
+          TODO
+          arrayType.dimensions.foreach {
+            x =>
+              val indexType = x.elementType.asInstanceOf[DiscreteType]
+              mv.pushInt(indexType.left)
+              mv.pushInt(indexType.right)
+          }
+          val returnType = "L" + OPENVS + "RuntimeArray" + arrayType.dimensionality + "D;"
+          mv.INVOKESTATIC(RUNTIME, "checkIsInRange", "(" + returnType + ("II" * arrayType.dimensionality) + ")" + returnType)
+          */
+          case _ =>
         }
       }
     }
