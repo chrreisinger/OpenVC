@@ -59,7 +59,7 @@ object Main {
       }
     } catch {
       case fileNotFoundException: java.io.FileNotFoundException => println("could not find file: " + fileNotFoundException.getMessage)
-      case ex@(_: java.lang.reflect.InvocationTargetException | _: java.lang.ExceptionInInitializerError) if (ex.getStackTrace.exists(element => element != null && (element.getFileName.endsWith(".vhd") || element.getFileName.endsWith(".vhdl")))) =>
+      case ex@(_: java.lang.reflect.InvocationTargetException | _: java.lang.ExceptionInInitializerError) if (ex.getCause.getStackTrace.exists(element => element != null && (element.getFileName.endsWith(".vhd") || element.getFileName.endsWith(".vhdl")))) =>
         ex.getCause match {
           case exception@(_: VHDLRuntimeException | _: java.lang.NullPointerException) =>
             exception.setStackTrace(exception.getStackTrace.filterNot(element => element.getFileName == null || element.getFileName.endsWith(".scala") || element.getFileName.endsWith(".java")))
