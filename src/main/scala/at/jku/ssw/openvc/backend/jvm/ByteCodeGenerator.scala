@@ -31,7 +31,6 @@ import ast.expressions._
 import symbolTable._
 import symbols._
 import dataTypes._
-import VHDLCompiler.Configuration
 
 import at.jku.ssw.openvs.RuntimeAnnotations._
 import at.jku.ssw.openvs.{VHDLRuntime, VHDLRange}
@@ -189,8 +188,8 @@ object ByteCodeGenerator {
     case _ => 1
   }
 
-  def apply(configuration: Configuration, sourceFileName: String, designFile: ASTNode) {
-    acceptNode(designFile, null)
+  def apply(unit: CompilationUnit) {
+    acceptNode(unit.astNode, null)
 
     def acceptNodes(nodes: Seq[ASTNode], context: Context) {for (node <- nodes) acceptNode(node, context)}
 
@@ -2282,21 +2281,21 @@ object ByteCodeGenerator {
     }
 
     def createClass(flags: Int, name: String, superClass: String, annotationClass: Class[_], interfaces: Option[Array[String]] = None, createEmptyConstructor: Boolean = true): RichClassWriter = {
-      val cw = if (configuration.debugCodeGenerator) {
+      val cw = if (unit.configuration.debugCodeGenerator) {
         import org.objectweb.asm.util.TraceClassVisitor
         import java.io.PrintWriter
 
         val cw = new ClassWriter(0)
         val tcv = new TraceClassVisitor(cw, new PrintWriter(System.out, true))
         //new RichClassWriter(configuration.outputDirectory, name, cw,Some(new CheckClassAdapter(tcv)))
-        new RichClassWriter(configuration.outputDirectory, name, cw, Some(tcv))
+        new RichClassWriter(unit.configuration.outputDirectory, name, cw, Some(tcv))
       } else {
-        new RichClassWriter(configuration.outputDirectory, name, new ClassWriter(ClassWriter.COMPUTE_FRAMES + ClassWriter.COMPUTE_MAXS))
+        new RichClassWriter(unit.configuration.outputDirectory, name, new ClassWriter(ClassWriter.COMPUTE_FRAMES + ClassWriter.COMPUTE_MAXS))
       }
 
       cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER + flags, name, null, superClass, interfaces.orNull)
       cw.visitAnnotation(ci(annotationClass), true).visitEnd()
-      cw.visitSource(sourceFileName, OpenVCSignature)
+      cw.visitSource(unit.source.fileName, OpenVCSignature)
       if (createEmptyConstructor) cw.createEmptyConstructor()
       cw
     }

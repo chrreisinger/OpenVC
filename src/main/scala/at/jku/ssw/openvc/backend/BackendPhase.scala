@@ -26,7 +26,7 @@ object BackendPhase extends Phase {
   val name = "backend"
 
   override def apply(unit: CompilationUnit): CompilationUnit = {
-    if (unit.errors.isEmpty && unit.warnings.isEmpty) jvm.ByteCodeGenerator(unit.configuration, unit.source.fileName, unit.astNode)
+    if (unit.errors.isEmpty) jvm.ByteCodeGenerator(unit)
     unit
   }
 }
