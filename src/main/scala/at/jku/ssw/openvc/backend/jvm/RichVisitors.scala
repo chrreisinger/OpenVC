@@ -473,9 +473,14 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
   def pushAnyVal(value: AnyVal) {
     value match {
       case b: Boolean => pushBoolean(b)
+      case b: Byte => pushInt(b)
+      case s: Short => pushInt(s)
+      case c: Char => pushInt(c)
       case i: Int => pushInt(i)
+      case f: Float => pushFloat(f)
       case d: Double => pushDouble(d)
       case l: Long => pushLong(l)
+      case u: Unit => sys.error("impossible")
     }
   }
 
@@ -509,6 +514,17 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
       case java.lang.Double.MIN_VALUE => GETSTATIC("java/lang/Double", "MIN_VALUE", "D")
       case java.lang.Double.MAX_VALUE => GETSTATIC("java/lang/Double", "MAX_VALUE", "D")
       case _ => LDC(java.lang.Double.valueOf(value))
+    }
+  }
+
+  def pushFloat(value: Float) {
+    value match {
+      case 0.0 => FCONST_0()
+      case 1.0 => FCONST_1()
+      case 2.0 => FCONST_2()
+      case java.lang.Float.MIN_VALUE => GETSTATIC("java/lang/Float", "MIN_VALUE", "F")
+      case java.lang.Float.MAX_VALUE => GETSTATIC("java/lang/Float", "MAX_VALUE", "F")
+      case _ => LDC(java.lang.Float.valueOf(value))
     }
   }
 

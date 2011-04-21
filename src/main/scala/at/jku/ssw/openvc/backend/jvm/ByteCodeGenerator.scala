@@ -1451,24 +1451,22 @@ object ByteCodeGenerator {
       }
     }
 
-    def visitVariableAssignmentStatement(varAssignStmt: VariableAssignmentStatement, context: Context) {
+    def visitVariableAssignmentStatement(variableAssignmentStatement: VariableAssignmentStatement, context: Context) {
       import context._
 
-      mv.createDebugLineNumberInformation(varAssignStmt)
-      varAssignStmt match {
-        case stmt: SimpleVariableAssignmentStatement =>
-          stmt.target.nameOrAggregate match {
-            case Left(name) =>
-              val (target, targetType) = loadTarget(stmt.target.expression)
-              target.owner match {
-                case _: SubprogramSymbol | _: PackageSymbol | _: RuntimeSymbol =>
-                case _ => mv.ALOAD(0)
-              }
-              acceptExpression(stmt.expression)
-              checkIsInRange(targetType)
-              mv.storeSymbol(target, targetType)
-            case Right(aggregate) => sys.error("not implemented")
+      val simpleVariableAssignment = variableAssignmentStatement.asInstanceOf[SimpleVariableAssignmentStatement]
+      mv.createDebugLineNumberInformation(simpleVariableAssignment)
+      simpleVariableAssignment.target.nameOrAggregate match {
+        case Left(name) =>
+          val (target, targetType) = loadTarget(simpleVariableAssignment.target.expression)
+          target.owner match {
+            case _: SubprogramSymbol | _: PackageSymbol | _: RuntimeSymbol =>
+            case _ => mv.ALOAD(0)
           }
+          acceptExpression(simpleVariableAssignment.expression)
+          checkIsInRange(targetType)
+          mv.storeSymbol(target, targetType)
+        case Right(aggregate) => sys.error("not implemented")
       }
     }
 
