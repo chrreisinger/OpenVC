@@ -241,6 +241,10 @@ object ByteCodeGenerator {
       }
     }
 
+    def acceptCondition(expr: Expression, context: ExpressionContext)(implicit mv: RichMethodVisitor) {
+      acceptExpression(expr, Some(context))
+    }
+
     def acceptExpressionOption(expr: Option[Expression], contextOption: Option[ExpressionContext] = None, createDebugLineNumberInformation: Boolean = true)(implicit mv: RichMethodVisitor) {
       expr.foreach(acceptExpression(_, contextOption, createDebugLineNumberInformation))
     }
@@ -899,7 +903,7 @@ object ByteCodeGenerator {
           if (value == 0) generateAssertCode() //only generate code for assert false ... because assert true can never be false, so the assert statement is dead code
           else NOP()
         case _ =>
-          acceptExpression(assertStmt.condition, Some(new ExpressionContext(trueJumpLabel = trueJumpLabel, falseJumpLabel = falseJumpLabel, kind = ExpressionContext.JumpKind.TrueJump)))
+          acceptCondition(assertStmt.condition, new ExpressionContext(trueJumpLabel = trueJumpLabel, falseJumpLabel = falseJumpLabel, kind = ExpressionContext.JumpKind.TrueJump))
           generateAssertCode()
       }
     }
@@ -921,7 +925,7 @@ object ByteCodeGenerator {
             part =>
               val falseJumpLabel = createLabel
               val trueJumpLabel = createLabel
-              acceptExpression(part.condition, Some(new ExpressionContext(trueJumpLabel = trueJumpLabel, falseJumpLabel = falseJumpLabel, kind = ExpressionContext.JumpKind.FalseJump)))
+              acceptCondition(part.condition, new ExpressionContext(trueJumpLabel = trueJumpLabel, falseJumpLabel = falseJumpLabel, kind = ExpressionContext.JumpKind.FalseJump))
               trueJumpLabel()
               val blockCW = visitBlockStatement(BlockStatement(part.condition.position, part.label, None, None, None, None, None, part.declarativeItems, part.concurrentStatements, None), context)
               NEW(blockCW.className)
@@ -982,7 +986,7 @@ object ByteCodeGenerator {
       def generateCodeForIfThenPart(part: IfStatement.IfThenPart, generateGOTO: Boolean) {
         val falseJumpLabel = createLabel
         val trueJumpLabel = createLabel
-        acceptExpression(part.condition, Some(new ExpressionContext(trueJumpLabel = trueJumpLabel, falseJumpLabel = falseJumpLabel, kind = ExpressionContext.JumpKind.FalseJump)))
+        acceptCondition(part.condition, new ExpressionContext(trueJumpLabel = trueJumpLabel, falseJumpLabel = falseJumpLabel, kind = ExpressionContext.JumpKind.FalseJump))
         trueJumpLabel()
         acceptNodes(part.sequentialStatements, context)
         if (generateGOTO && !part.sequentialStatements.exists(_.isInstanceOf[ReturnStatement])) GOTO(endLabel)
@@ -1025,7 +1029,7 @@ object ByteCodeGenerator {
       val trueJumpLabel = createLabel
       val falseJumpLabel = createLabel
       createDebugLineNumberInformation(stmt)
-      acceptExpressionOption(condition, Some(new ExpressionContext(trueJumpLabel = trueJumpLabel, falseJumpLabel = falseJumpLabel, kind = ExpressionContext.JumpKind.FalseJump)))
+      for (expr <- condition) acceptCondition(expr, new ExpressionContext(trueJumpLabel = trueJumpLabel, falseJumpLabel = falseJumpLabel, kind = ExpressionContext.JumpKind.FalseJump))
       trueJumpLabel()
       GOTO(targetLabel)
       falseJumpLabel()
@@ -1483,7 +1487,7 @@ object ByteCodeGenerator {
       continueLabel()
       acceptNodes(whileStmt.sequentialStatements, context.insertLoopLabels(whileStmt.position, new LoopLabels(conditionTestLabel, breakLabel)))
       conditionTestLabel()
-      acceptExpression(whileStmt.condition, Some(new ExpressionContext(trueJumpLabel = continueLabel, falseJumpLabel = breakLabel, kind = ExpressionContext.JumpKind.TrueJump)))
+      acceptCondition(whileStmt.condition, new ExpressionContext(trueJumpLabel = continueLabel, falseJumpLabel = breakLabel, kind = ExpressionContext.JumpKind.TrueJump))
       breakLabel()
     }
 
