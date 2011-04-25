@@ -547,7 +547,6 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
             }
             //literal.copy(dataType = new ConstrainedRangeType(arrayType.elementType, 0, literal.text.length))//TODO
             literal.copy(dataType = arrayType)
-          case NoType => literal.copy(dataType = SymbolTable.stringType) //TODO
           case dataType =>
             addError(literal, "expected a expression of type %s, found %s", expectedType.name, dataType.name)
             literal
@@ -923,7 +922,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
           case _ => NoType
         }
         case MOD | REM => (term.left.dataType, term.right.dataType) match {
-          case (integerType: IntegerType, right) if (integerType == right || right == SymbolTable.universalIntegerType) => integerType
+          case (integerType: IntegerType, right) if (isCompatible(integerType, right)) => integerType
           case _ => NoType
         }
       }
@@ -957,7 +956,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
 
   def checkCondition(context: Context, expr: Expression): Expression =
     if (configuration.vhdl2008) {
-      val newExpr = acceptExpression(expr, SymbolTable.booleanType, context)
+      val newExpr = acceptExpression(expr, NoType, context)
       if (newExpr.dataType == SymbolTable.booleanType) newExpr
       else (if (newExpr.dataType != NoType) findOverloadedOperatorWithoutError(context, "??", newExpr, newExpr)
       else Option(newExpr)).getOrElse {
@@ -965,7 +964,11 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
         newExpr
       }
     }
-    else checkExpression(context, expr, SymbolTable.booleanType)
+    else {
+      val newExpr = acceptExpression(expr, NoType, context)
+      if (newExpr.dataType != SymbolTable.booleanType) addError(expr.firstPosition, "expected a boolean expression found %s", newExpr.dataType.name)
+      newExpr
+    }
 
   def checkExpression(context: Context, expr: Expression, dataType: DataType): Expression = {
     val newExpr = acceptExpression(expr, dataType, context)
@@ -1042,8 +1045,15 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
                     (element.actualPart match {
                       case Right(openIdentifier) => addError(openIdentifier, "a parameter for a subprogramm can not be open")
                       case Left(expression) =>
-                        val expr = checkExpression(context, expression, NoType)
-                        subprograms.filter(subprogram => isCompatible(subprogram.parameters(i).dataType, expr.dataType)) match {
+                        val possibleSubprograms = subprograms.filter(_.parameters.size > i)
+                        val dataType =
+                          if (possibleSubprograms.nonEmpty) {
+                            val headIthDataType = possibleSubprograms.head.parameters(i).dataType
+                            if (possibleSubprograms.forall(_.parameters(i).dataType == headIthDataType)) headIthDataType
+                            else NoType
+                          } else NoType
+                        val expr = checkExpression(context, expression, dataType)
+                        possibleSubprograms.filter(subprogram => isCompatible(subprogram.parameters(i).dataType, expr.dataType)) match {
                           case Seq() => addError(element.actualPosition, "no subprogram found, which takes a %s at parameter position %s", expr.dataType.name, i.toString)
                           case sub => Option((sub, expr))
                         }

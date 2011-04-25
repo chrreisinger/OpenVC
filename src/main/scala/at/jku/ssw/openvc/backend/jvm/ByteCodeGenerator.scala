@@ -1385,6 +1385,7 @@ object ByteCodeGenerator {
       (expression: @unchecked) match {
         case ItemExpression(_, symbol) => (symbol, symbol.dataType)
         case ArrayAccessExpression(symbol, indexes, dataType, None) =>
+          loadSymbol(symbol)
           indexes.foreach(acceptExpression(_))
           (symbol, dataType)
         case ArrayAccessExpression(symbol, indexes, elementType, Some(expression)) =>
@@ -1408,6 +1409,7 @@ object ByteCodeGenerator {
               GETFIELD(owner.dataType.implementationName, field.text, getJVMDataType(fieldDataType))
               loadTarget(expression)
           }
+        case _ => sys.error("not implemented")
       }
     }
 
@@ -1493,7 +1495,7 @@ object ByteCodeGenerator {
       createDefaultValuesMethods(procedureDefinition.parameterInterfaceList, procedureSymbol.mangledName, context.cw)
 
       val flags = (if (procedureSymbol.isStatic) Opcodes.ACC_STATIC else 0) + (if (procedureSymbol.isSynchronized) Opcodes.ACC_SYNCHRONIZED else 0)
-      val mv = context.cw.createMethod(flags, procedureSymbol.mangledName)
+      val mv = context.cw.createMethod(flags, procedureSymbol)
       val newContext = Context(context.cw, mv, Map(), context.designUnit, procedureDefinition.localSymbols.collect(_ match {
         case f: FileSymbol => f
       }))
@@ -1921,8 +1923,7 @@ object ByteCodeGenerator {
                 case scalarType: ScalarType => INVOKEVIRTUAL("java/lang/StringBuilder", "append", "(" + getJVMDataType(fieldType) + ")Ljava/lang/StringBuilder;")
                 case _: AccessType | _: RecordType => INVOKEVIRTUAL("java/lang/StringBuilder", "append", "(Ljava/lang/Object;)Ljava/lang/StringBuilder;")
                 case arrayType: ArrayType =>
-                  if (arrayType.dimensionality == 1) INVOKESTATIC("java/util/Arrays", "toString", "(" + getJVMDataType(arrayType) + ")Ljava/lang/String;")
-                  else INVOKESTATIC("java/util/Arrays", "deepToString", "([Ljava/lang/Object;)Ljava/lang/String;")
+                  INVOKEVIRTUAL(getJVMName(arrayType), "toString", "()Ljava/lang/String;")
                   INVOKEVIRTUAL("java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;")
               }
             }
@@ -1987,8 +1988,8 @@ object ByteCodeGenerator {
                   ACONST_NULL
                   l2()
                 case arrayType: ArrayType =>
-                  INVOKEVIRTUAL(getJVMDataType(fieldType), "clone", "()Ljava/lang/Object;")
-                  CHECKCAST(getJVMDataType(fieldType))
+                  INVOKEVIRTUAL(getJVMName(fieldType), "clone", "()Ljava/lang/Object;")
+                  CHECKCAST(getJVMName(fieldType))
               }
             }
             INVOKESPECIAL(recordType.implementationName, "<init>", "(" + methodDesc + ")V")
