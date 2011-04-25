@@ -262,20 +262,23 @@ object ByteCodeGenerator {
         case None =>
           expr.dataType match {
             case e: EnumerationType if (e == SymbolTable.booleanType || e == SymbolTable.bitType) =>
-              expr match {
-                case _: LogicalExpression | _: Relation =>
-                  import mv._
-                  val trueLabel = createLabel
-                  val falseLabel = createLabel
-                  val afterLabel = createLabel
-                  acceptExpressionInner(expr, ExpressionContext(trueLabel, falseLabel, ExpressionContext.JumpKind.TrueJump))
+              def createContextAndAccept() {
+                import mv._
+                val trueLabel = createLabel
+                val falseLabel = createLabel
+                val afterLabel = createLabel
+                acceptExpressionInner(expr, ExpressionContext(trueLabel, falseLabel, ExpressionContext.JumpKind.TrueJump))
 
-                  falseLabel()
-                  ICONST_0
-                  GOTO(afterLabel)
-                  trueLabel()
-                  ICONST_1
-                  afterLabel()
+                falseLabel()
+                ICONST_0
+                GOTO(afterLabel)
+                trueLabel()
+                ICONST_1
+                afterLabel()
+              }
+              expr match {
+                case LogicalExpression(_, _, operator, _, _) if (operator != LogicalExpression.Operator.XNOR && operator != LogicalExpression.Operator.XOR) => createContextAndAccept()
+                case _: Relation => createContextAndAccept()
                 case _ => acceptExpressionInner(expr)
               }
             case _ => acceptExpressionInner(expr)
@@ -311,11 +314,7 @@ object ByteCodeGenerator {
               case s => s.name
             }) + "_" + symbol.name, "()" + getJVMDataType(symbol))
           case functionCallExpr: FunctionCallExpression => visitFunctionCallExpression(functionCallExpr)
-          case logicalExpr: LogicalExpression =>
-            logicalExpr.dataType match {
-              case _: ArrayType => visitLogicalExpression(logicalExpr, innerContext)
-              case _ => visitLogicalExpression(logicalExpr.copy(left = toRelation(logicalExpr.left), right = toRelation(logicalExpr.right)), innerContext)
-            }
+          case logicalExpr: LogicalExpression => visitLogicalExpression(logicalExpr, innerContext)
           case simpleExpr: SimpleExpression => visitSimpleExpression(simpleExpr)
           case newExpr: Allocator => visitAllocator(newExpr)
           case literal: Literal => visitLiteral(literal)
@@ -556,7 +555,7 @@ object ByteCodeGenerator {
         }
       }
 
-      def visitLogicalExpression(logicalExpr: LogicalExpression, context: ExpressionContext, lastXORStatement: Boolean = true) {
+      def visitLogicalExpression(logicalExpr: LogicalExpression, context: ExpressionContext) {
         import LogicalExpression.Operator._
         import ExpressionContext.JumpKind._
 
@@ -569,34 +568,6 @@ object ByteCodeGenerator {
             //AND,NAND,OR,NOR are short-circuit operators
             // AND,NAND left expr == false => jump
             // OR, NOR left expr == true => jump
-            def acceptExprCreateBoolValue(expr: Expression) {
-              import mv._
-              val trueLabel = createLabel
-              val falseLabel = createLabel
-              val afterLabel = createLabel
-
-              def createValues() {
-                trueLabel()
-                ICONST_1
-                GOTO(afterLabel)
-                falseLabel()
-                ICONST_0
-                afterLabel()
-              }
-              val newContext = ExpressionContext(trueLabel, falseLabel, FalseJump)
-              expr match {
-                case logicalExpression: LogicalExpression =>
-                  logicalExpression.operator match {
-                    case XOR | XNOR => visitLogicalExpression(logicalExpression, newContext, false)
-                    case _ =>
-                      visitLogicalExpression(logicalExpression, newContext, false)
-                      createValues()
-                  }
-                case _ =>
-                  acceptExpressionInner(expr, newContext)
-                  createValues()
-              }
-            }
             def newFalseLabel(label: RichLabel): RichLabel =
               if ((logicalExpr.left.isInstanceOf[LogicalExpression]) || context.kind == FalseJump) context.falseJumpLabel
               else label
@@ -609,35 +580,40 @@ object ByteCodeGenerator {
             val afterLabel = createLabel
             logicalExpr.operator match {
               case AND =>
-                acceptExpressionInner(logicalExpr.left, context.copy(kind = FalseJump, falseJumpLabel = newFalseLabel(afterLabel)))
-                acceptExpressionInner(logicalExpr.right, context)
+                acceptExpressionInner(toRelation(logicalExpr.left), context.copy(kind = FalseJump, falseJumpLabel = newFalseLabel(afterLabel)))
+                acceptExpressionInner(toRelation(logicalExpr.right), context)
                 afterLabel()
               case NAND => visitFactor(Factor(logicalExpr.position, logicalExpr.copy(operator = AND), Factor.Operator.NOT, None, logicalExpr.dataType), context)
               case OR =>
-                acceptExpressionInner(logicalExpr.left, context.copy(kind = TrueJump, trueJumpLabel = newTrueLabel(afterLabel)))
-                acceptExpressionInner(logicalExpr.right, context)
+                acceptExpressionInner(toRelation(logicalExpr.left), context.copy(kind = TrueJump, trueJumpLabel = newTrueLabel(afterLabel)))
+                acceptExpressionInner(toRelation(logicalExpr.right), context)
                 afterLabel()
               case NOR => visitFactor(Factor(logicalExpr.position, logicalExpr.copy(operator = OR), Factor.Operator.NOT, None, logicalExpr.dataType), context)
               case XOR =>
-                acceptExprCreateBoolValue(logicalExpr.left)
-                acceptExprCreateBoolValue(logicalExpr.right)
+                acceptExpressionInner(logicalExpr.left)
+                acceptExpressionInner(logicalExpr.right)
                 IXOR()
-                if (lastXORStatement) {
-                  context.kind match {
-                    case TrueJump => IFNE(context.trueJumpLabel)
-                    case FalseJump => IFEQ(context.falseJumpLabel)
-                  }
-                }
               case XNOR =>
-                acceptExprCreateBoolValue(logicalExpr.left)
-                acceptExprCreateBoolValue(logicalExpr.right)
-                IXOR()
-                if (lastXORStatement) {
-                  context.kind match {
-                    case TrueJump => IFEQ(context.trueJumpLabel)
-                    case FalseJump => IFNE(context.falseJumpLabel)
-                  }
-                }
+                /*
+                implement XNOR as comparison
+                a XNOR b == !(a ^ b) which is the same as a == b
+
+                a     b       a == b a XOR b
+                false false   true   false
+                false true    false  true
+                true  false   false  true
+                true  true    true   false
+                 */
+                acceptExpressionInner(logicalExpr.left)
+                acceptExpressionInner(logicalExpr.right)
+                val falseLabel = createLabel
+                val trueLabel = createLabel
+                IF_ICMPNE(falseLabel)
+                ICONST_1
+                GOTO(trueLabel)
+                falseLabel()
+                ICONST_0
+                trueLabel()
             }
         }
       }
