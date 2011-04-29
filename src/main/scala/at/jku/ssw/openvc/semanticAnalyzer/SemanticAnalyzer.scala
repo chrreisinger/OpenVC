@@ -327,12 +327,12 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
         (Option(resultList), resultContext)
     }
 
-  def findOverloadedOperatorWithoutError(context: Context, operator: String, loc: Locatable, expressions: Expression*): Option[FunctionCallExpression] = {
+  def findOverloadedOperatorWithoutError(context: Context, operator: String, loc: Locatable, expressions: Expression*): Option[FunctionCall] = {
     val identifier = Identifier(loc.position, operatorMangleMap(operator))
     context.symbolTable.find(identifier.text, classOf[ListOfSubprograms]).flatMap {
       listOfSubprograms =>
         context.findFunctionInList(listOfSubprograms, expressions.map(_.dataType), NoType).map {
-          functionSymbol => FunctionCallExpression(identifier, Option(AssociationList(Seq(), expressions, functionSymbol.parameters)), None, functionSymbol)
+          functionSymbol => FunctionCall(identifier, Option(AssociationList(Seq(), expressions, functionSymbol.parameters)), None, functionSymbol)
         }
     }
   }
@@ -368,7 +368,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
       case physicalLiteral: PhysicalLiteral => visitPhysicalLiteral(physicalLiteral)
     }
 
-    def findOverloadedOperator(operator: String, loc: Locatable, expressions: Expression*): Option[FunctionCallExpression] =
+    def findOverloadedOperator(operator: String, loc: Locatable, expressions: Expression*): Option[FunctionCall] =
       findOverloadedOperatorWithoutError(context, operator, loc, expressions: _*).orElse {
         expressions.toSeq match {
           case Seq(left, right) => addError(loc, """the operator "%s" is not defined for types %s and %s""", operator, left.dataType.name, right.dataType.name)
@@ -659,13 +659,13 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
     }
 
     def visitName(name: Name): Expression = {
-      def visitFunctionCallExpression(functionCallExpr: FunctionCallExpression, listOfSubprograms: ListOfSubprograms, returnType: Option[DataType]): FunctionCallExpression = {
-        val (functionSymbol, parameterAssociation) = checkSubprogramAssociationList(context, functionCallExpr.parameterAssociation, listOfSubprograms, returnType, functionCallExpr)
-        (functionCallExpr.copy(parameterAssociation = parameterAssociation, symbol = functionSymbol.orNull.asInstanceOf[FunctionSymbol]))
+      def visitFunctionCall(functionCall: FunctionCall, listOfSubprograms: ListOfSubprograms, returnType: Option[DataType]): FunctionCall = {
+        val (functionSymbol, parameterAssociation) = checkSubprogramAssociationList(context, functionCall.parameterAssociation, listOfSubprograms, returnType, functionCall)
+        (functionCall.copy(parameterAssociation = parameterAssociation, symbol = functionSymbol.orNull.asInstanceOf[FunctionSymbol]))
       }
       def matchSymbol(symbol: Symbol, identifier: Identifier): Expression = symbol match {
         case AliasSymbol(_, destination) => matchSymbol(destination, identifier)
-        case list: ListOfSubprograms => visitFunctionCallExpression(FunctionCallExpression(identifier, None), list, Option(expectedType))
+        case list: ListOfSubprograms => visitFunctionCall(FunctionCall(identifier, None), list, Option(expectedType))
         case unitSymbol: UnitSymbol => PhysicalLiteral(identifier.position, "1", new SelectedName(Seq(identifier)), Literal.Type.INTEGER_LITERAL, unitSymbol)
         case ListOfEnumerations(_, enumerations) => enumerations.find(enumSymbol => isCompatible(enumSymbol.dataType, expectedType)) match {
           case Some(enumSymbol) => Literal(identifier.position, identifier.text, Literal.Type.INTEGER_LITERAL, enumSymbol.dataType, value = enumSymbol.dataType.value(enumSymbol.name.replace("'", "")))
@@ -687,7 +687,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
               case Name.AssociationListPart(_, associationList) =>
                 symbol match {
                   case list: ListOfSubprograms =>
-                    val functionCall = visitFunctionCallExpression(FunctionCallExpression(name.identifier, Some(associationList)), list, Option(NoType)) //TODO name.identifier is wrong
+                    val functionCall = visitFunctionCall(FunctionCall(name.identifier, Some(associationList)), list, Option(NoType)) //TODO name.identifier is wrong
                     //match the result value of a expression, e.g. x:=fooFunction(1,2,3,4).x;
                     Option(functionCall.copy(expression = matchParts(xs, ConstantSymbol(Identifier("return value"), functionCall.dataType, -1, NoSymbol))))
                   case _ =>

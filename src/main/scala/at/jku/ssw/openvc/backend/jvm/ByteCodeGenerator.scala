@@ -313,7 +313,7 @@ object ByteCodeGenerator {
               case subprogram: SubprogramSymbol => subprogram.mangledName
               case s => s.name
             }) + "_" + symbol.name, "()" + getJVMDataType(symbol))
-          case functionCallExpr: FunctionCallExpression => visitFunctionCallExpression(functionCallExpr)
+          case functionCallExpr: FunctionCall => visitFunctionCallExpression(functionCallExpr)
           case logicalExpr: LogicalExpression => visitLogicalExpression(logicalExpr, innerContext)
           case simpleExpr: SimpleExpression => visitSimpleExpression(simpleExpr)
           case newExpr: Allocator => visitAllocator(newExpr)
@@ -480,11 +480,11 @@ object ByteCodeGenerator {
         }
       }
 
-      def visitFunctionCallExpression(functionCallExpr: FunctionCallExpression) {
-        val functionSymbol = functionCallExpr.symbol
+      def visitFunctionCallExpression(functionCall: FunctionCall) {
+        val functionSymbol = functionCall.symbol
         functionSymbol.attributes.get("foreign") match {
           case Some(attributeSymbol) if (attributeSymbol.isInstanceOf[ForeignAttributeSymbol]) =>
-            loadParameters(functionCallExpr.parameterAssociation)
+            loadParameters(functionCall.parameterAssociation)
             attributeSymbol.asInstanceOf[ForeignAttributeSymbol].jvmSignature match {
               case Left((className, methodName)) => mv.INVOKESTATIC(if (className == RuntimeMarker) RUNTIME else className, methodName, "(" + getJVMParameterList(functionSymbol.parameters) + ")" + getJVMDataType(functionSymbol.returnType))
               case Right((className, methodName, parameterTypes)) => mv.INVOKESTATIC(if (className == RuntimeMarker) RUNTIME else className, methodName, parameterTypes)
@@ -495,10 +495,10 @@ object ByteCodeGenerator {
               mv.ALOAD(0)
               Opcodes.INVOKEVIRTUAL
             }
-            loadParameters(functionCallExpr.parameterAssociation)
+            loadParameters(functionCall.parameterAssociation)
             mv.visitMethodInsn(functionCallType, functionSymbol.owner.implementationName, functionSymbol.mangledName, "(" + getJVMParameterList(functionSymbol.parameters) + ")" + getJVMDataType(functionSymbol.returnType))
         }
-        functionCallExpr.expression.foreach(acceptExpressionInner(_))
+        functionCall.expression.foreach(acceptExpressionInner(_))
       }
 
       def visitPhysicalLiteral(physicalLiteral: PhysicalLiteral) {

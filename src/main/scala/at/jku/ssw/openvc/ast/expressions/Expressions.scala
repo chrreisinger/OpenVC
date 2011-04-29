@@ -335,7 +335,7 @@ final case class FieldAccessExpression(symbol: RuntimeSymbol, field: Identifier,
  * @param expression the optional expression to access the return value of the function call e.g. recordField in the example
  * @param symbol the function to call
  */
-final case class FunctionCallExpression(name: Identifier, parameterAssociation: Option[AssociationList], expression: Option[Expression] = None, symbol: FunctionSymbol = null) extends Expression {
+final case class FunctionCall(name: Identifier, parameterAssociation: Option[AssociationList], expression: Option[Expression] = None, symbol: FunctionSymbol = null) extends Expression {
   val position = name.position
   val dataType = expression match {
     case Some(expr) => expr.dataType
