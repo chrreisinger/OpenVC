@@ -330,7 +330,7 @@ object ByteCodeGenerator {
                 arrayType.elementType match {
                   case _: RecordType =>
                     INVOKEVIRTUAL(getJVMName(symbol), "getValue", "(" + ("I" * indexes.size) + ")" + "Ljava/lang/Object;")
-                    CHECKCAST(getJVMName(arrayType.elementType))
+                    CHECKCAST(arrayType.elementType)
                   case _ => INVOKEVIRTUAL(getJVMName(symbol), "getValue", "(" + ("I" * indexes.size) + ")" + getJVMDataType(arrayType.elementType))
                 }
             }
@@ -347,7 +347,7 @@ object ByteCodeGenerator {
             loadDiscreteRange(discreteRange)
             val arrayType = ci(classOf[at.jku.ssw.openvs.RuntimeArray1D[_]])
             mv.INVOKEVIRTUAL(RUNTIME + "$", "slice" + getScalaSpecializedMethodSuffix(sliceDataType.asInstanceOf[ArrayType].elementType), "(" + arrayType + ci(classOf[VHDLRange]) + ")" + arrayType)
-            mv.CHECKCAST(getJVMName(symbol.dataType))
+            mv.CHECKCAST(symbol.dataType)
             expressionOption.foreach(acceptExpressionInner(_, innerContext))
           case e =>
             println(e.getClass.getName + " " + e.position)
@@ -532,7 +532,7 @@ object ByteCodeGenerator {
               }
               ACONST_NULL //TODO load range
               INVOKEVIRTUAL(RUNTIME + "$", "createRuntimeArray" + getScalaSpecializedMethodSuffix(arrayType.elementType), "(" + "[" + getJVMDataType(arrayType.elementType) + ci(classOf[VHDLRange]) + ")" + ci(classOf[at.jku.ssw.openvs.RuntimeArray1D[_]]))
-              CHECKCAST(getJVMName(arrayType))
+              CHECKCAST(arrayType)
             }
           case INTEGER_LITERAL | REAL_LITERAL | CHARACTER_LITERAL => pushAnyVal(literal.value)
           case NULL_LITERAL => ACONST_NULL
@@ -739,7 +739,7 @@ object ByteCodeGenerator {
                 case (leftType: DataType, rightType: DataType) => (getJVMDataType(leftType), getJVMDataType(rightType), leftType)
               }
               INVOKEVIRTUAL(RUNTIME + "$", "concatenate" + getScalaSpecializedMethodSuffix(elementType), "(" + left + right + "I)" + arrayType)
-              CHECKCAST(getJVMName(simpleExpr.dataType))
+              CHECKCAST(simpleExpr.dataType)
           }
         }
         for (signOperator <- simpleExpr.signOperator) {
@@ -1196,7 +1196,7 @@ object ByteCodeGenerator {
             val dataType = "L" + OPENVS + "RuntimeArray" + arrayType.dimensionality + "D;"
             INVOKEVIRTUAL(RUNTIME + "$", "createRuntimeArray" + getScalaSpecializedMethodSuffix(arrayType.elementType),
               "(" + dataType + (ci(classOf[VHDLRange]) * arrayType.dimensionality) + ")" + dataType)
-            CHECKCAST(getJVMName(arrayType))
+            CHECKCAST(arrayType)
             ASTORE(aliasDeclaration.symbol.index)
           case _ => sys.error("not possible")
         }
@@ -1396,7 +1396,7 @@ object ByteCodeGenerator {
               arrayType.elementType match {
                 case _: RecordType =>
                   INVOKEVIRTUAL(getJVMName(symbol), "getValue", "(" + ("I" * indexes.size) + ")" + "Ljava/lang/Object;")
-                  CHECKCAST(getJVMName(arrayType.elementType))
+                  CHECKCAST(arrayType.elementType)
                 case _ => INVOKEVIRTUAL(getJVMName(symbol), "getValue", "(" + ("I" * indexes.size) + ")" + getJVMDataType(arrayType.elementType))
               }
           }
@@ -1764,7 +1764,7 @@ object ByteCodeGenerator {
               loadScalaManifest(dataType)
               mv.INVOKEVIRTUAL(RUNTIME + "$", "createRuntimeArray" + getScalaSpecializedMethodSuffix(arrayType.elementType), "(" + (ci(classOf[VHDLRange]) * arrayType.dimensionality) + "Ljava/lang/Class;Lscala/reflect/ClassManifest;)" + returnType)
           }
-          mv.CHECKCAST(getJVMName(arrayType))
+          mv.CHECKCAST(arrayType)
         case _: RecordType | _: ProtectedType =>
           import mv._
           NEW(dataType.implementationName)
@@ -1989,7 +1989,7 @@ object ByteCodeGenerator {
                   l2()
                 case arrayType: ArrayType =>
                   INVOKEVIRTUAL(getJVMName(fieldType), "clone", "()Ljava/lang/Object;")
-                  CHECKCAST(getJVMName(fieldType))
+                  CHECKCAST(fieldType)
               }
             }
             INVOKESPECIAL(recordType.implementationName, "<init>", "(" + methodDesc + ")V")
@@ -2061,7 +2061,7 @@ object ByteCodeGenerator {
             INSTANCEOF(recordType.implementationName)
             IFEQ(afterIfStmtLabel)
             ALOAD(1)
-            CHECKCAST(recordType.implementationName)
+            CHECKCAST(recordType)
             ASTORE(2)
             thatScopeLabel()
             ALOAD(2)

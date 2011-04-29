@@ -391,6 +391,8 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
 
   def CHECKCAST(className: String) {this.visitTypeInsn(Opcodes.CHECKCAST, className)}
 
+  def CHECKCAST(dataType: DataType) {this.visitTypeInsn(Opcodes.CHECKCAST, getJVMName(dataType))}
+
   def INSTANCEOF(className: String) {this.visitTypeInsn(Opcodes.INSTANCEOF, className)}
 
   def MONITORENTER() {this.visitInsn(Opcodes.MONITORENTER)}
