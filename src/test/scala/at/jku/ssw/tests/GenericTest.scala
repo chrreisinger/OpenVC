@@ -33,7 +33,7 @@ trait GenericTest extends FunSuite with ShouldMatchers {
   def compile(source: String) {
     if (directory.exists) directory.listFiles.foreach(_.delete())
 
-    val unit = VHDLCompiler.compile(new CompilationUnit(SourceFile.fromText(source, "testFile"), configuration))
+    val unit = VHDLCompiler.compile(new CompilationUnit(SourceFile.fromString(source, "testFile"), configuration))
     unit.printErrors(new PrintWriter(System.out))
     unit.errors.size should equal(0)
   }

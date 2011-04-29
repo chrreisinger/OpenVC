@@ -21,21 +21,72 @@ package at.jku.ssw.openvc.util
 import org.antlr.runtime.{CharStream, ANTLRFileStream, ANTLRStringStream, ANTLRInputStream}
 import java.io.InputStream
 
+/**
+ * This object provides convenience methods to create an iterable representation of a VHDL source file.
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ */
 object SourceFile {
+ /**
+  * creates a new SourceFile from a file
+  *
+  * @example {{{
+  *   val source = SourceFile.fromFile("test.vhd", Some("UTF-16"))
+  * }}}
+  * @param fileName the name source file on the hard disk
+  * @param encoding the name of a supported [[http://download.oracle.com/javase/7/docs/api/java/nio/charset/Charset.html Charset]] encoding
+  * @return the new created SourceFile object
+  */
   def fromFile(fileName: String, encoding: Option[String] = None): SourceFile =
-    new ANTLRStream(fileName, new ANTLRFileStream(fileName, encoding.orNull))
+    new ANTLRStream(fileName, new ANTLRFileStream(fileName, encoding.orNull)).withReset(() => fromFile(fileName, encoding))
 
-  def fromText(code: String, fileName: String): SourceFile =
-    new ANTLRStream(fileName, new ANTLRStringStream(code))
+ /**
+  * creates a new SourceFile from a String
+  *
+  * @example {{{
+  *   val source = SourceFile.fromString(code, "test.vhd")
+  * }}}
+  * @param code the String that contains the source code
+  * @param fileName the name of the source file, that is used in error reporting
+  * @return the new created SourceFile object
+  */
+  def fromString(code: String, fileName: String): SourceFile =
+    new ANTLRStream(fileName, new ANTLRStringStream(code)).withReset(() => fromString(code, fileName))
 
+ /**
+  * creates a new SourceFile from a InputStream
+  *
+  * @example {{{
+  *   val source = SourceFile.fromString(new FileInputStream("test.vhd"), "test.vhd")
+  * }}}
+  * @param stream the source [[http://download.oracle.com/javase/7/docs/api/java/io/InputStream.html InputStream]]
+  * @param fileName the name of the source file, that is used in error reporting
+  * @param encoding the name of a supported [[http://download.oracle.com/javase/7/docs/api/java/nio/charset/Charset.html Charset]] encoding
+  * @return the new created SourceFile object
+  */
   def fromInputStream(stream: InputStream, fileName: String, encoding: Option[String] = None): SourceFile =
-    new ANTLRStream(fileName, new ANTLRInputStream(stream, encoding.orNull))
+    new ANTLRStream(fileName, new ANTLRInputStream(stream, encoding.orNull)).withReset(() => fromInputStream(stream, fileName, encoding))
 }
 
+/**
+ * Represents a source file with VHDL code in the compiler
+ *
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[http://www.scala-lang.org/archives/downloads/distrib/files/nightly/docs/library/index.html#scala.io.Source scala.io.Source]]
+ */
 sealed abstract class SourceFile extends scala.io.Source {
+  /**
+   * the content of the source file, after it was loaded into memory
+   */
   val content: Array[Char]
+
+ /**
+  * the name of the source file
+  */
   val fileName: String
 
+  /**
+   * the content of the source file as string, the array inside the string is the [[content]] array
+   */
   lazy val contentAsString = {
     //create a string and set the value, offset and count fields, so we avoid all array copy calls
     //content and contentAsString share the same array
@@ -44,7 +95,8 @@ sealed abstract class SourceFile extends scala.io.Source {
     constructor.newInstance(new java.lang.Integer(0), new java.lang.Integer(content.length), content)
   }
 
-  lazy val iter = content.iterator
+  /** the actual iterator */
+  protected lazy val iter = content.iterator
 }
 
 private[util] final class ANTLRStream(val fileName: String, val stringStream: ANTLRStringStream) extends SourceFile with CharStream {
