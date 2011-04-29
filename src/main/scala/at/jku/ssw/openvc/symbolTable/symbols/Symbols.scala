@@ -120,8 +120,8 @@ abstract class AttributeSymbol extends Symbol {
 }
 
 @SerialVersionUID(1238244612233452818L)
-final case class PreDefinedAttributeSymbol(@transient identifier: Identifier, dataType: DataType, parameter: Option[DataType], isParameterOptional: Boolean) extends AttributeSymbol {
-  def this(name: String, dataType: DataType, parameter: Option[DataType], isParameterOptional: Boolean = false) = this (Identifier(name), dataType, parameter, isParameterOptional)
+final case class PreDefinedAttributeSymbol(@transient identifier: Identifier, dataType: DataType, parameters: Seq[DataType], isParameterOptional: Boolean) extends AttributeSymbol {
+  def this(name: String, dataType: DataType, parameters: Seq[DataType] = Seq(), isParameterOptional: Boolean = false) = this (Identifier(name), dataType, parameters, isParameterOptional)
 
   val owner = NoSymbol
 }
@@ -281,17 +281,17 @@ final case class SignalSymbol(@transient identifier: Identifier, dataType: DataT
   val isPort = !owner.isInstanceOf[SubprogramSymbol] && isParameter
 
   override lazy val attributes = mutable.Map(dataType.attributes.toSeq: _*) ++ Map(
-    ("delayed" -> new PreDefinedAttributeSymbol("delayed", dataType, Option(SymbolTable.timeType))),
-    ("stable" -> new PreDefinedAttributeSymbol("stable", SymbolTable.booleanType, Option(SymbolTable.timeType))),
-    ("quiet" -> new PreDefinedAttributeSymbol("quiet", SymbolTable.booleanType, Option(SymbolTable.timeType))),
-    ("transaction" -> new PreDefinedAttributeSymbol("transaction", SymbolTable.bitType, None)),
-    ("event" -> new PreDefinedAttributeSymbol("event", SymbolTable.booleanType, None)),
-    ("active" -> new PreDefinedAttributeSymbol("active", SymbolTable.booleanType, None)),
-    ("last_event" -> new PreDefinedAttributeSymbol("last_event", SymbolTable.timeType, None)),
-    ("last_active" -> new PreDefinedAttributeSymbol("last_active", SymbolTable.timeType, None)),
-    ("last_value" -> new PreDefinedAttributeSymbol("last_value", dataType, None)),
-    ("driving" -> new PreDefinedAttributeSymbol("driving", SymbolTable.booleanType, None)),
-    ("driving_value" -> new PreDefinedAttributeSymbol("driving_value", dataType, None))
+    ("delayed" -> new PreDefinedAttributeSymbol("delayed", dataType, Seq(SymbolTable.timeType))),
+    ("stable" -> new PreDefinedAttributeSymbol("stable", SymbolTable.booleanType, Seq(SymbolTable.timeType))),
+    ("quiet" -> new PreDefinedAttributeSymbol("quiet", SymbolTable.booleanType, Seq(SymbolTable.timeType))),
+    ("transaction" -> new PreDefinedAttributeSymbol("transaction", SymbolTable.bitType)),
+    ("event" -> new PreDefinedAttributeSymbol("event", SymbolTable.booleanType)),
+    ("active" -> new PreDefinedAttributeSymbol("active", SymbolTable.booleanType)),
+    ("last_event" -> new PreDefinedAttributeSymbol("last_event", SymbolTable.timeType)),
+    ("last_active" -> new PreDefinedAttributeSymbol("last_active", SymbolTable.timeType)),
+    ("last_value" -> new PreDefinedAttributeSymbol("last_value", dataType)),
+    ("driving" -> new PreDefinedAttributeSymbol("driving", SymbolTable.booleanType)),
+    ("driving_value" -> new PreDefinedAttributeSymbol("driving_value", dataType))
   )
 
 }

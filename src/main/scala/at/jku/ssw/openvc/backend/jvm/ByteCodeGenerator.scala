@@ -374,13 +374,13 @@ object ByteCodeGenerator {
                       case "high" => pushAnyVal(scalarType.upperBound)
                       case "ascending" => pushBoolean(scalarType.isAscending)
                       case "image" =>
-                        acceptExpressionOption(attributeAccess.parameterExpression)
+                        attributeAccess.parameters.foreach(acceptExpression(_))
                         scalarType match {
                           case _: IntegerType | _: RealType | _: PhysicalType => INVOKESTATIC(getBoxedName(scalarType), "toString", "(" + getJVMDataType(scalarType) + ")Ljava/lang/String;")
                           case enumType: EnumerationType => INVOKESTATIC(enumType.implementationName, "image", "(I)Ljava/lang/String;")
                         }
                       case "value" =>
-                        acceptExpressionOption(attributeAccess.parameterExpression)
+                        attributeAccess.parameters.foreach(acceptExpression(_))
                         scalarType match {
                           case _: IntegerType => INVOKESTATIC("java/lang/Integer", "parseInt", "(Ljava/lang/String;)I")
                           case _: RealType => INVOKESTATIC("java/lang/Double", "parseDouble", "(Ljava/lang/String;)D")
@@ -399,16 +399,16 @@ object ByteCodeGenerator {
                 }
               case signal: SignalSymbol if (signal.attributes.contains(attributeAccess.attribute.name)) =>
                 loadSymbol(signal)
-                acceptExpressionOption(attributeAccess.parameterExpression)
+                attributeAccess.parameters.foreach(acceptExpression(_))
                 //"delayed" | "stable" | "quiet" | "transaction" | "event" | "active" | "last_event" | "last_active" | "last_value" | "driving" | "event" | "driving_value"
-                INVOKEVIRTUAL(getJVMName(signal), attributeAccess.attribute.name, if (preDefinedAttributeSymbol.parameter.isDefined) "(L)" else "()" + getJVMDataType(attributeAccess.attribute.dataType))
+                INVOKEVIRTUAL(getJVMName(signal), attributeAccess.attribute.name, if (preDefinedAttributeSymbol.parameters.nonEmpty) "(J)" else "()" + getJVMDataType(attributeAccess.attribute.dataType))
               case symbol: RuntimeSymbol =>
                 symbol.dataType match {
                   case arrayType: ArrayType =>
                     loadSymbol(symbol)
-                    attributeAccess.parameterExpression match {
-                      case None => ICONST_1 //this must be a array attribute where the dimension is optional
-                      case Some(parameterExpression) => acceptExpression(parameterExpression)
+                    attributeAccess.parameters match {
+                      case Seq() => ICONST_1 //this must be a array attribute where the dimension is optional
+                      case _ => attributeAccess.parameters.foreach(acceptExpression(_))
                     }
                     //"left" | "right" | "low" | "high" | "length" | "ascending" | "range" | "reverse_range"
                     INVOKEVIRTUAL(getJVMName(symbol), attributeAccess.attribute.name, "(I)" + getJVMDataType(attributeAccess.attribute.dataType))

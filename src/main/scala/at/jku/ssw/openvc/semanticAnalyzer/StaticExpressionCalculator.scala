@@ -84,7 +84,7 @@ object StaticExpressionCalculator {
             val mod = l % r
             if ((mod < numeric.zero && r > numeric.zero) || (mod > numeric.zero && r < numeric.zero)) mod + r else mod
         }
-      case e@AttributeExpression(_, symbol, attribute, None, None) =>
+      case e@AttributeExpression(_, symbol, attribute, Seq(), None) =>
         e.dataType match {
           case scalar: ScalarType =>
             attribute.name match {

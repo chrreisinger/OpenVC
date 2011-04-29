@@ -249,7 +249,7 @@ object Name {
     val position = range.position
   }
 
-  final case class AttributePart(signature: Option[Signature], identifier: Identifier, expression: Option[Expression]) extends Part {
+  final case class AttributePart(signature: Option[Signature], identifier: Identifier, parameters: Seq[Expression]) extends Part {
     val position = signature.map(_.position).getOrElse(identifier.position)
   }
 
@@ -300,7 +300,7 @@ final case class ArrayAccessExpression(symbol: RuntimeSymbol, indexes: Seq[Expre
   }
 }
 
-final case class AttributeExpression(position: Position, symbol: Symbol, attribute: AttributeSymbol, parameterExpression: Option[Expression], expression: Option[Expression]) extends Expression with WithSymbol {
+final case class AttributeExpression(position: Position, symbol: Symbol, attribute: AttributeSymbol, parameters: Seq[Expression], expression: Option[Expression]) extends Expression with WithSymbol {
   val dataType = expression match {
     case Some(expr) => expr.dataType
     case None => attribute.dataType

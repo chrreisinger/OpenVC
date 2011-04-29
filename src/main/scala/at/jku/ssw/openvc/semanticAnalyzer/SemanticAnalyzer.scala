@@ -732,7 +732,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
                       }
                     } else addError(name, "%s is not a function", symbol.name)
                 }
-              case Name.AttributePart(signatureOption, identifier, expressionOption) =>
+              case Name.AttributePart(signatureOption, identifier, parameters) =>
                 (symbol match {
                   case listOfSubprograms: ListOfSubprograms => signatureOption match {
                     case Some(signature) => findSubprogramFromSignature(context, listOfSubprograms, signature)
@@ -749,18 +749,14 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
                   _.attributes.get(identifier.text) match {
                     case None => addError(identifier, "attribute %s not found", identifier.text)
                     case Some(attribute) =>
-                      val parameterExpression = attribute match {
-                        case preDefinedAttributeSymbol: PreDefinedAttributeSymbol => preDefinedAttributeSymbol.parameter match {
-                          case Some(requiredDataType) => preDefinedAttributeSymbol.isParameterOptional match {
-                            case false => expressionOption match {
-                              case None => addError(identifier, "the attribute %s requires a parameter of type %s", attribute.name, requiredDataType.name)
-                              case Some(expression) => Option(checkExpression(context, expression, requiredDataType))
-                            }
-                            case true => expressionOption.map(checkExpression(context, _, requiredDataType))
-                          }
-                          case None => expressionOption.flatMap(addError(_, "the attribute %s does not take a parameter", attribute.name))
-                        }
-                        case userDefinedAttributeSymbol: UserDefinedAttributeSymbol => expressionOption.flatMap(addError(_, "a user defined attribute does not take parameters"))
+                      val parameterExpressions = attribute match {
+                        case preDefinedAttributeSymbol: PreDefinedAttributeSymbol =>
+                          if (preDefinedAttributeSymbol.parameters.size == parameters.size) preDefinedAttributeSymbol.parameters.zip(parameters).map(x => checkExpression(context, x._2, x._1))
+                          else if (preDefinedAttributeSymbol.parameters.size == 0) parameters.headOption.flatMap(addError(_, "the attribute %s does not take a parameter", attribute.name)).toList
+                          else if (!preDefinedAttributeSymbol.isParameterOptional) addError(identifier, "the attribute %s requires %s parameters", attribute.name, preDefinedAttributeSymbol.parameters.size.toString).toList
+                          else if (parameters.size != 0) addError(identifier, "the attribute %s takes only one optional parameter", attribute.name).toList
+                          else Seq()
+                        case userDefinedAttributeSymbol: UserDefinedAttributeSymbol => parameters.headOption.flatMap(addError(_, "a user defined attribute does not take parameters")).toList
                       }
                       val expression = attribute match {
                         case preDefinedAttributeSymbol: PreDefinedAttributeSymbol =>
@@ -773,7 +769,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
                           require(xs.isEmpty)
                           None
                       }
-                      Option(AttributeExpression(identifier.position, symbol, attribute, parameterExpression, expression))
+                      Option(AttributeExpression(identifier.position, symbol, attribute, parameterExpressions, expression))
                   }
                 }
               case Name.SlicePart(range) =>

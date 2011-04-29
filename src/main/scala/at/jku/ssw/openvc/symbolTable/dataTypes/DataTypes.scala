@@ -92,14 +92,14 @@ abstract sealed class ArrayType extends CompositeType {
   val dimensions: Seq[RangeType]
   lazy val dimensionality = dimensions.size
   override lazy val attributes = Map(
-    ("left" -> new PreDefinedAttributeSymbol("left", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
-    ("right" -> new PreDefinedAttributeSymbol("right", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
-    ("low" -> new PreDefinedAttributeSymbol("low", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
-    ("high" -> new PreDefinedAttributeSymbol("high", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
-    ("range" -> new PreDefinedAttributeSymbol("range", dimensions.head, Option(SymbolTable.integerType), true)),
-    ("reverse_range" -> new PreDefinedAttributeSymbol("reverse_range", dimensions.head, Option(SymbolTable.integerType), true)),
-    ("length" -> new PreDefinedAttributeSymbol("length", SymbolTable.integerType, Option(SymbolTable.integerType), true)),
-    ("ascending" -> new PreDefinedAttributeSymbol("ascending", SymbolTable.booleanType, Option(SymbolTable.integerType), true))
+    ("left" -> new PreDefinedAttributeSymbol("left", SymbolTable.integerType, Seq(SymbolTable.integerType), true)),
+    ("right" -> new PreDefinedAttributeSymbol("right", SymbolTable.integerType, Seq(SymbolTable.integerType), true)),
+    ("low" -> new PreDefinedAttributeSymbol("low", SymbolTable.integerType, Seq(SymbolTable.integerType), true)),
+    ("high" -> new PreDefinedAttributeSymbol("high", SymbolTable.integerType, Seq(SymbolTable.integerType), true)),
+    ("range" -> new PreDefinedAttributeSymbol("range", dimensions.head, Seq(SymbolTable.integerType), true)),
+    ("reverse_range" -> new PreDefinedAttributeSymbol("reverse_range", dimensions.head, Seq(SymbolTable.integerType), true)),
+    ("length" -> new PreDefinedAttributeSymbol("length", SymbolTable.integerType, Seq(SymbolTable.integerType), true)),
+    ("ascending" -> new PreDefinedAttributeSymbol("ascending", SymbolTable.booleanType, Seq(SymbolTable.integerType), true))
   )
 }
 
@@ -128,19 +128,19 @@ abstract sealed class ScalarType extends DataType {
   lazy val isSubType = baseType.isDefined
   override val resolutionFunction: Option[FunctionSymbol]
   override lazy val attributes = Map(
-    ("left" -> new PreDefinedAttributeSymbol("left", this, None)),
-    ("right" -> new PreDefinedAttributeSymbol("right", this, None)),
-    ("low" -> new PreDefinedAttributeSymbol("low", this, None)),
-    ("high" -> new PreDefinedAttributeSymbol("high", this, None)),
-    ("ascending" -> new PreDefinedAttributeSymbol("ascending", SymbolTable.booleanType, None)),
-    ("image" -> new PreDefinedAttributeSymbol("image", SymbolTable.stringType, Option(this))),
-    ("value" -> new PreDefinedAttributeSymbol("value", this, Option(SymbolTable.stringType))),
-    ("pos" -> new PreDefinedAttributeSymbol("pos", this, Option(this))),
-    ("val" -> new PreDefinedAttributeSymbol("val", this, Option(this))),
-    ("succ" -> new PreDefinedAttributeSymbol("succ", this, Option(this))),
-    ("leftof" -> new PreDefinedAttributeSymbol("leftof", this, Option(this))),
-    ("rightof" -> new PreDefinedAttributeSymbol("rightof", this, Option(this))),
-    ("base" -> new PreDefinedAttributeSymbol("base", baseType.getOrElse(this), None))
+    ("left" -> new PreDefinedAttributeSymbol("left", this)),
+    ("right" -> new PreDefinedAttributeSymbol("right", this)),
+    ("low" -> new PreDefinedAttributeSymbol("low", this)),
+    ("high" -> new PreDefinedAttributeSymbol("high", this)),
+    ("ascending" -> new PreDefinedAttributeSymbol("ascending", SymbolTable.booleanType)),
+    ("image" -> new PreDefinedAttributeSymbol("image", SymbolTable.stringType, Seq(this))),
+    ("value" -> new PreDefinedAttributeSymbol("value", this, Seq(SymbolTable.stringType))),
+    ("pos" -> new PreDefinedAttributeSymbol("pos", this, Seq(this))),
+    ("val" -> new PreDefinedAttributeSymbol("val", this, Seq(this))),
+    ("succ" -> new PreDefinedAttributeSymbol("succ", this, Seq(this))),
+    ("leftof" -> new PreDefinedAttributeSymbol("leftof", this, Seq(this))),
+    ("rightof" -> new PreDefinedAttributeSymbol("rightof", this, Seq(this))),
+    ("base" -> new PreDefinedAttributeSymbol("base", baseType.getOrElse(this)))
   )
 }
 

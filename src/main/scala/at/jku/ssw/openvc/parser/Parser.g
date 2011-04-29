@@ -1668,9 +1668,12 @@ name_association_list_part returns [Name.AssociationListPart part] :
 name_slice_part returns [Name.SlicePart part] :
 	LPAREN discrete_range RPAREN  {$part=new Name.SlicePart($discrete_range.discreteRange)};
 
-name_attribute_part returns [Name.AttributePart part] :
+name_attribute_part returns [Name.AttributePart part]
+@init{
+	val expressions=new Buffer[Expression]()
+} :
 	signature? APOSTROPHE (id=identifier|RANGE {id=toIdentifier($RANGE)} |TOLERANCE {id=toIdentifier($TOLERANCE)} |ACROSS {id=toIdentifier($ACROSS)}|THROUGH {id=toIdentifier($THROUGH)} |REFERENCE {id=toIdentifier($REFERENCE)})
-	( (LPAREN)=> LPAREN expr=expression ({ams}?=>COMMA expression)* RPAREN)? {$part=new Name.AttributePart($signature.signature_,$id.id,$expr.expr)};
+	((LPAREN)=> LPAREN expr1=expression {expressions += $expr1.expr} ({ams}?=>COMMA expr2=expression {expressions += $expr2.expr})* RPAREN)? {$part=new Name.AttributePart($signature.signature_,$id.id,expressions.result)};
 		
 signature returns [Signature signature_] :
 	LBRACKET selected_name_list? (RETURN type_mark)? RBRACKET
