@@ -25,7 +25,8 @@ package at.jku.ssw.openvc.util
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.toPosition]]
  */
 sealed abstract class Position extends Ordered[Position] {
-  /**Is this position not NoPosition?
+  /**
+   * Is this position not NoPosition?
    * If isDefined is true, line, column, start and end are defined.
    */
   val isDefined = true
@@ -72,6 +73,16 @@ sealed abstract class Position extends Ordered[Position] {
     else 1
 }
 
+/**
+ * Represents a point in a source file
+ *
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.util.SourceFile]]
+ * @param line the line in the source file
+ * @param column the character position in the line
+ * @param start the index of the first character of the token in the content array of a source file
+ * @param end the index of the last character of the token in the content array of a source file
+ */
 final case class OffsetPosition(line: Int, column: Int, start: Int, end: Int) extends Position {
 
   override def addLineOffset(lineOffset: Int) = new OffsetPosition(this.line + lineOffset, this.column, -1, -1)
@@ -79,13 +90,26 @@ final case class OffsetPosition(line: Int, column: Int, start: Int, end: Int) ex
   override def addCharacterOffset(characterOffset: Int) = new OffsetPosition(this.line, this.column + characterOffset, -1, -1)
 }
 
+/**
+ * Represents a range in a source file, it is used for syntax errors
+ *
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[at.jku.ssw.openvc.util.SourceFile]]
+ * @param point the point where the range starts
+ * @param start the index of the first character of the range in the content array of a source file
+ * @param end the index of the last character of the range in the content array of a source file
+ */
 final case class RangePosition(point: OffsetPosition, start: Int, end: Int) extends Position {
   override val isRange = true
   val line = point.line
   val column = point.column
 }
 
-
+/**
+ * NoPosition is a dummy position that always throws for `line`, `column`, `start` and `end` an exception.
+ * NoPosition is used when there is no real position to avoid null values.
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ */
 object NoPosition extends Position {
   override val isDefined = false
 
@@ -93,7 +117,7 @@ object NoPosition extends Position {
 
   def column = sys.error("NoPosition.column")
 
-  def start = sys.error("NoPosition.startIndex")
+  def start = sys.error("NoPosition.start")
 
-  def end = sys.error("NoPosition.stopIndex")
+  def end = sys.error("NoPosition.end")
 }

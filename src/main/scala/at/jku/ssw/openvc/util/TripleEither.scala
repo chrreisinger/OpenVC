@@ -18,10 +18,66 @@
 
 package at.jku.ssw.openvc.util
 
-sealed abstract class TripleEither[+A, +B, +C]
+/**
+ *  Represents a value of one of three possible types (a disjoint union).
+ *  The data constructors [[at.jku.ssw.openvc.util.First]], [[at.jku.ssw.openvc.util.Second]]
+ *  and [[at.jku.ssw.openvc.util.Third]] represent the three possible values.
+ *
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @see [[http://www.scala-lang.org/archives/downloads/distrib/files/nightly/docs/library/index.html#scala.Either scala.Either]]
+ */
+sealed abstract class TripleEither[+A, +B, +C] {
+ /**
+  * Returns `true` if this is a `First`, `false` otherwise.
+  */
+  def isFirst: Boolean
 
-final case class First[+A, +B, +C](a: A) extends TripleEither[A, B, C]
+ /**
+  * Returns `true` if this is a `Second`, `false` otherwise.
+  */
+  def isSecond: Boolean
 
-final case class Second[+A, +B, +C](b: B) extends TripleEither[A, B, C]
+ /**
+  * Returns `true` if this is a `Third`, `false` otherwise.
+  */
+  def isThird: Boolean
+}
 
-final case class Third[+A, +B, +C](c: C) extends TripleEither[A, B, C]
+/**
+ * The first value of the disjoint union, as opposed to `Second` and `Third`.
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @param a the value
+ */
+final case class First[+A, +B, +C](a: A) extends TripleEither[A, B, C] {
+  def isFirst = true
+
+  def isSecond = false
+
+  def isThird = false
+}
+
+/**
+ * The second value of the disjoint union, as opposed to `First` and `Third`.
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @param b the value
+ */
+final case class Second[+A, +B, +C](b: B) extends TripleEither[A, B, C] {
+  def isFirst = false
+
+  def isSecond = true
+
+  def isThird = false
+}
+
+/**
+ * The third value of the disjoint union, as opposed to `First` and `Second`.
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ * @param c the value
+ */
+final case class Third[+A, +B, +C](c: C) extends TripleEither[A, B, C] {
+  def isFirst = false
+
+  def isSecond = false
+
+  def isThird = true
+}

@@ -18,17 +18,37 @@
 
 package at.jku.ssw.openvc
 
+/**
+ * Base class for all compiler phases
+ * @see [[at.jku.ssw.openvc.VHDLCompiler]]
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ */
 abstract class Phase {
-
+ /**
+  * the name of the compiler phase
+  */
   val name: String
 
+ /**
+  * a description of the phase
+  */
   val description = name
 
   override def toString = name
 
+ /**
+  * apply the phase to a compilation unit
+  *
+  * @param unit the compilation unit to which this phase should be applied
+  * @return a `CompilationUnit` that represents the result of the phase
+  */
   def apply(unit: CompilationUnit): CompilationUnit
 }
 
+/**
+ * NoPhase is a dummy phase that throws an exception when applied
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ */
 object NoPhase extends Phase {
   val name = "<no phase>"
 
