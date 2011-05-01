@@ -17,3 +17,4 @@ vhdlSrc/*
 *.vhd
 Parser.scala
 Lexer.scala
+.scala_dependencies
