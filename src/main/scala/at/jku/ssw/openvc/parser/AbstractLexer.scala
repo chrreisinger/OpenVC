@@ -19,24 +19,22 @@
 package at.jku.ssw.openvc.parser
 
 import org.antlr.runtime.{Lexer => ANTLRLexer, _}
-import at.jku.ssw.openvc.CompilerMessage
+import at.jku.ssw.openvc.CompilationUnit
 import at.jku.ssw.openvc.util.OffsetPosition
 
 abstract class AbstractLexer(input: CharStream, state: RecognizerSharedState) extends ANTLRLexer(input, state) {
-  var ams = false
-  var vhdl2008 = false
+  var compilationUnit: CompilationUnit = _
 
-  private val lexerErrorList = new scala.collection.immutable.VectorBuilder[CompilerMessage]() //scala.collection.mutable.ListBuffer[A]
+  lazy val ams = compilationUnit.configuration.amsEnabled
+  lazy val vhdl2008 = compilationUnit.configuration.vhdl2008
 
   protected def checkIntegerLiteral() {
     if (getText.contains("-")) {
       val index = getText.indexOf("-")
       val position = new OffsetPosition(getLine, getCharPositionInLine - index, getCharIndex - index, getCharIndex + 1 - index)
-      lexerErrorList += new CompilerMessage(position, "An exponent for an integer literal must not have a minus sign.")
+      compilationUnit.addError(position, "An exponent for an integer literal must not have a minus sign.")
     }
   }
-
-  def lexerErrors: Seq[CompilerMessage] = this.lexerErrorList.result()
 
   override def getErrorMessage(e: RecognitionException, tokenNames: Array[String]): String =
     if (e.isInstanceOf[NoViableAltException]) {
@@ -48,6 +46,6 @@ abstract class AbstractLexer(input: CharStream, state: RecognizerSharedState) ex
     else super.getErrorMessage(e, tokenNames)
 
   override def displayRecognitionError(tokenNames: Array[String], e: RecognitionException) {
-    lexerErrorList += new CompilerMessage(position = new OffsetPosition(e.line, e.charPositionInLine, e.index, e.index + 1), message = getErrorMessage(e, tokenNames))
+    compilationUnit.addError(position = new OffsetPosition(e.line, e.charPositionInLine, e.index, e.index + 1), message = getErrorMessage(e, tokenNames))
   }
 }

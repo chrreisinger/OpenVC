@@ -75,7 +75,7 @@ sync [String message]
 @after{
 	// If we consume any tokens at this point then we create an error.
 	if (startToken ne input.LT(1)) {
-		syntaxErrorList += new CompilerMessage(position=toPosition(startToken),message="garbled " + message)
+		compilationUnit.addError(position=toPosition(startToken),message="garbled " + message)
 	}
 }:;   // Deliberately match nothing, causing this rule always to be entered.
     

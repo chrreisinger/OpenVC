@@ -992,8 +992,8 @@ object ByteCodeGenerator {
     /**
      * Creates an conditional jump to a specific label
      *
-     * if condition is None this will allways jump, else
-     * it will generarte code that is a if statement and a jump
+     * if condition is None this will always jump, else
+     * it will generate code that is a if statement and a jump
      * {{{ if (condition) GOTO(target) }}}
      *
      * @param targetLabel the target of the jump
@@ -1295,7 +1295,7 @@ object ByteCodeGenerator {
 
         ALOAD(0)
         INVOKESPECIAL("java/lang/Object", "<init>", "()V")
-        for ((symbol, i) <- combinedList zipWithIndex) {
+        for ((symbol, i) <- combinedList.zipWithIndex) {
           ALOAD(0)
           loadInstruction(symbol.dataType, i + 1)
           PUTFIELD(cw.className, symbol.name, getJVMDataType(symbol))
@@ -2274,7 +2274,7 @@ object ByteCodeGenerator {
 
       cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER + flags, name, null, superClass, interfaces.orNull)
       cw.visitAnnotation(ci(annotationClass), true).visitEnd()
-      cw.visitSource(unit.source.fileName, OpenVCSignature)
+      cw.visitSource(unit.sourceFile.fileName, OpenVCSignature)
       if (createEmptyConstructor) cw.createEmptyConstructor()
       cw
     }

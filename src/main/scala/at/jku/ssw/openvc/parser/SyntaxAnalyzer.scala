@@ -25,16 +25,10 @@ object SyntaxAnalyzer extends Phase {
   val name = "parser"
 
   override def apply(unit: CompilationUnit): CompilationUnit = {
-    val lexer = new Lexer(unit.source.asInstanceOf[CharStream])
-    lexer.ams = unit.configuration.amsEnabled
-    lexer.vhdl2008 = unit.configuration.vhdl2008
-    val tokens = new CommonTokenStream(lexer)
-    val parser = new Parser(tokens)
-    parser.ams = unit.configuration.amsEnabled
-    parser.vhdl2008 = unit.configuration.vhdl2008
-    val designFile = parser.design_file()
-    unit.addErrors(parser.syntaxErrors)
-    unit.addErrors(lexer.lexerErrors)
-    unit.copy(astNode = designFile)
+    val lexer = new Lexer(unit.sourceFile.asInstanceOf[CharStream])
+    lexer.compilationUnit = unit
+    val parser = new Parser(new CommonTokenStream(lexer))
+    parser.compilationUnit = unit
+    unit.copy(astNode = parser.design_file())
   }
 }

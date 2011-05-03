@@ -35,7 +35,6 @@ import symbols._
 import dataTypes._
 
 import at.jku.ssw.openvc.backend.jvm.ByteCodeGenerator.getNextIndex
-import at.jku.ssw.openvc.CompilerMessage
 
 object SemanticAnalyzer extends Phase {
   val name = "semanticAnalyzer"
@@ -46,7 +45,6 @@ object SemanticAnalyzer extends Phase {
 final class SemanticAnalyzer(unit: CompilationUnit) {
   import unit.{addError, addWarning, configuration}
 
-  type SemanticCheckResult = (ASTNode, Seq[CompilerMessage], Seq[CompilerMessage])
   type Buffer[A] = immutable.VectorBuilder[A]
 
   private[this] val operatorMangleMap = Map(

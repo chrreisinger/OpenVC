@@ -18,76 +18,7 @@
 
 package at.jku.ssw.openvc
 
-import ast.{NoNode, ASTNode, Locatable}
-import util.{SourceFile, Position, NoPosition}
-import at.jku.ssw.openvc.VHDLCompiler.Configuration
-import collection.mutable.ListBuffer
-
-final class CompilerMessage(val position: Position, val message: String) extends Ordered[CompilerMessage] {
-  override def toString = position + " " + message
-
-  override def compare(that: CompilerMessage): Int = this.position.compare(that.position)
-}
-
-final case class CompilationUnit(source: SourceFile,
-                                 configuration: Configuration,
-                                 astNode: ASTNode = NoNode,
-                                 private val errorBuffer: ListBuffer[CompilerMessage] = new ListBuffer[CompilerMessage],
-                                 private val warningBuffer: ListBuffer[CompilerMessage] = new ListBuffer[CompilerMessage]) {
-
-  import java.io.PrintWriter
-
-  def errors = errorBuffer.result()
-
-  def warnings = warningBuffer.result()
-
-  def addErrors(errors: Seq[CompilerMessage]) {errorBuffer ++= errors}
-
-  def addError(stmt: Locatable, msg: String, messageParameters: AnyRef*): Option[Nothing] = addError(stmt.position, msg, messageParameters: _*)
-
-  def addError(position: Position, msg: String, messageParameters: AnyRef*): Option[Nothing] = {
-    errorBuffer += new CompilerMessage(position, String.format(msg, messageParameters.toArray: _*))
-    None
-  }
-
-  def addWarning(stmt: Locatable, msg: String, messageParameters: AnyRef*): Option[Nothing] = {
-    warningBuffer += new CompilerMessage(stmt.position, String.format(msg, messageParameters.toArray: _*))
-    None
-  }
-
-  def printErrors(writer: PrintWriter) {
-    lazy val sourceLines = source.getLines().toIndexedSeq
-    if (errors.nonEmpty || warnings.nonEmpty) {
-      writer.println("errors:" + errors.size + " warnings:" + warnings.size)
-    }
-    def printMessages(prefix: String, messages: Seq[CompilerMessage]) {
-      for (msg <- messages) {
-        writer.println(prefix + source.fileName + ": line:" + msg.position.line + " col:" + msg.position.column + " " + msg.message)
-        if (msg.position != NoPosition) {
-          writer.println(sourceLines(math.min(msg.position.line - 1, sourceLines.size - 1)))
-          writer.println((" " * msg.position.column) + "^")
-        }
-      }
-    }
-    printMessages("[err] ", errors.sorted)
-    printMessages("[warn] ", warnings)
-    writer.flush()
-  }
-}
-
 object VHDLCompiler {
-
-  final class Configuration(val amsEnabled: Boolean,
-                            val vhdl2008: Boolean,
-                            val parseOnly: Boolean,
-                            val outputDirectory: String,
-                            val designLibrary: String,
-                            val libraryDirectory: String,
-                            val debugCompiler: Boolean,
-                            val debugCodeGenerator: Boolean) {
-    val libraryOutputDirectory = outputDirectory + designLibrary + java.io.File.separator
-  }
-
   def compile(unit: CompilationUnit): CompilationUnit = {
     import java.io.File
     import annotation.tailrec

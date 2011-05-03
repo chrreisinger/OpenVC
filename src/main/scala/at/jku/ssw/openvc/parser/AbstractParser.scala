@@ -20,21 +20,20 @@ package at.jku.ssw.openvc.parser
 
 import collection.immutable.SortedMap
 import org.antlr.runtime.{Parser => ANTLRParser, _}
-import at.jku.ssw.openvc.CompilerMessage
+import at.jku.ssw.openvc.CompilationUnit
 import at.jku.ssw.openvc.ast.Identifier
 import at.jku.ssw.openvc.util.{OffsetPosition, RangePosition}
 import Parser._
 
 abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) extends ANTLRParser(input, state) {
-  var ams = false
-  var vhdl2008 = false
+  var compilationUnit: CompilationUnit = _
+
+  lazy val ams = compilationUnit.configuration.amsEnabled
+  lazy val vhdl2008 = compilationUnit.configuration.vhdl2008
+
   var followSet: BitSet = _
 
   type Buffer[A] = scala.collection.immutable.VectorBuilder[A] //scala.collection.mutable.ListBuffer[A]
-
-  protected val syntaxErrorList = new Buffer[CompilerMessage]()
-
-  def syntaxErrors: Seq[CompilerMessage] = this.syntaxErrorList.result()
 
   protected implicit def toPosition(token: Token): OffsetPosition =
     new OffsetPosition(token.getLine, token.getCharPositionInLine, token.asInstanceOf[CommonToken].getStartIndex, token.asInstanceOf[CommonToken].getStopIndex)
@@ -258,7 +257,7 @@ abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) 
         // The start and end points come directly from the mismatched token.
         (e.token.asInstanceOf[CommonToken].getStartIndex, e.token.asInstanceOf[CommonToken].getStopIndex + 1)
     }
-    syntaxErrorList += new CompilerMessage(position = new RangePosition(e.token, startPoint, endPoint), message = mb.toString())
+    compilationUnit.addError(position = new RangePosition(e.token, startPoint, endPoint), message = mb.toString())
   }
 
   //The following code was taken from http://www.antlr.org/wiki/display/ANTLR3/Custom+Syntax+Error+Recovery
@@ -287,7 +286,7 @@ abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) 
     syncToSet(follow)
     // If we consume any tokens at this point then we create an error.
     if (startToken ne input.LT(1)) {
-      syntaxErrorList += new CompilerMessage(position = toPosition(startToken), message = "garbled sequential statement")
+      compilationUnit.addError(position = toPosition(startToken), message = "garbled sequential statement")
     }
   }
 

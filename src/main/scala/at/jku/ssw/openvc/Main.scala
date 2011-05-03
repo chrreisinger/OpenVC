@@ -19,7 +19,7 @@
 package at.jku.ssw.openvc
 
 import util.SourceFile
-import VHDLCompiler.Configuration
+import CompilationUnit.Configuration
 import at.jku.ssw.openvs.VHDLRuntime.VHDLRuntimeException
 import at.jku.ssw.openvs.Simulator
 import java.io.{PrintWriter, FilenameFilter, File}
@@ -40,7 +40,7 @@ object Main {
             allVHDLFiles.foreach {
               file =>
                 val result = VHDLCompiler.compile(new CompilationUnit(SourceFile.fromFile(file.getAbsolutePath), configuration))
-                result.printErrors(new PrintWriter(System.out))
+                result.printMessages(new PrintWriter(System.out))
             }
         }
         println("time:" + (System.currentTimeMillis - start))
@@ -53,7 +53,7 @@ object Main {
           val classFilter = new FilenameFilter() {
             override def accept(dir: File, name: String): Boolean = name.endsWith(".class")
           }
-          files.map(file => VHDLCompiler.compile(new CompilationUnit(SourceFile.fromFile(file), configuration))).foreach(unit => unit.printErrors(new PrintWriter(System.out)))
+          files.map(file => VHDLCompiler.compile(new CompilationUnit(SourceFile.fromFile(file), configuration))).foreach(unit => unit.printMessages(new PrintWriter(System.out)))
           Simulator.loadFiles(this.getClass.getClassLoader, configuration.outputDirectory, listFiles(new File(configuration.libraryOutputDirectory), classFilter, true).map(file => file.getPath.substring(file.getPath.indexOf('\\') + 1).split('.').head.replace('\\', '.')), List("std.jar", "ieee.jar"))
           Simulator.runClass(this.getClass.getClassLoader, configuration.outputDirectory, configuration.designLibrary + ".alu_tb_body", "main$-1404437944", List("std.jar", "ieee.jar"))
       }
