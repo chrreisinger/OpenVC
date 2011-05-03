@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <classpath>
-<classpathentry kind="src" path="src\test\scala" output="target\scala_2.9.0.RC2\test-classes" including="**/*.scala" />
+<classpathentry kind="src" path="src\test\scala" output="target\scala_2.9.0.RC3\test-classes" including="**/*.scala" />
 <classpathentry kind="src" path="src\main\scala" including="**/*.scala" />
-<classpathentry kind="lib" path="lib_managed\scala_2.9.0.RC2\compile\antlr-2.7.7.jar" />
-<classpathentry kind="lib" path="lib_managed\scala_2.9.0.RC2\compile\stringtemplate-3.2.1.jar" />
-<classpathentry kind="lib" path="lib_managed\scala_2.9.0.RC2\compile\antlr-3.3.jar" />
-<classpathentry kind="lib" path="lib_managed\scala_2.9.0.RC2\compile\commons-cli-1.2.jar" />
-<classpathentry kind="lib" path="lib_managed\scala_2.9.0.RC2\compile\scalatest-1.3-javadoc.jar" />
-<classpathentry kind="lib" path="lib_managed\scala_2.9.0.RC2\compile\antlr-runtime-3.3.jar" />
-<classpathentry kind="lib" path="lib_managed\scala_2.9.0.RC2\compile\asm-all-3.3.1.jar" />
-<classpathentry kind="lib" path="lib_managed\scala_2.9.0.RC2\compile\scalatest-1.3.jar" />
-<classpathentry kind="lib" path="lib_managed\scala_2.9.0.RC2\compile\commons-cli-1.2-javadoc.jar" />
+<classpathentry kind="lib" path="lib_managed\scala_2.9.0.RC3\compile\commons-cli-1.2.jar" />
+<classpathentry kind="lib" path="lib_managed\scala_2.9.0.RC3\compile\scalatest-1.3-javadoc.jar" />
+<classpathentry kind="lib" path="lib_managed\scala_2.9.0.RC3\compile\antlr-3.3.jar" />
+<classpathentry kind="lib" path="lib_managed\scala_2.9.0.RC3\compile\antlr-runtime-3.3.jar" />
+<classpathentry kind="lib" path="lib_managed\scala_2.9.0.RC3\compile\commons-cli-1.2-javadoc.jar" />
+<classpathentry kind="lib" path="lib_managed\scala_2.9.0.RC3\compile\asm-all-3.3.1.jar" />
+<classpathentry kind="lib" path="lib_managed\scala_2.9.0.RC3\compile\stringtemplate-3.2.1.jar" />
+<classpathentry kind="lib" path="lib_managed\scala_2.9.0.RC3\compile\scalatest-1.3.jar" />
+<classpathentry kind="lib" path="lib_managed\scala_2.9.0.RC3\compile\antlr-2.7.7.jar" />
 <classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER" />
 <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER" />
-<classpathentry kind="output" path="target\scala_2.9.0.RC2\classes" />
+<classpathentry kind="output" path="target\scala_2.9.0.RC3\classes" />
 </classpath>
