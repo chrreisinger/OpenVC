@@ -18,6 +18,7 @@
 
 package at.jku.ssw.openvc.parser
 
+import collection.immutable.SortedMap
 import org.antlr.runtime.{Parser => ANTLRParser, _}
 import at.jku.ssw.openvc.CompilerMessage
 import at.jku.ssw.openvc.ast.Identifier
@@ -40,102 +41,90 @@ abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) 
 
   protected implicit def anyToOption[A](value: A): Option[A] = Option(value)
 
-  protected def toIdentifier(token: Token, toLowerCase: Boolean = true): Identifier =
+  protected def toIdentifier(token: Token, isBasicIdentifier: Boolean = true): Identifier =
     if (token.getType != STRING_LITERAL && token.getType != CHARACTER_LITERAL)
-      new Identifier(toPosition(token), if (toLowerCase) token.getText.toLowerCase else token.getText.replace("""\\""", "\\"))
+      new Identifier(toPosition(token), if (isBasicIdentifier) token.getText.toLowerCase else token.getText.replace("""\\""", "\\"))
     else new Identifier(toPosition(token), token.getText)
 
-  private val tokenMap = Map(
-    "DOUBLESTAR" -> "**",
-    "AMS_ASSIGN" -> "==",
-    "LEQ" -> "<=",
-    "GEQ" -> ">=",
-    "ARROW" -> "=>",
-    "NEQ" -> "/=",
-    "VAR_ASSIGN" -> ":=",
-    "BOX" -> "<>",
-    "DBLQUOTE" -> "\"",
-    "SEMICOLON" -> ";",
-    "COMMA" -> ",",
-    "AMPERSAND" -> "&",
-    "LPAREN" -> "(",
-    "RPAREN" -> ")",
-    "LBRACKET" -> "[",
-    "RBRACKET" -> "]",
-    "COLON" -> ":",
-    "MUL" -> "*",
-    "DIV" -> "/",
-    "PLUS" -> "+",
-    "MINUS" -> "-",
-    "LT" -> "<",
-    "GT" -> ">",
-    "EQ" -> "=",
-    "BAR" -> "|",
-    "DOT" -> ".",
-    "MEQ" -> "?=",
-    "MNEQ" -> "?/=",
-    "MLT" -> "?<",
-    "MLEQ" -> "?<=",
-    "MGT" -> "?>",
-    "MGEQ" -> "?>=",
-    "AT" -> "@",
-    "QMARK" -> "?",
-    "CONDITION_OPERATOR" -> "??",
-    "WS" -> "whitespace",
-    "NESTED_ML_COMMENT" -> "multiline comment",
-    "LINECOMMENT" -> "line comment",
-    "BASIC_IDENTIFIER" -> "basic identifier",
-    "EXTENDED_IDENTIFIER" -> "extended identifier",
-    "BASED_LITERAL" -> "based literal",
-    "INTEGER_LITERAL" -> "integer literal",
-    "REAL_LITERAL" -> "real literal",
-    "APOSTROPHE" -> "apostrophe",
-    "STRING_LITERAL" -> "string literal",
-    "BIT_STRING_LITERAL" -> "bit string literal",
-    "CHARACTER_LITERAL" -> "character literal",
-    "GRAPHIC_CHARACTER" -> "graphic character",
-    "LETTER_OR_DIGIT" -> "letter or digit",
-    "BASED_INTEGER" -> "based integer",
-    "BASE_SPECIFIER" -> "base specifier",
-    "EXTENDED_DIGIT" -> "extended digit",
-    "UPPER_CASE_LETTER" -> "upper case letter",
-    "LOWER_CASE_LETTER" -> "lower case letter",
-    "SPECIAL_CHARACTER" -> "special character",
-    "SPACE_CHARACTER" -> "space character",
-    "OTHER_SPECIAL_CHARACTER" -> "other special character",
-    "'<<'" -> "<<",
-    "'>>'" -> ">>",
-    "'^'" -> "^",
-    "'\\''" -> "'"
+  private val tokenMap = SortedMap(
+    AMS_ASSIGN -> "==",
+    VAR_ASSIGN -> ":=",
+    BOX -> "<>",
+    DBLQUOTE -> "\"",
+    COMMA -> ",",
+    SEMICOLON -> ";",
+    LPAREN -> "(",
+    RPAREN -> ")",
+    LBRACKET -> "[",
+    RBRACKET -> "]",
+    COLON -> ":",
+    DOT -> ".",
+    AMPERSAND -> "&",
+    BAR -> "|",
+    ARROW -> "=>",
+    AT -> "@",
+    QMARK -> "?",
+    DLT -> "<<",
+    DGT -> ">>",
+    CIRCUMFLEX -> "^",
+    DOUBLESTAR -> "**",
+    MUL -> "*",
+    DIV -> "/",
+    PLUS -> "+",
+    MINUS -> "-",
+    EQ -> "=",
+    NEQ -> "/=",
+    LT -> "<",
+    GT -> ">",
+    LEQ -> "<=",
+    GEQ -> ">=",
+    MEQ -> "?=",
+    MNEQ -> "?/=",
+    MLT -> "?<",
+    MLEQ -> "?<=",
+    MGT -> "?>",
+    MGEQ -> "?>=",
+    CONDITION_OPERATOR -> "??",
+    WHITESPACE -> "whitespace",
+    NESTED_ML_COMMENT -> "multiline comment",
+    LINE_COMMENT -> "line comment",
+    BASIC_IDENTIFIER -> "basic identifier",
+    EXTENDED_IDENTIFIER -> "extended identifier",
+    BASED_LITERAL -> "based literal",
+    INTEGER_LITERAL -> "integer literal",
+    REAL_LITERAL -> "real literal",
+    APOSTROPHE -> "apostrophe",
+    STRING_LITERAL -> "string literal",
+    BIT_STRING_LITERAL -> "bit string literal",
+    CHARACTER_LITERAL -> "character literal",
+    GRAPHIC_CHARACTER -> "graphic character",
+    LETTER_OR_DIGIT -> "letter or digit",
+    BASED_INTEGER -> "based integer",
+    BASE_SPECIFIER -> "base specifier",
+    EXTENDED_DIGIT -> "extended digit",
+    UPPER_CASE_LETTER -> "upper case letter",
+    LOWER_CASE_LETTER -> "lower case letter",
+    SPECIAL_CHARACTER -> "special character",
+    SPACE_CHARACTER -> "space character",
+    OTHER_SPECIAL_CHARACTER -> "other special character"
   )
 
-  lazy val vhdlTokenNames = getTokenNames.map(tokenName => tokenMap.getOrElse(tokenName, tokenName.toLowerCase))
+  lazy val vhdlTokenNames = (SortedMap(getTokenNames.zipWithIndex.map(_.swap): _*) ++ tokenMap).values.toArray
 
   private val ruleMap = Map(
-    "sequential_statement" -> "a sequential statement",
-    "wait_statement" -> "a wait statement",
-    "assertion_statement" -> "an assertion statement",
-    "report_statement" -> "a report statement",
-    "procedure_call_statement" -> "a procedure call statement",
     "assignment_statement" -> "a signal or variable assignment statement",
-    "if_statement" -> "an if statement",
-    "case_statement" -> "a case statement",
-    "loop_statement" -> "a loop statement",
-    "next_statement" -> "a next statement",
-    "exit_statement" -> "an exit statement",
-    "return_statement" -> "a return statement",
-    "null_statement" -> "a null statement",
-    "ams_break_statement" -> "a break statement"
+    "label_colon" -> "identifier :"
   )
 
   protected def stackPositionDescription(ruleName: String): String =
     ruleMap.get(ruleName) match {
       case Some(description) => description
       case _ =>
-        (ruleName.charAt(0) match {
-          case 'a' | 'e' | 'i' | 'o' | 'u' => "an "
-          case _ => "a "
-        }) + ruleName.split('_').mkString(" ")
+        val name = ruleName.split('_').filter(string => string != "v2008" && string != "ams").mkString(" ")
+        name.charAt(0) match {
+          case 'a' | 'e' | 'i' | 'o' | 'u' => "an " + name
+          case _ => "a " + name
+        }
     }
 
   private object TokenType extends Enumeration {
@@ -157,8 +146,7 @@ abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) 
   )
 
   private def classifyToken(tokenType: Int): TokenType.Value =
-    if (operatorKeywords.contains(tokenType)) TokenType.Operator
-    else if (tokenType >= DOUBLESTAR && tokenType <= CONDITION_OPERATOR) TokenType.Operator
+    if (operatorKeywords.contains(tokenType) || (tokenType >= DOUBLESTAR && tokenType <= CONDITION_OPERATOR)) TokenType.Operator
     else if ((tokenType >= ABS && tokenType <= XOR) || extensionsKeywords.contains(tokenType)) TokenType.KeyWord
     else if (tokenType == BASIC_IDENTIFIER || tokenType == EXTENDED_IDENTIFIER) TokenType.Identifier
     else TokenType.Other
