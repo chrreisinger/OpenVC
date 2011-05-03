@@ -501,22 +501,34 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
         case dataType => factor.copy(dataType = dataType)
       }
 
-    def convertBasedLiteral(text: String): (AnyVal, Literal.Type.Value, DataType) = {
+    def convertBasedLiteral(text: String, expression: Expression): (AnyVal, Literal.Type.Value, DataType) = {
       //INTEGER '#' BASED_INTEGER ( DOT BASED_INTEGER )? '#' EXPONENT? ;
-      val Regex = """(\d+)#([a-f0-9]+)(.([a-f0-9]+))?#(e(['+'|'-']?)(\d+))?""".r
+      val Regex = """(\d+)#([a-f0-9]+)(.([a-f0-9]+))?#(e(\+|-)?(\d+))?""".r
       text.replace("_", "").toLowerCase match {
-        case Regex(baseString, values, _, fractionString, _, sign, exponentString) =>
+        case Regex(baseString, valuesString, _, fractionString, _, signString, exponentString) =>
           val base = baseString.toInt
-          val exponent = (if (exponentString != null) math.pow(base, Integer.parseInt(exponentString)).toInt else 1)
+          def checkDigits(str: String) {
+            str.foreach {
+              char =>
+                if (Integer.parseInt("" + char, 16) >= base) addError(expression, "digit %s is greater thant the base %s", char.toString(), base.toString())
+            }
+          }
+          if (base < 2 || base > 16) addError(expression, "The base must be at least two and at most sixteen.")
+          checkDigits(valuesString)
+          val exponent =
+            if (exponentString != null) math.pow(base, if (signString != null && signString == "-") -exponentString.toInt else exponentString.toInt)
+            else 1
           if (fractionString == null) {
-            val value = (Integer.parseInt(values, base) * exponent)
+            if (signString != null && signString == "-") addError(expression, "An exponent for a based integer literal must not have a minus sign.")
+            val value = (Integer.parseInt(valuesString, base) * exponent).toInt
             (value, Literal.Type.INTEGER_LITERAL, SymbolTable.universalIntegerType)
           }
           else {
+            checkDigits(fractionString)
             val fraction = fractionString.zipWithIndex.map {
               case (digit, i) => Integer.parseInt(digit.toString, base) / math.pow(base, i + 1)
             }.sum
-            val value = ((Integer.parseInt(values, base) + fraction) * exponent)
+            val value = ((Integer.parseInt(valuesString, base) + fraction) * exponent)
             (value, Literal.Type.REAL_LITERAL, SymbolTable.universalRealType)
           }
       }
@@ -526,7 +538,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
       context.findSymbol(literal.unitName, classOf[UnitSymbol]) match {
         case Some(unitSymbol) =>
           if (literal.literalType == Literal.Type.BASED_LITERAL) {
-            val (value, literalType, _) = convertBasedLiteral(literal.text)
+            val (value, literalType, _) = convertBasedLiteral(literal.text, literal)
             literal.copy(unitSymbol = unitSymbol, text = value.toString, literalType = literalType)
           } else literal.copy(unitSymbol = unitSymbol)
         case _ => literal
@@ -538,19 +550,21 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
       literal.literalType match {
         case INTEGER_LITERAL => literal.copy(dataType = SymbolTable.universalIntegerType, value = literal.toInt)
         case REAL_LITERAL => literal.copy(dataType = SymbolTable.universalRealType, value = literal.toDouble)
-        case STRING_LITERAL => expectedType match {
-          case arrayType: ArrayType if (arrayType.elementType.isInstanceOf[EnumerationType] && arrayType.dimensionality == 1) =>
-            val enumType = arrayType.elementType.asInstanceOf[EnumerationType]
-            for ((c, i) <- literal.text.replace("\"", "").zipWithIndex) {
-              if (!enumType.contains(c.toString))
-                addError(literal.position.addCharacterOffset(i + 1), "'%s' is not a element of enumeration type %s", c.toString, enumType.name)
-            }
-            //literal.copy(dataType = new ConstrainedRangeType(arrayType.elementType, 0, literal.text.length))//TODO
-            literal.copy(dataType = arrayType)
-          case dataType =>
-            addError(literal, "expected a expression of type %s, found %s", expectedType.name, dataType.name)
-            literal
-        }
+        case STRING_LITERAL =>
+          val text = literal.text.replace("\"\"", "\"")
+          expectedType match {
+            case arrayType: ArrayType if (arrayType.elementType.isInstanceOf[EnumerationType] && arrayType.dimensionality == 1) =>
+              val enumType = arrayType.elementType.asInstanceOf[EnumerationType]
+              for ((c, i) <- text.zipWithIndex) {
+                if (!enumType.contains(c.toString))
+                  addError(literal.position.addCharacterOffset(i + 1), "'%s' is not a element of enumeration type %s", c.toString, enumType.name)
+              }
+              //literal.copy(dataType = new ConstrainedRangeType(arrayType.elementType, 0, literal.text.length))//TODO
+              literal.copy(dataType = arrayType, text = text)
+            case dataType =>
+              addError(literal, "expected a expression of type %s, found %s", expectedType.name, dataType.name)
+              literal
+          }
         case CHARACTER_LITERAL =>
           context.findSymbol(Identifier(literal.position, literal.text), classOf[ListOfEnumerations]).flatMap {
             list =>
@@ -643,7 +657,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
               visitLiteral(Literal(literal.position, valueString, STRING_LITERAL))
           }
         case BASED_LITERAL =>
-          val (value, literalType, dataType) = convertBasedLiteral(literal.text)
+          val (value, literalType, dataType) = convertBasedLiteral(literal.text, literal)
           Literal(literal.position, value.toString, literalType, dataType, value)
         case NULL_LITERAL => literal.copy(dataType = NullType)
       }

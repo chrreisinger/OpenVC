@@ -28,6 +28,14 @@ abstract class AbstractLexer(input: CharStream, state: RecognizerSharedState) ex
 
   private val lexerErrorList = new scala.collection.immutable.VectorBuilder[CompilerMessage]() //scala.collection.mutable.ListBuffer[A]
 
+  protected def checkIntegerLiteral() {
+    if (getText.contains("-")) {
+      val index = getText.indexOf("-")
+      val position = new OffsetPosition(getLine, getCharPositionInLine - index, getCharIndex - index, getCharIndex + 1 - index)
+      lexerErrorList += new CompilerMessage(position, "An exponent for an integer literal must not have a minus sign.")
+    }
+  }
+
   def lexerErrors: Seq[CompilerMessage] = this.lexerErrorList.result()
 
   override def getErrorMessage(e: RecognitionException, tokenNames: Array[String]): String =

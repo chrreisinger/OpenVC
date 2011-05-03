@@ -147,6 +147,18 @@ final class ExpressionTests extends GenericTest {
       end main;
     """
   }
+
+  compileCodeInPackageAndRun("compile based literals") {
+    """
+      procedure main is
+      begin  -- main
+        assert 2#1111_1111# = 16#FF# and 016#0FF# = 255 severity failure;
+        assert 16#E#E1 = 2#1110_0000# and 16#E#E1 = 224 severity failure;
+        assert 16#F.FF#E+2 = 2#1.1111_1111_111#E11 and 16#F.FF#E+2 = 4095.0 severity failure;
+      end main;
+    """
+  }
+  
   compileCodeInPackageAndRun("compile bit string literals") {
     """
       procedure compare (

@@ -64,7 +64,7 @@ object Identifier {
 }
 
 final class Identifier(val position: Position, val originalText: String) extends Locatable {
-  val text = originalText.replace("\"", "")
+  val text = if (originalText.charAt(0) == '"') originalText.substring(1, originalText.length() - 1) else originalText
   override val toString: String = this.text
 
   override def equals(other: Any): Boolean = other match {
@@ -266,7 +266,7 @@ object InterfaceList {
   sealed trait AbstractInterfaceElement
 
   case object NoElement extends AbstractInterfaceElement
-  
+
   abstract sealed class InterfaceObjectDeclaration extends AbstractInterfaceElement with Locatable {
     val identifiers: Seq[Identifier]
     val expression: Option[Expression]
