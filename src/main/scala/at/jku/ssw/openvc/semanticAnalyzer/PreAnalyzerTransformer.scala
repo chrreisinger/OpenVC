@@ -24,7 +24,8 @@ import ast.concurrentStatements._
 import ast.sequentialStatements._
 
 object PreAnalyzerTransformer extends Phase {
-  val name = "PreAnalyzerTransformer"
+  val name = "preAnalyzerTransformer"
+  override val description = "simple AST transformations before semanticAnalyzer"
 
   override def apply(unit: CompilationUnit): CompilationUnit = unit.copy(astNode = ASTStatementTransformer.transform(unit.astNode)(transform))
 

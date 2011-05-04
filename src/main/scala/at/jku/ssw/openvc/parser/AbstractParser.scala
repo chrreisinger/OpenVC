@@ -28,8 +28,8 @@ import Parser._
 abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) extends ANTLRParser(input, state) {
   var compilationUnit: CompilationUnit = _
 
-  lazy val ams = compilationUnit.configuration.amsEnabled
-  lazy val vhdl2008 = compilationUnit.configuration.vhdl2008
+  lazy val ams = compilationUnit.configuration.enableAMS
+  lazy val vhdl2008 = compilationUnit.configuration.enableVhdl2008
 
   var followSet: BitSet = _
 

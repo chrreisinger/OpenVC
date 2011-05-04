@@ -2260,7 +2260,7 @@ object ByteCodeGenerator {
     }
 
     def createClass(flags: Int, name: String, superClass: String, annotationClass: Class[_], interfaces: Option[Array[String]] = None, createEmptyConstructor: Boolean = true): RichClassWriter = {
-      val cw = if (unit.configuration.debugCodeGenerator) {
+      val cw = if (unit.configuration.XdebugCodeGenerator) {
         import org.objectweb.asm.util.TraceClassVisitor
         import java.io.PrintWriter
 

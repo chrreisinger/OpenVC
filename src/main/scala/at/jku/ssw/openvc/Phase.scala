@@ -32,7 +32,7 @@ abstract class Phase {
  /**
   * a description of the phase
   */
-  val description = name
+  def description = name
 
   override def toString = name
 

@@ -22,8 +22,8 @@ import at.jku.ssw.openvc.Phase
 import at.jku.ssw.openvc.CompilationUnit
 
 object BackendPhase extends Phase {
-
   val name = "backend"
+  override val description = "generates the code"
 
   override def apply(unit: CompilationUnit): CompilationUnit = {
     if (!unit.hasErrors) jvm.ByteCodeGenerator(unit)

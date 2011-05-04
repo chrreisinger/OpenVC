@@ -38,8 +38,14 @@ import at.jku.ssw.openvc.backend.jvm.ByteCodeGenerator.getNextIndex
 
 object SemanticAnalyzer extends Phase {
   val name = "semanticAnalyzer"
+  override val description = "symbol and type analysis"
 
-  def apply(unit: CompilationUnit): CompilationUnit = unit.copy(astNode = new SemanticAnalyzer(unit).analyze())
+  def apply(unit: CompilationUnit): CompilationUnit = {
+    import java.io.File
+    val directory = new File(unit.configuration.libraryOutputDirectory)
+    if (!directory.exists) directory.mkdirs
+    unit.copy(astNode = new SemanticAnalyzer(unit).analyze())
+  }
 }
 
 final class SemanticAnalyzer(unit: CompilationUnit) {
@@ -583,7 +589,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
               val extendedBitValue = baseSpecifier.toLowerCase match {
                 case "b" | "ub" | "sb" => values.zipWithIndex.map {
                   case (character, i) =>
-                    if (character == '0' || character == '1' || configuration.vhdl2008) character.toString
+                    if (character == '0' || character == '1' || configuration.enableVhdl2008) character.toString
                     else {
                       addError(literal, INVALID_BIT_STRING_LITERAL_CHARACTER, character.toString, "binary")
                       '0'
@@ -599,7 +605,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
                         case _ => value
                       }
                     }
-                    else if (configuration.vhdl2008) character.toString * 3
+                    else if (configuration.enableVhdl2008) character.toString * 3
                     else {
                       addError(literal, INVALID_BIT_STRING_LITERAL_CHARACTER, character.toString, "octal")
                       "000"
@@ -617,7 +623,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
                         case _ => value
                       }
                     }
-                    else if (configuration.vhdl2008) character.toString * 4
+                    else if (configuration.enableVhdl2008) character.toString * 4
                     else {
                       addError(literal, INVALID_BIT_STRING_LITERAL_CHARACTER, character.toString, "hexadecimal")
                       "0000"
@@ -963,7 +969,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
     exprOption map (checkCondition(context, _))
 
   def checkCondition(context: Context, expr: Expression): Expression =
-    if (configuration.vhdl2008) {
+    if (configuration.enableVhdl2008) {
       val newExpr = acceptExpression(expr, NoType, context)
       if (newExpr.dataType == SymbolTable.booleanType) newExpr
       else (if (newExpr.dataType != NoType) findOverloadedOperatorWithoutError(context, "??", newExpr, newExpr)
@@ -2041,7 +2047,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
     if (name == "+" || name == "-") {
       if (parameters.size != 2 && parameters.size != 1) addError(identifier, "overloaded operator " + name + " must be a unary or binary operator")
     }
-    else if (name == "abs" || name == "not" || (configuration.vhdl2008 && (name == "and" || name == "or" || name == "nand" || name == "nor" || name == "xor" || name == "xnor" || name == "??"))) {
+    else if (name == "abs" || name == "not" || (configuration.enableVhdl2008 && (name == "and" || name == "or" || name == "nand" || name == "nor" || name == "xor" || name == "xnor" || name == "??"))) {
       if (parameters.size != 1) addError(identifier, "overloaded unary operator " + name + " must have a single parameter")
     }
     else if (identifier.originalText(0) == '"' && parameters.size != 2) addError(identifier, "overloaded binary operator " + name + " must have two parameters")

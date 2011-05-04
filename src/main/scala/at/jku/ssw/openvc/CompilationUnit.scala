@@ -24,14 +24,16 @@ import collection.immutable.SortedSet
 
 object CompilationUnit {
 
-  final class Configuration(val amsEnabled: Boolean,
-                            val vhdl2008: Boolean,
-                            val parseOnly: Boolean,
+  final class Configuration(val enableAMS: Boolean,
+                            val enableVhdl2008: Boolean,
+                            val noWarn: Boolean,
+                            val encoding: Option[String],
                             val outputDirectory: String,
                             val designLibrary: String,
                             val libraryDirectory: String,
-                            val debugCompiler: Boolean,
-                            val debugCodeGenerator: Boolean) {
+                            val XrunOnlyToPhase: Option[String],
+                            val XdebugCompiler: Boolean,
+                            val XdebugCodeGenerator: Boolean) {
     val libraryOutputDirectory = outputDirectory + designLibrary + java.io.File.separator
   }
 
@@ -82,7 +84,7 @@ final case class CompilationUnit(sourceFile: SourceFile,
     if (hasErrors || hasWarnings) {
       writer.println("errors:" + errors.size + " warnings:" + warnings.size)
     }
-    for (msg <- messages) {
+    for (msg <- if (configuration.noWarn) errors else messages) {
       val prefix = msg.severity match {
         case Severity.WARNING => "[warn] "
         case Severity.ERROR => "[err] "

@@ -23,6 +23,7 @@ import at.jku.ssw.openvc.{CompilationUnit, Phase}
 
 object SyntaxAnalyzer extends Phase {
   val name = "parser"
+  override val description = "parse source files"
 
   override def apply(unit: CompilationUnit): CompilationUnit = {
     val lexer = new Lexer(unit.sourceFile.asInstanceOf[CharStream])

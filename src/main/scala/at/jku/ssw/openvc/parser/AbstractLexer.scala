@@ -25,8 +25,8 @@ import at.jku.ssw.openvc.util.OffsetPosition
 abstract class AbstractLexer(input: CharStream, state: RecognizerSharedState) extends ANTLRLexer(input, state) {
   var compilationUnit: CompilationUnit = _
 
-  lazy val ams = compilationUnit.configuration.amsEnabled
-  lazy val vhdl2008 = compilationUnit.configuration.vhdl2008
+  lazy val ams = compilationUnit.configuration.enableAMS
+  lazy val vhdl2008 = compilationUnit.configuration.enableVhdl2008
 
   protected def checkIntegerLiteral() {
     if (getText.contains("-")) {

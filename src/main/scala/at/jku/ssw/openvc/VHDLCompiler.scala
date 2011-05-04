@@ -19,13 +19,14 @@
 package at.jku.ssw.openvc
 
 object VHDLCompiler {
+
+  import parser.SyntaxAnalyzer
+  import semanticAnalyzer.{PreAnalyzerTransformer, SemanticAnalyzer}
+  import backend.BackendPhase
+
   def compile(unit: CompilationUnit): CompilationUnit = {
-    import java.io.File
     import annotation.tailrec
     import unit.configuration
-    import parser.SyntaxAnalyzer
-    import semanticAnalyzer.{PreAnalyzerTransformer, SemanticAnalyzer}
-    import backend.BackendPhase
 
     @tailrec
     def run(phases: Seq[Phase], unit: CompilationUnit): CompilationUnit = phases match {
@@ -34,17 +35,16 @@ object VHDLCompiler {
         val phaseStart = System.currentTimeMillis
         val newUnit = phase(unit)
         val phaseEnd = System.currentTimeMillis - phaseStart
-        if (configuration.debugCompiler) println(phase.name + " time:" + phaseEnd)
+        if (configuration.XdebugCompiler) println(phase.name + " time:" + phaseEnd)
         run(xs, newUnit)
     }
 
-    val directory = new File(configuration.libraryOutputDirectory)
-    if (!directory.exists) directory.mkdirs
-
-    val phases =
-      if (configuration.parseOnly) Seq(SyntaxAnalyzer)
-      else Seq(SyntaxAnalyzer, PreAnalyzerTransformer, SemanticAnalyzer, BackendPhase)
-
+    val phases = configuration.XrunOnlyToPhase match {
+      case None => AllPhases
+      case Some(phase) => AllPhases.take(AllPhases.indexWhere(_.name == phase))
+    }
     run(phases, unit)
   }
+
+  val AllPhases = Seq(SyntaxAnalyzer, PreAnalyzerTransformer, SemanticAnalyzer, BackendPhase)
 }
