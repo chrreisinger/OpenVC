@@ -138,7 +138,7 @@ final case class Aggregate(position: Position, elements: Seq[Aggregate.ElementAs
  *
  * example: {{{ integer(a) }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @param expression the expression to cast to [[dataType]]
+ * @param expression the expression to cast to `dataType`
  */
 final case class TypeConversion(expression: Expression, dataType: DataType = NoType) extends Expression {
   val position = expression.position

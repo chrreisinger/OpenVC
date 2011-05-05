@@ -18,12 +18,26 @@
 
 package at.jku.ssw.openvc
 
+/**
+ * This object is the compiler that provides the `compile` method to compile a compilation unit.
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ */
 object VHDLCompiler {
 
   import parser.SyntaxAnalyzer
   import semanticAnalyzer.{PreAnalyzerTransformer, SemanticAnalyzer}
   import backend.BackendPhase
 
+ /**
+  * compiles a compilation unit and returns the result
+  *
+  * @example {{{
+  *   val unit = VHDLCompiler.compile(new CompilationUnit(SourceFile.fromFile("test.vhd"), configuration)))
+  *   unit.printMessages(new java.io.PrintWriter(System.out))
+  * }}}
+  * @param unit the compilation unit to compile
+  * @return a compilation unit with the [[at.jku.ssw.openvc.ast.ASTNode]] and the compiler messages
+  */
   def compile(unit: CompilationUnit): CompilationUnit = {
     import annotation.tailrec
     import unit.configuration
@@ -46,5 +60,6 @@ object VHDLCompiler {
     run(phases, unit)
   }
 
+  /** all phases needed by the compiler to completely compile one compilation unit*/
   val AllPhases = Seq(SyntaxAnalyzer, PreAnalyzerTransformer, SemanticAnalyzer, BackendPhase)
 }

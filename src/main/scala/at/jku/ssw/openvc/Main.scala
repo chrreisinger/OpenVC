@@ -86,7 +86,7 @@ object Main {
     standardOptions.addOption("nowarn", false, "Generate no warnings")
     standardOptions.addOption("X", false, "Print a synopsis of nonstandard options")
 
-    val libraryNameOption = new Option("designLibrary", true, "Name of the design library to which this design unit belongs")
+    val libraryNameOption = new Option("designLibrary", true, "Name of the design library to which this design file belongs")
     libraryNameOption.setArgName("libraryName")
     standardOptions.addOption(libraryNameOption)
 
@@ -104,11 +104,11 @@ object Main {
 
     val extendedOptions = new Options()
     extendedOptions.addOption("XparseOnly", false, "Parses only the souce code, no code will be generated. This is the same as -XrunOnlyToPhase parser")
-    extendedOptions.addOption("XdebugCompiler", false, "Prints compiler debugging information.")
+    extendedOptions.addOption("XdebugCompiler", false, "Prints compiler debugging information")
     extendedOptions.addOption("XdebugCodeGenerator", false, "Prints the generated code to stdout")
     extendedOptions.addOption("XshowPhases", false, "Print a synopsis of compiler phases")
 
-    val XrunOnlyToPhaseOption = new Option("XrunOnlyToPhase", true, "Specify where to find existing libraries")
+    val XrunOnlyToPhaseOption = new Option("XrunOnlyToPhase", true, "Run only to a specific compiler phase, skip the rest")
     XrunOnlyToPhaseOption.setArgName("phase")
     extendedOptions.addOption(XrunOnlyToPhaseOption)
 

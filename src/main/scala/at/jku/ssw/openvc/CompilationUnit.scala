@@ -24,6 +24,21 @@ import collection.immutable.SortedSet
 
 object CompilationUnit {
 
+ /**
+  * Represents the configuration used in the compiler
+  *
+  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+  * @param enableAMS enable VHDL AMS in the parser
+  * @param enableVhdl2008 enable VHDL 2008 features in the parser and SemanticAnalyzer
+  * @param noWarn print no warnings
+  * @param encoding the encoding for source files
+  * @param outputDirectory the directory where to place generated files
+  * @param designLibrary the name of the design library to which this design file belongs
+  * @param libraryDirectory the directory where compiler searches to find existing libraries like `std`
+  * @param XrunOnlyToPhase Run only to a specific compiler phase, skip the rest
+  * @param XdebugCompiler print compiler debugging information.
+  * @param XdebugCodeGenerator print the generated code to stdout
+  */
   final class Configuration(val enableAMS: Boolean,
                             val enableVhdl2008: Boolean,
                             val noWarn: Boolean,
@@ -34,10 +49,19 @@ object CompilationUnit {
                             val XrunOnlyToPhase: Option[String],
                             val XdebugCompiler: Boolean,
                             val XdebugCodeGenerator: Boolean) {
+    /** the directory where to place generated files for the design library*/
     val libraryOutputDirectory = outputDirectory + designLibrary + java.io.File.separator
   }
 
-
+ /**
+  * Represents a error and warning message from the compiler
+  *
+  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+  * @see [[at.jku.ssw.openvc.CompilationUnit.Severity]]
+  * @param position the position in the source file that caused this message
+  * @param severity the severity of the message
+  * @param message the message from the compiler
+  */
   final class CompilerMessage(val position: Position, val severity: Severity.Value, val message: String) extends Ordered[CompilerMessage] {
     override def toString = position + " " + message
 
@@ -45,7 +69,7 @@ object CompilationUnit {
   }
 
   object Severity extends Enumeration {
-    val INFO, ERROR, WARNING = Value
+    val ERROR, WARNING = Value
   }
 
 }
@@ -64,9 +88,9 @@ final case class CompilationUnit(sourceFile: SourceFile,
 
   def hasWarnings: Boolean = warnings.nonEmpty
 
-  lazy val errors = messagesSet.filter(_.severity == Severity.ERROR)
+  def errors = messagesSet.filter(_.severity == Severity.ERROR)
 
-  lazy val warnings = messagesSet.filter(_.severity == Severity.WARNING)
+  def warnings = messagesSet.filter(_.severity == Severity.WARNING)
 
   def addMessage(position: Position, severity: Severity.Value, message: String, messageParameters: AnyRef*): Option[Nothing] = {
     messagesSet = messagesSet + new CompilerMessage(position, severity, String.format(message, messageParameters.toArray: _*))
