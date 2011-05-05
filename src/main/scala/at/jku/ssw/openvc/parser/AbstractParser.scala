@@ -139,14 +139,9 @@ abstract class AbstractParser(input: TokenStream, state: RecognizerSharedState) 
     AND, OR, NAND, NOR, XOR, XNOR, SLL, SRL, SLA, SRA, ROL, ROR, MOD, REM, ABS, NOT
   )
 
-  private val extensionsKeywords = Set(
-    CONTEXT, FORCE, PARAMETER, RELEASE, DEFAULT, NATURE, TERMINAL, QUANTITY, TOLERANCE, ACROSS, THROUGH,
-    SPECTRUM, NOISE, SUBNATURE, LIMIT, REFERENCE, BREAK, PROCEDURAL
-  )
-
   private def classifyToken(tokenType: Int): TokenType.Value =
     if (operatorKeywords.contains(tokenType) || (tokenType >= DOUBLESTAR && tokenType <= CONDITION_OPERATOR)) TokenType.Operator
-    else if ((tokenType >= ABS && tokenType <= XOR) || extensionsKeywords.contains(tokenType)) TokenType.KeyWord
+    else if (tokenType >= ABS && tokenType <= PROCEDURAL) TokenType.KeyWord
     else if (tokenType == BASIC_IDENTIFIER || tokenType == EXTENDED_IDENTIFIER) TokenType.Identifier
     else TokenType.Other
 

@@ -145,6 +145,44 @@ WITH          : 'with';
 XNOR          : 'xnor';
 XOR           : 'xor';
 
+//VHDL-2008 new reserved words
+CONTEXT	      : {vhdl2008}?=>'context';
+FORCE         : {vhdl2008}?=>'force';
+PARAMETER     : {vhdl2008}?=>'parameter';
+RELEASE	      : {vhdl2008}?=>'release';
+DEFAULT	      : {vhdl2008}?=>'default';
+
+//VHDL-2008 PSL reserved words
+/*
+ASSUME_GUARANTEE : {psl}?=>'assume_guarantee';
+ASSUME	      : {psl}?=>'assume';
+COVER         : {psl}?=>'cover';
+FAIRNESS      : {psl}?=>'fairness';
+PROPERTY      : {psl}?=>'property';
+RESTRICT      : {psl}?=>'restrict';
+RESTRICT_GUARANTEE : {psl}?=>'restrict_guarantee';
+SEQUENCE      : {psl}?=>'sequence';
+STRONG	      : {psl}?=>'strong';
+VMODE         : {psl}?=>'vmode';
+VPROP         : {psl}?=>'vprop';
+VUNIT         : {psl}?=>'vunit';
+*/
+
+//VHDL-AMS reserved words
+NATURE	      : {ams}?=>'nature';
+TERMINAL      : {ams}?=>'terminal';
+QUANTITY      : {ams}?=>'quantity';
+TOLERANCE     : {ams}?=>'tolerance';
+ACROSS	      : {ams}?=>'across';
+THROUGH	      : {ams}?=>'through';
+SPECTRUM      : {ams}?=>'spectrum';
+NOISE         : {ams}?=>'noise';
+SUBNATURE     : {ams}?=>'subnature';
+LIMIT         : {ams}?=>'limit';
+REFERENCE     : {ams}?=>'reference';
+BREAK         : {ams}?=>'break';
+PROCEDURAL    : {ams}?=>'procedural';
+
 AMS_ASSIGN    : '==';
 VAR_ASSIGN    : ':=';
 BOX           : '<>';
@@ -184,44 +222,6 @@ MGT           : '?>';
 MLEQ          : '?<=';
 MGEQ          : '?>=';
 CONDITION_OPERATOR : '??';
-
-//VHDL-2008 new reserved words
-CONTEXT	      : {vhdl2008}?=>'context';
-FORCE         : {vhdl2008}?=>'force';
-PARAMETER     : {vhdl2008}?=>'parameter';
-RELEASE	      : {vhdl2008}?=>'release';
-DEFAULT	      : {vhdl2008}?=>'default';
-
-//VHDL-2008 PSL reserved words
-/*
-ASSUME_GUARANTEE : {psl}?=>'assume_guarantee';
-ASSUME	      : {psl}?=>'assume';
-COVER         : {psl}?=>'cover';
-FAIRNESS      : {psl}?=>'fairness';
-PROPERTY      : {psl}?=>'property';
-RESTRICT      : {psl}?=>'restrict';
-RESTRICT_GUARANTEE : {psl}?=>'restrict_guarantee';
-SEQUENCE      : {psl}?=>'sequence';
-STRONG	      : {psl}?=>'strong';
-VMODE         : {psl}?=>'vmode';
-VPROP         : {psl}?=>'vprop';
-VUNIT         : {psl}?=>'vunit';
-*/
-
-//VHDL-AMS reserved words
-NATURE	      : {ams}?=>'nature';
-TERMINAL      : {ams}?=>'terminal';
-QUANTITY      : {ams}?=>'quantity';
-TOLERANCE     : {ams}?=>'tolerance';
-ACROSS	      : {ams}?=>'across';
-THROUGH	      : {ams}?=>'through';
-SPECTRUM      : {ams}?=>'spectrum';
-NOISE         : {ams}?=>'noise';
-SUBNATURE     : {ams}?=>'subnature';
-LIMIT         : {ams}?=>'limit';
-REFERENCE     : {ams}?=>'reference';
-BREAK         : {ams}?=>'break';
-PROCEDURAL    : {ams}?=>'procedural';
 
 // Lexer rules
 WHITESPACE : ( '\t' | ' ' | '\r' | '\n' )+ {skip()};
