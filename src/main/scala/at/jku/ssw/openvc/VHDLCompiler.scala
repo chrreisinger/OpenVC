@@ -55,7 +55,7 @@ object VHDLCompiler {
 
     val phases = configuration.XrunOnlyToPhase match {
       case None => AllPhases
-      case Some(phase) => AllPhases.take(AllPhases.indexWhere(_.name == phase))
+      case Some(phase) => AllPhases.take(AllPhases.indexWhere(_.name == phase) + 1)
     }
     run(phases, unit)
   }
