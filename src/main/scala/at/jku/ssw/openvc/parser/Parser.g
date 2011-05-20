@@ -1132,8 +1132,9 @@ sequence_of_statements returns [Seq[SequentialStatement\] list=Seq()]
 @init{
 	val tmpList=new Buffer[SequentialStatement]()
 	val syncMessage = "sequential statement"
+	val set = followSet
 } :
-	{syncAndAddError(syncMessage, followSet)} (sequential_statement{tmpList +=$sequential_statement.stmt} {syncAndAddError(syncMessage, followSet)})*
+	{syncAndAddError(syncMessage, set)} (sequential_statement{tmpList +=$sequential_statement.stmt} {syncAndAddError(syncMessage, set)})*
 	{$list=tmpList.result};
 
 sequential_statement returns [SequentialStatement stmt=NoNode]
