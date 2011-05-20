@@ -21,6 +21,11 @@ package at.jku.ssw.openvc.parser
 import org.antlr.runtime.{CommonTokenStream, CharStream}
 import at.jku.ssw.openvc.{CompilationUnit, Phase}
 
+/**
+ * The phase that does the syntax analysis and which creates the AST nodes
+ *
+ * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
+ */
 object SyntaxAnalyzer extends Phase {
   val name = "parser"
   override val description = "parse source files"

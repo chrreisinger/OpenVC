@@ -20,7 +20,7 @@ lexer grammar Lexer;
 
 options {
 	language   = Scala;
-	superClass = AbstractLexer;
+	superClass = BaseLexer;
 }
 
 @lexer::header {

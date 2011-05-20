@@ -18,11 +18,11 @@
 
 parser grammar Parser;
 
-options{
-	language=Scala;
-	memoize=true;
-	superClass=AbstractParser;
-	tokenVocab=Lexer;
+options {
+  language   = Scala;
+  memoize    = true;
+  superClass = BaseParser;
+  tokenVocab = Lexer;
 }
 
 @parser::header{
@@ -60,24 +60,8 @@ import util._
 saveFollowSet 
 @init{followSet=state.following(state._fsp)} :;
 
-sync [String message]
-@init{
-    // Consume any garbled tokens that come before the next statement
-    // or the end of the block. The only slight risk here is that the
-    // block becomes MORE inclusive than it should but as the script is
-    // in error, this is a better course than throwing out the block
-    // when the error occurs and screwing up the whole meaning of
-    // the rest of the token stream.
-    //
-    val startToken=input.LT(1)
-    syncToSet()
-} 
-@after{
-	// If we consume any tokens at this point then we create an error.
-	if (startToken ne input.LT(1)) {
-		compilationUnit.addError(position=toPosition(startToken),message="garbled " + message)
-	}
-}:;   // Deliberately match nothing, causing this rule always to be entered.
+sync [String rule]
+@init{syncAndAddError(rule)} :;   // Deliberately match nothing, causing this rule always to be entered.
     
 //B.1 Design File
 
@@ -1147,9 +1131,9 @@ ams_simultaneous_null_statement[Identifier label] returns [SimultaneousStatement
 sequence_of_statements returns [Seq[SequentialStatement\] list=Seq()]
 @init{
 	val tmpList=new Buffer[SequentialStatement]()
-	val set=followSet
+	val syncMessage = "sequential statement"
 } :
-	{syncToFollowSet(set)} (sequential_statement{tmpList +=$sequential_statement.stmt} {syncToFollowSet(set)})*
+	{syncAndAddError(syncMessage, followSet)} (sequential_statement{tmpList +=$sequential_statement.stmt} {syncAndAddError(syncMessage, followSet)})*
 	{$list=tmpList.result};
 
 sequential_statement returns [SequentialStatement stmt=NoNode]
@@ -1776,7 +1760,7 @@ identifier_list returns [Seq[Identifier\] list=Seq()]
 
 identifier returns [Identifier id=NoIdentifier] :
 	BASIC_IDENTIFIER {$id=toIdentifier(input.LT(-1))}
-	| EXTENDED_IDENTIFIER {$id=toIdentifier(input.LT(-1),false)};
+	| EXTENDED_IDENTIFIER {$id=toIdentifier(input.LT(-1))};
 	
 v2008_tool_directive : APOSTROPHE identifier GRAPHIC_CHARACTER*;
 
