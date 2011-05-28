@@ -126,7 +126,7 @@ entity_declaration returns [LibraryUnit declaration = NoNode]
 	val statements = new Buffer[ConcurrentStatement]
 	val ruleName = "entity declarative item"
 } :
-	entityToken=ENTITY startIdentifier=identifier IS
+	entityToken=ENTITY startIdentifier=IDENTIFIER IS
 		generic_clause?
 		port_clause?
 		sync[ruleName] (entity_declarative_item {items += $entity_declarative_item.item} sync[ruleName])*
@@ -139,8 +139,8 @@ entity_declaration returns [LibraryUnit declaration = NoNode]
 			)
 		)* 
 	)?
-	END ENTITY? endIdentifier=identifier? SEMICOLON
-	{$declaration = new EntityDeclaration($entityToken, $startIdentifier.ident, $generic_clause.clause, $port_clause.clause, items.result, statements.result, $endIdentifier.ident)};
+	END ENTITY? endIdentifier=IDENTIFIER? SEMICOLON
+	{$declaration = new EntityDeclaration($entityToken, $startIdentifier, $generic_clause.clause, $port_clause.clause, items.result, statements.result, $endIdentifier)};
 
 entity_declarative_item returns [DeclarativeItem item = NoNode] :
 	subprogram_specification_or_body {item = $subprogram_specification_or_body.specificationOrBody}
@@ -181,12 +181,12 @@ architecture_body returns [LibraryUnit body = NoNode]
 	val items = new Buffer[DeclarativeItem]
 	val ruleName = "block declarative item"
 } :
-	architectureToken=ARCHITECTURE startIdentifier=identifier OF selected_name IS
+	architectureToken=ARCHITECTURE startIdentifier=IDENTIFIER OF selected_name IS
 		sync[ruleName] (block_declarative_item {items += $block_declarative_item.item} sync[ruleName])*
 	BEGIN
 		concurrent_statement_list
-	END ARCHITECTURE? endIdentifier=identifier? SEMICOLON
-	{$body = new ArchitectureDeclaration($architectureToken, $startIdentifier.ident, items.result, $selected_name.name, $concurrent_statement_list.list, $endIdentifier.ident)};
+	END ARCHITECTURE? endIdentifier=IDENTIFIER? SEMICOLON
+	{$body = new ArchitectureDeclaration($architectureToken, $startIdentifier, items.result, $selected_name.name, $concurrent_statement_list.list, $endIdentifier)};
 
 configuration_declarative_item returns [DeclarativeItem item = NoNode] :
 	use_clause {$item = $use_clause.clause}
@@ -198,20 +198,20 @@ configuration_declaration returns [LibraryUnit declaration = NoNode]
 	val items = new Buffer[DeclarativeItem]
 	val ruleName = "configuration declarative item"
 } :
-	configurationToken=CONFIGURATION startIdentifier=identifier OF selected_name IS
+	configurationToken=CONFIGURATION startIdentifier=IDENTIFIER OF selected_name IS
 		sync[ruleName] (configuration_declarative_item {items += $configuration_declarative_item.item} sync[ruleName])*
 		//({psl}?=> psl_verification_unit_binding_indication)*
 		block_configuration
-	END CONFIGURATION? endIdentifier=identifier? SEMICOLON
-	{$declaration = new ConfigurationDeclaration($configurationToken, $startIdentifier.ident, items.result, $selected_name.name, $block_configuration.configuration, $endIdentifier.ident)};
+	END CONFIGURATION? endIdentifier=IDENTIFIER? SEMICOLON
+	{$declaration = new ConfigurationDeclaration($configurationToken, $startIdentifier, items.result, $selected_name.name, $block_configuration.configuration, $endIdentifier)};
 
 generate_specification returns [TripleEither[DiscreteRange, Identifier, Expression\] specification] :
 	(discrete_range)=> discrete_range {$specification = First($discrete_range.discreteRange)}
-	| {vhdl2008 && (input.LA(1) == BASIC_IDENTIFIER || input.LA(1) == EXTENDED_IDENTIFIER) && input.LA(2) == RPAREN}?=> identifier {$specification = Second($identifier.ident)}
+	| {vhdl2008 && input.LA(1) == IDENTIFIER && input.LA(2) == RPAREN}?=> IDENTIFIER {$specification = Second($IDENTIFIER)}
 	| expression {$specification = Third($expression.expr)};
 	
 block_specification returns [BlockConfigurationSpecification specification] :
-	(identifier LPAREN)=> identifier (LPAREN generate_specification RPAREN)? {$specification = new BlockConfigurationSpecification(Right(($identifier.ident, $generate_specification.specification)))}
+	(IDENTIFIER LPAREN)=> IDENTIFIER (LPAREN generate_specification RPAREN)? {$specification = new BlockConfigurationSpecification(Right(($IDENTIFIER, $generate_specification.specification)))}
 	| selected_name {$specification = new BlockConfigurationSpecification(Left($selected_name.name))};
 
 block_configuration returns [BlockConfiguration configuration]
@@ -239,10 +239,10 @@ component_configuration returns [ComponentConfiguration configuration] :
 	{$configuration = new ComponentConfiguration($component_specification.specification, $binding_indication.indication, $block_configuration.configuration)};
 
 v2008_context_declaration returns [LibraryUnit declaration = NoNode] :
-	contextToken=CONTEXT startIdentifier=identifier IS
+	contextToken=CONTEXT startIdentifier=IDENTIFIER IS
 		context_items
-	END CONTEXT? endIdentifier=identifier? SEMICOLON
-	{$declaration = new ContextDeclaration($contextToken, $startIdentifier.ident, $context_items.items, $endIdentifier.ident)};
+	END CONTEXT? endIdentifier=IDENTIFIER? SEMICOLON
+	{$declaration = new ContextDeclaration($contextToken, $startIdentifier, $context_items.items, $endIdentifier)};
 
 //B.3 Declarations and Specifications
 package_declaration returns [LibraryUnit with DeclarativeItem declaration = NoNode]
@@ -250,11 +250,11 @@ package_declaration returns [LibraryUnit with DeclarativeItem declaration = NoNo
 	val items = new Buffer[DeclarativeItem]
 	val ruleName = "package declarative item"
 } :
-	packageToken=PACKAGE startIdentifier=identifier IS
+	packageToken=PACKAGE startIdentifier=IDENTIFIER IS
 		({vhdl2008}?=> generic_clause (generic_map_aspect SEMICOLON)?)?
 		sync[ruleName] (package_declarative_item {items += $package_declarative_item.item} sync[ruleName])*
-	END PACKAGE? endIdentifier=identifier? SEMICOLON
-	{$declaration = new PackageDeclaration($packageToken, $startIdentifier.ident, $generic_clause.clause, $generic_map_aspect.aspect, items.result, $endIdentifier.ident)};
+	END PACKAGE? endIdentifier=IDENTIFIER? SEMICOLON
+	{$declaration = new PackageDeclaration($packageToken, $startIdentifier, $generic_clause.clause, $generic_map_aspect.aspect, items.result, $endIdentifier)};
 
 package_declarative_item returns [DeclarativeItem item = NoNode] :
 	subprogram_declaration {$item = $subprogram_declaration.declaration}
@@ -290,10 +290,10 @@ package_body returns [LibraryUnit with DeclarativeItem body = NoNode]
 	val items = new Buffer[DeclarativeItem]
 	val ruleName = "package body declarative item"
 } :
-	packageToken=PACKAGE BODY startIdentifier=identifier IS
+	packageToken=PACKAGE BODY startIdentifier=IDENTIFIER IS
 		sync[ruleName] (package_body_declarative_item {items += $package_body_declarative_item.item} sync[ruleName])*
-	END (PACKAGE BODY)? endIdentifier=identifier? SEMICOLON
-	{$body = new PackageBodyDeclaration($packageToken, $startIdentifier.ident, items.result, $endIdentifier.ident)};
+	END (PACKAGE BODY)? endIdentifier=IDENTIFIER? SEMICOLON
+	{$body = new PackageBodyDeclaration($packageToken, $startIdentifier, items.result, $endIdentifier)};
 
 package_body_declarative_item returns [DeclarativeItem item = NoNode] :
 	subprogram_specification_or_body {$item = $subprogram_specification_or_body.specificationOrBody}
@@ -316,19 +316,19 @@ package_body_declarative_item returns [DeclarativeItem item = NoNode] :
 	| group_declaration {$item = $group_declaration.declaration};
 
 v2008_package_instantiation_declaration returns [LibraryUnit with DeclarativeItem declaration = NoNode] :
-	PACKAGE identifier IS NEW selected_name
+	PACKAGE IDENTIFIER IS NEW selected_name
 		generic_map_aspect? SEMICOLON
-	{$declaration = new PackageInstantiationDeclaration($PACKAGE, $identifier.ident, $selected_name.name, $generic_map_aspect.aspect)};
+	{$declaration = new PackageInstantiationDeclaration($PACKAGE, $IDENTIFIER, $selected_name.name, $generic_map_aspect.aspect)};
 
 designator returns [Identifier designator = NoIdentifier] :
-	identifier {$designator = $identifier.ident}
+	IDENTIFIER {$designator = $IDENTIFIER}
 	| STRING_LITERAL {$designator = toIdentifier($STRING_LITERAL)}; //STRING_LITERAL is a operator symbol
 
 subprogram_specification returns [DeclarativeItem specification = NoNode] :
-	PROCEDURE identifier
+	PROCEDURE IDENTIFIER
 	({vhdl2008}?=> GENERIC LPAREN generic_list RPAREN generic_map_aspect?)?
 	(({vhdl2008}?=> PARAMETER)? LPAREN parameter_interface_list_procedure RPAREN)?
-	{$specification = new ProcedureDeclaration($PROCEDURE, $identifier.ident, $generic_list.list, $generic_map_aspect.aspect, $parameter_interface_list_procedure.list)}
+	{$specification = new ProcedureDeclaration($PROCEDURE, $IDENTIFIER, $generic_list.list, $generic_map_aspect.aspect, $parameter_interface_list_procedure.list)}
 	| (PURE | impure=IMPURE)? FUNCTION designator
 	({vhdl2008}?=> GENERIC LPAREN generic_list RPAREN generic_map_aspect?)?
 	(({vhdl2008}?=> PARAMETER)? LPAREN parameter_interface_list_function RPAREN)? RETURN type_mark
@@ -383,17 +383,17 @@ subprogram_declarative_item returns [DeclarativeItem item = NoNode] :
 	| group_declaration {$item = $group_declaration.declaration};
 
 v2008_subprogram_instantiation_declaration returns [DeclarativeItem declaration = NoNode] :
-	(PROCEDURE | functionToken=FUNCTION) identifier IS
+	(PROCEDURE | functionToken=FUNCTION) IDENTIFIER IS
 		NEW selected_name signature?
 			generic_map_aspect? SEMICOLON
-	{$declaration = new SubprogramInstantiationDeclaration(if ($PROCEDURE != null) $PROCEDURE else $functionToken, $PROCEDURE != null, $identifier.ident, $selected_name.name, $signature.signature, $generic_map_aspect.aspect)};
+	{$declaration = new SubprogramInstantiationDeclaration(if ($PROCEDURE != null) $PROCEDURE else $functionToken, $PROCEDURE != null, $IDENTIFIER, $selected_name.name, $signature.signature, $generic_map_aspect.aspect)};
 
 type_declaration returns [DeclarativeItem declaration = NoNode] :
-	TYPE identifier (IS type_definition[$identifier.ident, toPosition($TYPE)])? SEMICOLON
+	TYPE IDENTIFIER (IS type_definition[$IDENTIFIER, toPosition($TYPE)])? SEMICOLON
 	{
 		$declaration =
 			if ($type_definition.definition != null) $type_definition.definition
-			else new IncompleteTypeDeclaration($TYPE, $identifier.ident)
+			else new IncompleteTypeDeclaration($TYPE, $IDENTIFIER)
 	};
 
 type_definition[Identifier name, Position position] returns [DeclarativeItem definition = NoNode] :
@@ -407,7 +407,7 @@ type_definition[Identifier name, Position position] returns [DeclarativeItem def
 	| protected_type_declaration[$name, $position] {$definition = $protected_type_declaration.declaration};
 
 ams_nature_declaration returns [DeclarativeItem declaration = NoNode] :
-	NATURE identifier IS ams_nature_definition[$identifier.ident, toPosition($NATURE)] SEMICOLON
+	NATURE IDENTIFIER IS ams_nature_definition[$IDENTIFIER, toPosition($NATURE)] SEMICOLON
 	{$declaration = $ams_nature_definition.definition};
 
 ams_terminal_declaration returns [DeclarativeItem declaration = NoNode] :
@@ -476,29 +476,29 @@ alias_declaration returns [DeclarativeItem declaration = NoNode] :
 	{$declaration = new AliasDeclaration($ALIAS, $alias_designator.designator, $subtype_indication.indication, $name.name, $signature.signature)};
 
 alias_designator returns [Identifier designator = NoIdentifier] :
-	identifier {$designator = $identifier.ident}
+	IDENTIFIER {$designator = $IDENTIFIER}
 	| CHARACTER_LITERAL {$designator = toIdentifier($CHARACTER_LITERAL)}
 	| STRING_LITERAL {$designator = toIdentifier($STRING_LITERAL)};
 
 component_declaration returns [DeclarativeItem declaration = NoNode] :
-	componentToken=COMPONENT startIdentifier=identifier IS?
+	componentToken=COMPONENT startIdentifier=IDENTIFIER IS?
 		generic_clause?
 		port_clause?
-	END COMPONENT endIdentifier=identifier? SEMICOLON
-	{$declaration = new ComponentDeclaration($componentToken, $startIdentifier.ident, $generic_clause.clause, $port_clause.clause, $endIdentifier.ident)};
+	END COMPONENT endIdentifier=IDENTIFIER? SEMICOLON
+	{$declaration = new ComponentDeclaration($componentToken, $startIdentifier, $generic_clause.clause, $port_clause.clause, $endIdentifier)};
 
 attribute_declaration returns [DeclarativeItem declaration = NoNode] :
-	ATTRIBUTE identifier COLON type_mark SEMICOLON 
-	{$declaration = new AttributeDeclaration($ATTRIBUTE, $identifier.ident, $type_mark.mark)};
+	ATTRIBUTE IDENTIFIER COLON type_mark SEMICOLON
+	{$declaration = new AttributeDeclaration($ATTRIBUTE, $IDENTIFIER, $type_mark.mark)};
 
 attribute_specification returns [DeclarativeItem specification = NoNode] :
-	ATTRIBUTE identifier OF entity_name_list COLON entity_class IS expression SEMICOLON 
-	{$specification = new AttributeSpecification($ATTRIBUTE, $identifier.ident, $entity_name_list.list, $entity_class.entityClass, $expression.expr)};
+	ATTRIBUTE IDENTIFIER OF entity_name_list COLON entity_class IS expression SEMICOLON
+	{$specification = new AttributeSpecification($ATTRIBUTE, $IDENTIFIER, $entity_name_list.list, $entity_class.entityClass, $expression.expr)};
 
 entity_designator returns [(Identifier, Option[Signature\]) designator]
 @init {var id: Identifier = null} :
 	(
-	identifier {id = $identifier.ident}
+	IDENTIFIER {id = $IDENTIFIER}
 	| CHARACTER_LITERAL {id = toIdentifier($CHARACTER_LITERAL)}
 	| STRING_LITERAL {id = toIdentifier($STRING_LITERAL)}
 	) signature?
@@ -554,7 +554,7 @@ component_specification returns [ComponentSpecification specification] :
 	{$specification = new ComponentSpecification($instantiation_list.list, $selected_name.name)};
 
 entity_aspect returns [Option[Either[(SelectedName, Option[Identifier\]), SelectedName\]\] aspect] :
-	ENTITY selected_name (LPAREN identifier RPAREN)? {$aspect = Left(($selected_name.name, Option($identifier.ident)))}
+	ENTITY selected_name (LPAREN IDENTIFIER RPAREN)? {$aspect = Left(($selected_name.name, toIdentifierOption($IDENTIFIER)))}
 	| CONFIGURATION selected_name {$aspect = Right($selected_name.name)}
 	| OPEN {$aspect = None};
 
@@ -584,12 +584,12 @@ entity_class_entry returns [GroupTemplateDeclaration.EntityClassEntry entry] :
 
 group_template_declaration returns [DeclarativeItem declaration = NoNode]
 @init {val entries = new Buffer[GroupTemplateDeclaration.EntityClassEntry]} :
-	GROUP identifier IS LPAREN entry=entity_class_entry {entries += entry} (COMMA entry=entity_class_entry {entries += entry})* RPAREN SEMICOLON
-	{$declaration = new GroupTemplateDeclaration($GROUP, $identifier.ident, entries.result)};
+	GROUP IDENTIFIER IS LPAREN entry=entity_class_entry {entries += entry} (COMMA entry=entity_class_entry {entries += entry})* RPAREN SEMICOLON
+	{$declaration = new GroupTemplateDeclaration($GROUP, $IDENTIFIER, entries.result)};
 
 group_declaration returns [DeclarativeItem declaration = NoNode] :
-	GROUP identifier COLON selected_name LPAREN group_constituent_list RPAREN SEMICOLON
-	{$declaration = new GroupDeclaration($GROUP, $identifier.ident, $selected_name.name, $group_constituent_list.list)};
+	GROUP IDENTIFIER COLON selected_name LPAREN group_constituent_list RPAREN SEMICOLON
+	{$declaration = new GroupDeclaration($GROUP, $IDENTIFIER, $selected_name.name, $group_constituent_list.list)};
 
 group_constituent returns [Either[Name, Identifier\] constituent] :
 	name {$constituent = Left($name.name)}
@@ -606,7 +606,7 @@ use_clause returns [UseClause clause] :
 
 // B.4 Type Definitions
 enumeration_literal returns [Identifier literal = NoIdentifier] :
-	identifier {$literal = $identifier.ident}
+	IDENTIFIER {$literal = $IDENTIFIER}
 	| CHARACTER_LITERAL {$literal = toIdentifier($CHARACTER_LITERAL)};
 
 enumeration_type_definition[Identifier name, Position position] returns [DeclarativeItem definition = NoNode]
@@ -619,13 +619,13 @@ numeric_type_definition[Identifier name, Position position] returns [Declarative
 	range_constraint {$definition = new IntegerOrFloatingPointTypeDefinition($position, $name, $range_constraint.constraint)}
 	(
 		UNITS
-		primaryUnit=identifier SEMICOLON
+		primaryUnit=IDENTIFIER SEMICOLON
 		(
-			unit=identifier EQ physical_literal SEMICOLON 
-			{elements += new PhysicalTypeDefinition.Element($unit.ident, $physical_literal.literal)}
+			unit=IDENTIFIER EQ physical_literal SEMICOLON
+			{elements += new PhysicalTypeDefinition.Element($unit, $physical_literal.literal)}
 		)*
-		END UNITS endIdent=identifier?
-		{$definition = new PhysicalTypeDefinition($position, $name, $range_constraint.constraint, $primaryUnit.ident, elements.result, $endIdent.ident)}
+		END UNITS endIdent=IDENTIFIER?
+		{$definition = new PhysicalTypeDefinition($position, $name, $range_constraint.constraint, $primaryUnit, elements.result, $endIdent)}
 	)?;
 
 index_subtype_definition returns [SelectedName definition] :
@@ -651,8 +651,8 @@ record_type_definition[Identifier name, Position position] returns [DeclarativeI
 		identifier_list COLON subtype_indication SEMICOLON
 		{elements += new RecordTypeDefinition.Element($identifier_list.list, $subtype_indication.indication)}
 	)+
-	END RECORD identifier?
-	{$definition = new RecordTypeDefinition($position, $name, elements.result, $identifier.ident)};
+	END RECORD IDENTIFIER?
+	{$definition = new RecordTypeDefinition($position, $name, elements.result, $IDENTIFIER)};
 
 access_type_definition[Identifier name, Position position] returns [DeclarativeItem definition = NoNode] :
 	ACCESS subtype_indication 
@@ -663,8 +663,8 @@ file_type_definition[Identifier name, Position position] returns [DeclarativeIte
 	{$definition = new FileTypeDefinition($position, $name, $type_mark.mark)};
 
 ams_scalar_nature_definition[Identifier name, Position position] returns [ScalarNatureDefinition definition] :
-	t1=type_mark ACROSS t2=type_mark THROUGH identifier REFERENCE
-	{$definition = new ScalarNatureDefinition(position, $name, $t1.mark, $t2.mark, $identifier.ident)};
+	t1=type_mark ACROSS t2=type_mark THROUGH IDENTIFIER REFERENCE
+	{$definition = new ScalarNatureDefinition(position, $name, $t1.mark, $t2.mark, $IDENTIFIER)};
 
 ams_array_nature_definition[Identifier name, Position position] returns [ArrayNatureTypeDefinition definition]
 @init {val definitions = new Buffer[SelectedName]} :
@@ -686,12 +686,12 @@ ams_record_nature_definition[Identifier name, Position position] returns [Record
 		identifier_list COLON ams_subnature_indication SEMICOLON
 		{elements += new RecordNatureDefinition.Element($identifier_list.list, $ams_subnature_indication.indication)}
 	)+
-	END RECORD identifier?
-	{$definition = new RecordNatureDefinition(position, $name, elements.result, $identifier.ident)};
+	END RECORD IDENTIFIER?
+	{$definition = new RecordNatureDefinition(position, $name, elements.result, $IDENTIFIER)};
 
 ams_subnature_declaration returns [DeclarativeItem declaration = NoNode] :
-	SUBNATURE identifier IS ams_subnature_indication SEMICOLON
-	{$declaration = new SubNatureDeclaration($SUBNATURE, $identifier.ident, $ams_subnature_indication.indication)};
+	SUBNATURE IDENTIFIER IS ams_subnature_indication SEMICOLON
+	{$declaration = new SubNatureDeclaration($SUBNATURE, $IDENTIFIER, $ams_subnature_indication.indication)};
 
 ams_subnature_indication returns [SubNatureIndication indication] :
 	ams_nature_mark index_constraint? (TOLERANCE toleranceExpr=expression ACROSS acrossExpr=expression THROUGH)?
@@ -707,8 +707,8 @@ protected_type_declaration[Identifier name, Position position] returns [Declarat
 } :
 	PROTECTED
 		sync[ruleName] (protected_type_declarative_item {items += $protected_type_declarative_item.item} sync[ruleName])*
-	END PROTECTED identifier?
-	{$declaration = new ProtectedTypeDeclaration($position, $name, items.result, $identifier.ident)};
+	END PROTECTED IDENTIFIER?
+	{$declaration = new ProtectedTypeDeclaration($position, $name, items.result, $IDENTIFIER)};
 
 protected_type_declarative_item returns [DeclarativeItem item = NoNode] :
 	subprogram_declaration {$item = $subprogram_declaration.declaration}
@@ -723,8 +723,8 @@ protected_type_body[Identifier name, Position position] returns [DeclarativeItem
 } :
 	PROTECTED BODY
 		sync[ruleName] (protected_type_body_declarative_item {items += $protected_type_body_declarative_item.item} sync[ruleName])*
-	END PROTECTED BODY identifier?
-	{$body = new ProtectedTypeBodyDeclaration($position, $name, items.result, $identifier.ident)};
+	END PROTECTED BODY IDENTIFIER?
+	{$body = new ProtectedTypeBodyDeclaration($position, $name, items.result, $IDENTIFIER)};
 
 protected_type_body_declarative_item returns [DeclarativeItem item = NoNode] :
 	subprogram_specification_or_body {$item = $subprogram_specification_or_body.specificationOrBody}
@@ -747,8 +747,8 @@ protected_type_body_declarative_item returns [DeclarativeItem item = NoNode] :
 	| group_declaration {$item = $group_declaration.declaration};
 
 subtype_declaration returns [DeclarativeItem declaration = NoNode] :
-	SUBTYPE identifier IS subtype_indication SEMICOLON
-	{$declaration = new SubTypeDeclaration($SUBTYPE, $identifier.ident, $subtype_indication.indication)};
+	SUBTYPE IDENTIFIER IS subtype_indication SEMICOLON
+	{$declaration = new SubTypeDeclaration($SUBTYPE, $IDENTIFIER, $subtype_indication.indication)};
 
 subtype_indication returns [SubTypeIndication indication] :
 	//TODO {vhdl2008}?=> ((v2008_resolution_indication selected_name)=> v2008_resolution_indication)? selected_name v2008_constraint? ({ams}?=> TOLERANCE expression)?
@@ -762,7 +762,7 @@ subtype_indication returns [SubTypeIndication indication] :
 
 v2008_resolution_indication returns [SelectedName indication] :
 	selected_name {$indication = $selected_name.name} //TODO
-	| LPAREN (v2008_resolution_indication | identifier v2008_resolution_indication (COMMA identifier v2008_resolution_indication)*) RPAREN;
+	| LPAREN (v2008_resolution_indication | IDENTIFIER v2008_resolution_indication (COMMA IDENTIFIER v2008_resolution_indication)*) RPAREN;
 
 direction returns [Range.Direction.Value direction] :
 	TO {$direction = Range.Direction.To}
@@ -794,7 +794,7 @@ array_constraint :
 	| LPAREN OPEN RPAREN (array_constraint | v2008_record_constraint)?;
 
 v2008_record_constraint :
-	(identifier (array_constraint | v2008_record_constraint)) (COMMA (identifier (array_constraint | v2008_record_constraint)));
+	(IDENTIFIER (array_constraint | v2008_record_constraint)) (COMMA (IDENTIFIER (array_constraint | v2008_record_constraint)));
 
 discrete_range returns [DiscreteRange discreteRange] :
 	(subtype_indication (RPAREN | COMMA | GENERATE | LOOP | BAR | ARROW | SEMICOLON))=> subtype_indication {$discreteRange = new DiscreteRange(Right($subtype_indication.indication))}
@@ -850,10 +850,10 @@ block_statement[Identifier label] returns [ConcurrentStatement statement = NoNod
 		sync[ruleName] (block_declarative_item {items += $block_declarative_item.item} sync[ruleName])*
 	BEGIN
 		concurrent_statement_list
-	END BLOCK identifier? SEMICOLON
+	END BLOCK IDENTIFIER? SEMICOLON
 	{
 		$statement = new BlockStatement($blockToken, $label, $expression.expr, $generic_clause.clause, $generic_map_aspect.aspect, $port_clause.clause, $port_map_aspect.aspect,
-			items.result, $concurrent_statement_list.list, $identifier.ident)
+			items.result, $concurrent_statement_list.list, $IDENTIFIER)
 	};
 
 block_declarative_item returns [DeclarativeItem item = NoNode] :
@@ -901,8 +901,8 @@ process_statement[Identifier label, Boolean postponed] returns [ConcurrentStatem
 		sync[ruleName] (process_declarative_item {items += $process_declarative_item.item} sync[ruleName])*
 	BEGIN
 		saveFollowSet sequence_of_statements
-	END POSTPONED? PROCESS identifier? SEMICOLON
-	{$statement = new ProcessStatement($processToken, $label, $postponed, $name_list.list, items.result, $sequence_of_statements.statements, $identifier.ident)};
+	END POSTPONED? PROCESS IDENTIFIER? SEMICOLON
+	{$statement = new ProcessStatement($processToken, $label, $postponed, $name_list.list, items.result, $sequence_of_statements.statements, $IDENTIFIER)};
 
 process_declarative_item returns [DeclarativeItem item = NoNode] :
 	subprogram_specification_or_body {$item = $subprogram_specification_or_body.specificationOrBody}
@@ -969,12 +969,12 @@ component_instantiation_statement[Identifier label] returns [ConcurrentStatement
 } :
 	(
 		COMPONENT? componentName=selected_name {componentType = ComponentInstantiationStatement.ComponentType.COMPONENT}
-		| ENTITY componentName=selected_name (LPAREN identifier RPAREN)? {componentType = ComponentInstantiationStatement.ComponentType.ENTITY}
+		| ENTITY componentName=selected_name (LPAREN IDENTIFIER RPAREN)? {componentType = ComponentInstantiationStatement.ComponentType.ENTITY}
 		| CONFIGURATION componentName=selected_name {componentType = ComponentInstantiationStatement.ComponentType.CONFIGURATION}
 	)
 	generic_map_aspect?
 	port_map_aspect? SEMICOLON
-	{$statement = new ComponentInstantiationStatement(position, $label, componentType, $componentName.name, $identifier.ident, $generic_map_aspect.aspect, $port_map_aspect.aspect)};
+	{$statement = new ComponentInstantiationStatement(position, $label, componentType, $componentName.name, $IDENTIFIER, $generic_map_aspect.aspect, $port_map_aspect.aspect)};
 
 generate_statement[Identifier label] returns [ConcurrentStatement statement = NoNode] :
 	for_generate_statement[$label] {$statement = $for_generate_statement.statement}
@@ -982,10 +982,10 @@ generate_statement[Identifier label] returns [ConcurrentStatement statement = No
 	| {vhdl2008}?=> v2008_case_generate_statement[$label] {$statement = $v2008_case_generate_statement.statement};
 
 for_generate_statement[Identifier label] returns [ConcurrentStatement statement = NoNode] :
-	FOR loopIdentifier=identifier IN discrete_range GENERATE
+	FOR loopIdentifier=IDENTIFIER IN discrete_range GENERATE
 		body=generate_statement_body
-	END GENERATE endIdent=identifier? SEMICOLON
-	{$statement = new ForGenerateStatement($FOR, $label, $loopIdentifier.ident, $discrete_range.discreteRange, $body.items, $body.statements, $body.endLabel, $endIdent.ident)};
+	END GENERATE endIdent=IDENTIFIER? SEMICOLON
+	{$statement = new ForGenerateStatement($FOR, $label, $loopIdentifier, $discrete_range.discreteRange, $body.items, $body.statements, $body.endLabel, $endIdent)};
 
 if_generate_statement[Identifier label] returns [ConcurrentStatement statement = NoNode]
 @init {
@@ -1003,17 +1003,17 @@ if_generate_statement[Identifier label] returns [ConcurrentStatement statement =
 		elseBody=generate_statement_body
 		{elsePart = Option(new IfGenerateStatement.IfThenPart($elseLabel.label, NoExpression, $elseBody.items, $elseBody.statements, $elseBody.endLabel))}
 	)?)?
-	END GENERATE identifier? SEMICOLON
-	{$statement = new IfGenerateStatement($IF, $label, ifList.result, elsePart, $identifier.ident)};
+	END GENERATE IDENTIFIER? SEMICOLON
+	{$statement = new IfGenerateStatement($IF, $label, ifList.result, elsePart, $IDENTIFIER)};
 
 v2008_case_generate_statement[Identifier label] returns [ConcurrentStatement statement = NoNode]
 @init {val alternatives = new Buffer[CaseGenerateStatement.When]} :
 	CASE expression GENERATE
 		(WHEN label_colon? choices ARROW body=generate_statement_body {alternatives += new CaseGenerateStatement.When($label_colon.label, $choices.choices, $body.items, $body.statements, $body.endLabel)})+
-	END GENERATE identifier? SEMICOLON
-	{$statement = new CaseGenerateStatement($CASE, $label, $expression.expr, alternatives.result, $identifier.ident)};
+	END GENERATE IDENTIFIER? SEMICOLON
+	{$statement = new CaseGenerateStatement($CASE, $label, $expression.expr, alternatives.result, $IDENTIFIER)};
 
-generate_statement_body returns [Seq[DeclarativeItem\] items = Nil, Seq[ConcurrentStatement\] statements = Nil, Identifier endLabel]
+generate_statement_body returns [Seq[DeclarativeItem\] items = Nil, Seq[ConcurrentStatement\] statements = Nil, Option[Identifier\] endLabel]
 @init {
 	val buffer = new Buffer[DeclarativeItem]
 	val ruleName = "block declarative item"
@@ -1023,11 +1023,11 @@ generate_statement_body returns [Seq[DeclarativeItem\] items = Nil, Seq[Concurre
 		BEGIN
 	)?
 		concurrent_statement_list
-	({vhdl2008}?=> END identifier? SEMICOLON)?
+	({vhdl2008}?=> END IDENTIFIER? SEMICOLON)?
 	{
 		$items = buffer.result
 		$statements = $concurrent_statement_list.list
-		$endLabel = $identifier.ident
+		$endLabel = $IDENTIFIER
 	};
 
 ams_concurrent_break_statement[Identifier label] returns [ConcurrentStatement statement = NoNode] :
@@ -1061,15 +1061,15 @@ ams_simultaneous_if_statement[Identifier label] returns [SimultaneousStatement s
 	)*
 	(ELSE
 		elseStatements=ams_simultaneous_statement_list)?
-	END USE identifier? SEMICOLON
-	{$statement = new SimultaneousIfStatement($IF, $label, ifList.result, $elseStatements.list, $identifier.ident)};
+	END USE IDENTIFIER? SEMICOLON
+	{$statement = new SimultaneousIfStatement($IF, $label, ifList.result, $elseStatements.list, $IDENTIFIER)};
 
 ams_simultaneous_case_statement[Identifier label] returns [SimultaneousStatement statement = NoNode]
 @init {val alternatives = new Buffer[SimultaneousCaseStatement.When]} :
 	caseToken=CASE expression USE
 		(WHEN choices ARROW ams_simultaneous_statement_list {alternatives += new SimultaneousCaseStatement.When($choices.choices, $ams_simultaneous_statement_list.list)})+
-	END CASE identifier? SEMICOLON
-	{$statement = new SimultaneousCaseStatement($caseToken, $label, $expression.expr, alternatives.result, $identifier.ident)};
+	END CASE IDENTIFIER? SEMICOLON
+	{$statement = new SimultaneousCaseStatement($caseToken, $label, $expression.expr, alternatives.result, $IDENTIFIER)};
 
 ams_simultaneous_procedural_statement[Identifier label] returns [SimultaneousStatement statement = NoNode]
 @init {
@@ -1080,8 +1080,8 @@ ams_simultaneous_procedural_statement[Identifier label] returns [SimultaneousSta
 		sync[ruleName] (ams_simultaneous_procedural_declarative_item {items += $ams_simultaneous_procedural_declarative_item.item} sync[ruleName])*
 	BEGIN
 		saveFollowSet sequence_of_statements
-	END PROCEDURAL identifier? SEMICOLON
-	{$statement = new SimultaneousProceduralStatement($proceduralToken, $label, items.result, $sequence_of_statements.statements, $identifier.ident)};
+	END PROCEDURAL IDENTIFIER? SEMICOLON
+	{$statement = new SimultaneousProceduralStatement($proceduralToken, $label, items.result, $sequence_of_statements.statements, $IDENTIFIER)};
 
 ams_simultaneous_procedural_declarative_item returns [DeclarativeItem item = NoNode] :
 	subprogram_specification_or_body {$item = $subprogram_specification_or_body.specificationOrBody}
@@ -1223,42 +1223,42 @@ if_statement[Identifier label] returns [SequentialStatement statement = NoNode]
 	)*
 	(ELSE
 		saveFollowSet elseStatements=sequence_of_statements)?
-	END IF identifier? SEMICOLON 
-	{$statement = new IfStatement($ifToken, $label, ifList.result, $elseStatements.statements, $identifier.ident)};
+	END IF IDENTIFIER? SEMICOLON
+	{$statement = new IfStatement($ifToken, $label, ifList.result, $elseStatements.statements, $IDENTIFIER)};
 
 case_statement[Identifier label] returns [SequentialStatement statement = NoNode]
 @init {val alternatives = new Buffer[CaseStatement.When]} :
 	caseToken=CASE ({vhdl2008}?=> qmarkToken=QMARK)? expression IS
 		(WHEN choices ARROW saveFollowSet sequence_of_statements {alternatives += new CaseStatement.When($choices.choices, $sequence_of_statements.statements)})+
-	END CASE ({vhdl2008}?=> QMARK)? identifier? SEMICOLON
-	{$statement = new CaseStatement($caseToken, $label, qmarkToken != null, $expression.expr, alternatives.result, $identifier.ident)};
+	END CASE ({vhdl2008}?=> QMARK)? IDENTIFIER? SEMICOLON
+	{$statement = new CaseStatement($caseToken, $label, qmarkToken != null, $expression.expr, alternatives.result, $IDENTIFIER)};
 
 iteration_scheme returns [Either[Expression, (Identifier, DiscreteRange)\] scheme] :
 	WHILE condition {$scheme = Left($condition.condition)}
-	| FOR identifier IN discrete_range {$scheme = Right(($identifier.ident, $discrete_range.discreteRange))};
+	| FOR IDENTIFIER IN discrete_range {$scheme = Right(($IDENTIFIER, $discrete_range.discreteRange))};
 
 loop_statement[Identifier label] returns [SequentialStatement statement = NoNode]
 @init {val position = toPosition(input.LT(1))} :
 	iteration_scheme? LOOP
 		saveFollowSet sequence_of_statements
-	END LOOP identifier? SEMICOLON
+	END LOOP IDENTIFIER? SEMICOLON
 	{
 		$statement = Option($iteration_scheme.scheme) match {
 			case Some(scheme) => scheme match {
-				case Left(condition) => new WhileStatement(position, $label, condition, $sequence_of_statements.statements, $identifier.ident)
-				case Right((identifier, discreteRange)) => new ForStatement(position, $label, identifier, discreteRange, $sequence_of_statements.statements, $identifier.ident)
+				case Left(condition) => new WhileStatement(position, $label, condition, $sequence_of_statements.statements, $IDENTIFIER)
+				case Right((identifier, discreteRange)) => new ForStatement(position, $label, identifier, discreteRange, $sequence_of_statements.statements, $IDENTIFIER)
 			}
-			case None => new LoopStatement(position, $label, $sequence_of_statements.statements, $identifier.ident)
+			case None => new LoopStatement(position, $label, $sequence_of_statements.statements, $IDENTIFIER)
 		}
 	};
 
 next_statement[Identifier label] returns [SequentialStatement statement = NoNode] :
-	NEXT identifier? (WHEN condition)? SEMICOLON 
-	{$statement = new NextStatement($NEXT, $label, $identifier.ident, $condition.condition)};
+	NEXT IDENTIFIER? (WHEN condition)? SEMICOLON
+	{$statement = new NextStatement($NEXT, $label, $IDENTIFIER, $condition.condition)};
 
 exit_statement[Identifier label] returns [SequentialStatement statement = NoNode] :
-	EXIT identifier? (WHEN condition)? SEMICOLON 
-	{$statement = new ExitStatement($EXIT, $label, $identifier.ident, $condition.condition)};
+	EXIT IDENTIFIER? (WHEN condition)? SEMICOLON
+	{$statement = new ExitStatement($EXIT, $label, $IDENTIFIER, $condition.condition)};
 
 return_statement[Identifier label] returns [SequentialStatement statement = NoNode] :
 	RETURN expression? SEMICOLON 
@@ -1377,28 +1377,28 @@ ams_interface_quantity_declaration returns [InterfaceList.AbstractInterfaceEleme
 	};
 
 v2008_interface_type_declaration returns [InterfaceList.AbstractInterfaceElement declaration = InterfaceList.NoElement] :
-	TYPE identifier {$declaration = new InterfaceList.InterfaceTypeDeclaration($identifier.ident)};
+	TYPE IDENTIFIER {$declaration = new InterfaceList.InterfaceTypeDeclaration($IDENTIFIER)};
 
 v2008_interface_subprogram_default returns [Option[SelectedName\] default] : 
 	IS (selected_name {$default = Option($selected_name.name)} | BOX {$default = None});
 
 v2008_interface_subprogram_declaration returns [InterfaceList.AbstractInterfaceElement declaration = InterfaceList.NoElement] :
-	PROCEDURE identifier
+	PROCEDURE IDENTIFIER
 		(PARAMETER? LPAREN parameter_interface_list_procedure RPAREN)? v2008_interface_subprogram_default?
-		{$declaration = new InterfaceList.InterfaceProcedureDeclaration($identifier.ident, $parameter_interface_list_procedure.list, $v2008_interface_subprogram_default.default)}
+		{$declaration = new InterfaceList.InterfaceProcedureDeclaration($IDENTIFIER, $parameter_interface_list_procedure.list, $v2008_interface_subprogram_default.default)}
 	| (PURE | impure=IMPURE)? FUNCTION designator
 		(PARAMETER? LPAREN parameter_interface_list_function RPAREN)? RETURN type_mark v2008_interface_subprogram_default?
 		{$declaration = new InterfaceList.InterfaceFunctionDeclaration($impure == null, $designator.designator, $parameter_interface_list_function.list, $type_mark.mark, $v2008_interface_subprogram_default.default)};
 
 v2008_interface_package_declaration returns [InterfaceList.AbstractInterfaceElement declaration = InterfaceList.NoElement] :
-	PACKAGE identifier IS NEW selected_name
+	PACKAGE IDENTIFIER IS NEW selected_name
 		GENERIC MAP LPAREN (association_list | BOX | DEFAULT) RPAREN
 	{
 		val generic =
 			if ($association_list.list != null) Left($association_list.list)
 			else if ($DEFAULT != null) Right(true)
 			else Right(false)
-		$declaration = new InterfaceList.InterfacePackageDeclaration($identifier.ident, $selected_name.name, generic)
+		$declaration = new InterfaceList.InterfacePackageDeclaration($IDENTIFIER, $selected_name.name, generic)
 	};
 
 association_element returns [AssociationList.Element element] :
@@ -1411,7 +1411,7 @@ association_list returns [AssociationList list]
 	{$list = new AssociationList(buffer.result)};
 	
 formal_part returns [Either[Identifier, (SelectedName, Name.Part)\] part] :
-	identifier {$part = Left($identifier.ident)}
+	IDENTIFIER {$part = Left($IDENTIFIER)}
 	| selected_name ((name_association_list_part)=> name_association_list_part | name_slice_part) {$part = Right(($selected_name.name, null))};
 
 actual_part returns [Either[Expression, Identifier\] part] :
@@ -1568,7 +1568,7 @@ name returns [Name name]
 	| {vhdl2008}?=> v2008_external_name; //TODO
 
 name_prefix returns [Identifier prefix = NoIdentifier] :
-	identifier {$prefix = $identifier.ident}
+	IDENTIFIER {$prefix = $IDENTIFIER}
 	| STRING_LITERAL {$prefix = toIdentifier($STRING_LITERAL)};
  
 name_part returns [Name.Part part] :
@@ -1580,7 +1580,7 @@ name_part returns [Name.Part part] :
 name_selected_part returns [Name.SelectedPart part] 
 @init {$part = new Name.SelectedPart(NoIdentifier)} :
 	DOT (
-	identifier {$part = new Name.SelectedPart($identifier.ident)}
+	IDENTIFIER {$part = new Name.SelectedPart($IDENTIFIER)}
 	| CHARACTER_LITERAL {$part = new Name.SelectedPart(toIdentifier($CHARACTER_LITERAL))}
 	| STRING_LITERAL {$part = new Name.SelectedPart(toIdentifier($STRING_LITERAL))}
 	| ALL {$part = new Name.SelectedPart(toIdentifier($ALL))}
@@ -1594,7 +1594,7 @@ name_slice_part returns [Name.SlicePart part] :
 
 name_attribute_part returns [Name.AttributePart part]
 @init {val expressions = new Buffer[Expression]; var id = NoIdentifier} :
-	signature? APOSTROPHE (BASIC_IDENTIFIER | EXTENDED_IDENTIFIER | RANGE | TOLERANCE | ACROSS | THROUGH | REFERENCE) {id = toIdentifier(input.LT(-1))}
+	signature? APOSTROPHE (IDENTIFIER | RANGE | TOLERANCE | ACROSS | THROUGH | REFERENCE) {id = toIdentifier(input.LT(-1))}
 	((LPAREN)=> LPAREN expr=expression {expressions += expr} ({ams}?=> COMMA expr=expression {expressions += expr})* RPAREN)? {$part = new Name.AttributePart($signature.signature, id, expressions.result)};
 
 signature returns [Signature signature] :
@@ -1609,17 +1609,17 @@ v2008_external_pathname :
 	v2008_absolute_pathname | v2008_relative_pathname | v2008_package_pathname;
 
 v2008_absolute_pathname :
-	DOT (v2008_pathname_element DOT)* identifier;
+	DOT (v2008_pathname_element DOT)* IDENTIFIER;
 
 v2008_relative_pathname :
-	(CIRCUMFLEX DOT)* (v2008_pathname_element DOT)* identifier;
+	(CIRCUMFLEX DOT)* (v2008_pathname_element DOT)* IDENTIFIER;
 
 v2008_pathname_element :
 	//could be entity_identifier, component_instantiation_label, block_label, package_identifier or generate_statment_label
-	identifier (LPAREN expression RPAREN)?;
+	IDENTIFIER (LPAREN expression RPAREN)?;
 
 v2008_package_pathname :
-	AT libraryIdentifier=identifier DOT (packageIdentifier=identifier DOT)* objectIdentifier=identifier;
+	AT libraryIdentifier=IDENTIFIER DOT (packageIdentifier=IDENTIFIER DOT)* objectIdentifier=IDENTIFIER;
 
 literal returns [Expression literal = NoExpression]
 @init {
@@ -1662,7 +1662,7 @@ aggregate returns [Aggregate aggregate]
 
 choice returns [Choices.Choice choice]
 @init {val position = toPosition(input.LT(1))} :
-	(identifier (BAR | ARROW | COMMA | SEMICOLON))=> identifier {$choice = new Choices.Choice(position, Some(Third($identifier.ident)))}
+	(IDENTIFIER (BAR | ARROW | COMMA | SEMICOLON))=> IDENTIFIER {$choice = new Choices.Choice(position, Some(Third($IDENTIFIER)))}
 	| (simple_expression (BAR | ARROW | COMMA | SEMICOLON))=> simple_expression {$choice = new Choices.Choice(position, Some(Second($simple_expression.expression)))}
 	| discrete_range {$choice = new Choices.Choice(position, Some(First($discrete_range.discreteRange)))}
 	| OTHERS {$choice = new Choices.Choice(position, None)};
@@ -1687,14 +1687,10 @@ PSL_Verification_Unit : ;
 
 identifier_list returns [Seq[Identifier\] list = Nil]
 @init {val identifiers = new Buffer[Identifier]} :
-	id=identifier {identifiers += id} (COMMA id=identifier {identifiers += id})*
+	id=IDENTIFIER {identifiers += id} (COMMA id=IDENTIFIER {identifiers += id})*
 	{$list = identifiers.result.filter(_ != NoIdentifier)};
 
-identifier returns [Identifier ident = NoIdentifier] :
-	BASIC_IDENTIFIER {$ident = toIdentifier(input.LT(-1))}
-	| EXTENDED_IDENTIFIER {$ident = toIdentifier(input.LT(-1))};
-
-v2008_tool_directive : APOSTROPHE identifier GRAPHIC_CHARACTER*;
+v2008_tool_directive : APOSTROPHE IDENTIFIER GRAPHIC_CHARACTER*;
 
 label_colon returns [Identifier label] :
-	identifier COLON {$label = $identifier.ident};
+	IDENTIFIER COLON {$label = $IDENTIFIER};

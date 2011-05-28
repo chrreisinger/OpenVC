@@ -233,10 +233,16 @@ NESTED_ML_COMMENT :
 //A comment can appear on any line of a VHDL description and may contain any character except the format effectors vertical tab, carriage return, line feed, and form feed.
 LINE_COMMENT : '--' ~( '\r'|'\n'|'\u000C' )* {skip()};
 
+fragment
 BASIC_IDENTIFIER : LETTER ( '_'? LETTER_OR_DIGIT )*;
 
 //extended identifiers can't contain a single backslash
+fragment
 EXTENDED_IDENTIFIER : '\\' ( '\"' | '\\\\' | GRAPHIC_CHARACTER )+ '\\';
+
+IDENTIFIER :
+	BASIC_IDENTIFIER
+	| EXTENDED_IDENTIFIER;
 
 BASED_LITERAL : INTEGER '#' BASED_INTEGER ( DOT BASED_INTEGER )? '#' EXPONENT? ;
 

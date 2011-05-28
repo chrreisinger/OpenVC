@@ -59,10 +59,13 @@ private[parser] abstract class BaseParser(input: TokenStream, state: RecognizerS
   /** converts Any to Option[A] */
   protected implicit def anyToOption[A](value: A): Option[A] = Option(value)
 
+  /** converts a token to Option[Identifier] */
+  protected implicit def toIdentifierOption(token: ANTLRToken): Option[Identifier] = if (token != null) Some(toIdentifier(token)) else None
+
   /** converts a token to a Identifier */
-  protected def toIdentifier(token: ANTLRToken): Identifier =
-    if (token.getType == BASIC_IDENTIFIER) new Identifier(toPosition(token), token.getText.toLowerCase)
-    else if (token.getType == EXTENDED_IDENTIFIER) new Identifier(toPosition(token), token.getText.replace("""\\""", "\\"))
+  protected implicit def toIdentifier(token: ANTLRToken): Identifier =
+    if (token.getType == IDENTIFIER && token.getText.charAt(0) == '\\') new Identifier(toPosition(token), token.getText.replace("""\\""", "\\"))
+    else if (token.getType == IDENTIFIER) new Identifier(toPosition(token), token.getText.toLowerCase)
     else new Identifier(toPosition(token), token.getText)
 
   /** a Map that contains more meaningful descriptions of tokens */
@@ -169,7 +172,7 @@ private[parser] abstract class BaseParser(input: TokenStream, state: RecognizerS
   private def classifyToken(tokenType: Int): TokenType.Value =
     if (operatorKeywords.contains(tokenType) || (tokenType >= DOUBLESTAR && tokenType <= CONDITION_OPERATOR)) TokenType.Operator
     else if (tokenType >= ABS && tokenType <= PROCEDURAL) TokenType.KeyWord
-    else if (tokenType == BASIC_IDENTIFIER || tokenType == EXTENDED_IDENTIFIER) TokenType.Identifier
+    else if (tokenType == IDENTIFIER) TokenType.Identifier
     else TokenType.Other
 
   /** the name of the parser class */
@@ -389,7 +392,7 @@ private[parser] abstract class BaseParser(input: TokenStream, state: RecognizerS
 
     val tokenText = expectedTokenType match {
       case ANTLRToken.EOF => "<missing EOF>"
-      case BASIC_IDENTIFIER | EXTENDED_IDENTIFIER => "<missing IDENTIFIER>"
+      case IDENTIFIER => "<missing IDENTIFIER>"
       case _ => "<missing " + classifyToken(expectedTokenType).toString + ">"
     }
     val token = new MissingCommonToken(expectedTokenType, tokenText)
