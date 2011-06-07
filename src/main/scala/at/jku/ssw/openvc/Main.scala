@@ -28,22 +28,21 @@ object Main {
   def main(arguments: Array[String]) {
     try {
       /*
-      val (c, _) = parseCommandLineArguments(arguments)
-      val filter = new FilenameFilter() {
-        override def accept(dir: File, name: String): Boolean = (name.endsWith(".vhd") || name.endsWith(".vhdl")) && !name.endsWith("in.vhd")
-      }
-      val allVHDLFiles = listFiles(new File("""C:\Users\christian\Desktop\grlib-gpl-1.0.22-b4095\"""), filter, true)
-      for (i <- 0 to 10) {
-        val start = System.currentTimeMillis
-        c.foreach {
-          configuration =>
+      parseCommandLineArguments(arguments).foreach {
+        case (configuration, files) =>
+          val filter = new FilenameFilter() {
+            override def accept(dir: File, name: String): Boolean = (name.endsWith(".vhd") || name.endsWith(".vhdl")) && !name.endsWith("in.vhd")
+          }
+          val allVHDLFiles = listFiles(new File("""C:\Users\christian\Desktop\grlib-gpl-1.0.22-b4095\"""), filter, true)
+          for (i <- 0 to 10) {
+            val start = System.currentTimeMillis
             allVHDLFiles.foreach {
               file =>
                 val result = VHDLCompiler.compile(new CompilationUnit(SourceFile.fromFile(file.getAbsolutePath), configuration))
                 result.printMessages(new PrintWriter(System.out))
             }
-        }
-        println("time:" + (System.currentTimeMillis - start))
+            println("time:" + (System.currentTimeMillis - start))
+          }
       }
       return
       */
