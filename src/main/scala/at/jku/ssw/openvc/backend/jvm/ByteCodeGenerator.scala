@@ -1388,7 +1388,7 @@ object ByteCodeGenerator {
           loadSymbol(symbol)
           indexes.foreach(acceptExpression(_))
           (symbol, dataType)
-        case ArrayAccessExpression(symbol, indexes, elementType, Some(expression)) =>
+        case ArrayAccessExpression(symbol, indexes, elementType, Some(nextExpr)) =>
           loadSymbol(symbol)
           (symbol.dataType: @unchecked) match {
             case arrayType: ArrayType =>
@@ -1400,14 +1400,14 @@ object ByteCodeGenerator {
                 case _ => INVOKEVIRTUAL(getJVMName(symbol), "getValue", "(" + ("I" * indexes.size) + ")" + getJVMDataType(arrayType.elementType))
               }
           }
-          loadTarget(expression)
+          loadTarget(nextExpr)
         case FieldAccessExpression(owner, field, fieldDataType, expressionOption) =>
           if (!owner.owner.isInstanceOf[RuntimeSymbol]) loadSymbol(owner)
           expressionOption match {
             case None => (owner.makeCopy(field, owner.dataType), fieldDataType)
-            case Some(expression) =>
+            case Some(expr) =>
               GETFIELD(owner.dataType.implementationName, field.text, getJVMDataType(fieldDataType))
-              loadTarget(expression)
+              loadTarget(expr)
           }
         case _ => sys.error("not implemented")
       }
@@ -1719,7 +1719,7 @@ object ByteCodeGenerator {
           }
           GETSTATIC("scala/reflect/Manifest$", "MODULE$", "Lscala/reflect/Manifest$;")
           INVOKEVIRTUAL("scala/reflect/Manifest$", scalaType, "()Lscala/reflect/AnyValManifest;")
-        case dataType =>
+        case _ =>
           GETSTATIC("scala/reflect/ClassManifest$", "MODULE$", "Lscala/reflect/ClassManifest$;")
           LDC(Type.getType(getJVMDataType(dataType)))
           INVOKEVIRTUAL("scala/reflect/ClassManifest$", "classType", "(Ljava/lang/Class;)Lscala/reflect/ClassManifest;")
@@ -1736,7 +1736,7 @@ object ByteCodeGenerator {
           val discreteRanges = subtype.constraint match {
             case Some(constraint) => constraint match {
               case Left(_) => sys.error("impossible")
-              case Right(discreteRanges) => discreteRanges
+              case Right(ranges) => ranges
             }
             case None =>
               arrayType.dimensions.map {
@@ -1758,10 +1758,10 @@ object ByteCodeGenerator {
             case _: ConstrainedArrayType =>
               loadDefaultSubTypeValue(new SubTypeIndication(None, new SelectedName(Seq()), None, None, arrayType.elementType))
               mv.INVOKEVIRTUAL(RUNTIME + "$", "createRuntimeArray", "(" + (ci(classOf[VHDLRange]) * arrayType.dimensionality) + ci(classOf[at.jku.ssw.openvs.ArrayType]) + ")" + returnType)
-            case dataType =>
+            case elementType =>
               //generates this code:record[] x = VHDLRuntime.createRuntimeArray(ranges, record.class, ClassManifest..MODULE$.classType(record.class));
-              mv.LDC(Type.getType(getJVMDataType(dataType)))
-              loadScalaManifest(dataType)
+              mv.LDC(Type.getType(getJVMDataType(elementType)))
+              loadScalaManifest(elementType)
               mv.INVOKEVIRTUAL(RUNTIME + "$", "createRuntimeArray" + getScalaSpecializedMethodSuffix(arrayType.elementType), "(" + (ci(classOf[VHDLRange]) * arrayType.dimensionality) + "Ljava/lang/Class;Lscala/reflect/ClassManifest;)" + returnType)
           }
           mv.CHECKCAST(arrayType)

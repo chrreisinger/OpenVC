@@ -27,7 +27,7 @@ object PreAnalyzerTransformer extends Phase {
   val name = "preAnalyzerTransformer"
   override val description = "simple AST transformations before semanticAnalyzer"
 
-  override def apply(unit: CompilationUnit): CompilationUnit = unit.copy(astNode = ASTStatementTransformer.transform(unit.astNode)(transform))
+  override def apply(unit: CompilationUnit): CompilationUnit = unit.copy(astNode = ASTStatementTransformer(unit.astNode)(transform))
 
   private def convertWaveformAssignment(waveformAssignment: WaveformAssignment): SequentialStatement = {
     def waveTransform(waveform: Waveform): SequentialStatement =
@@ -125,6 +125,6 @@ object PreAnalyzerTransformer extends Phase {
         case ConcurrentSelectedSignalAssignment(position, label, _, expression, isMatchingCase, target, _, delay, alternatives) => convertWaveformAssignment(SelectedWaveformAssignment(position, label, expression, isMatchingCase, target, delay, alternatives))
       }
       toProcessStatement(newStatement, concurrentSignalAssignmentStmt.label, concurrentSignalAssignmentStmt.isPostponed)
-    case node => node
+    case _ => node
   }
 }

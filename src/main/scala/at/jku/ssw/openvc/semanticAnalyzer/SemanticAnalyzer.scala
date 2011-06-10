@@ -514,7 +514,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
           def checkDigits(str: String) {
             str.foreach {
               char =>
-                if (Integer.parseInt("" + char, 16) >= base) addError(expression, "digit %s is greater thant the base %s", char.toString(), base.toString())
+                if (Integer.parseInt("" + char, 16) >= base) addError(expression, "digit %s is greater thant the base %s", char.toString, base.toString)
             }
           }
           if (base < 2 || base > 16) addError(expression, "The base must be at least two and at most sixteen.")
@@ -575,7 +575,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
               list.enumerations.filter(enumSymbol => isCompatible(enumSymbol.dataType, expectedType)) match {
                 case Seq(enumerationSymbol) => Option(enumerationSymbol)
                 case Seq() => addError(literal, "enumeration value %s not found in enumeration type %s", literal.text, expectedType.name)
-                case symbols => addError(literal, "ambiguous character literal, found %s matching symbols", symbols.size.toString)
+                case enumerationSymbols => addError(literal, "ambiguous character literal, found %s matching symbols", enumerationSymbols.size.toString)
               }
           } match {
             case Some(enumerationSymbol) => literal.copy(dataType = enumerationSymbol.dataType, value = enumerationSymbol.dataType.value(enumerationSymbol.name.replace("'", "")))
@@ -714,8 +714,8 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
                       symbol match {
                         case _: SubTypeSymbol | _: TypeSymbol =>
                           val dataType = (symbol: @unchecked) match {
-                            case SubTypeSymbol(_, dataType, _) => dataType
-                            case TypeSymbol(_, dataType, _) => dataType
+                            case SubTypeSymbol(_, subType, _) => subType
+                            case TypeSymbol(_, t, _) => t
                           }
                           if (indexes.size == 1) {
                             require(xs.isEmpty)
@@ -910,7 +910,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
           case SimpleExpression.AddOperator.CONCATENATION => simpleExpr.copy(dataType = simpleExpr.left.dataType) //TODO hack
           case _ =>
             (simpleExpr.left.dataType, right.dataType) match {
-              case (left: NumericType, right) if (isCompatible(left, right)) => simpleExpr.copy(dataType = left)
+              case (left: NumericType, rightDataType) if (isCompatible(left, rightDataType)) => simpleExpr.copy(dataType = left)
               case _ => findOverloadedOperator(simpleExpr.addOperator.get.toString, simpleExpr, simpleExpr.left, right).getOrElse(simpleExpr)
             }
         }
@@ -1448,8 +1448,8 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
                 x =>
                   val discreteRange = checkDiscreteRange(context, x._1, x._2.elementType)
                   if (discreteRange.dataType != null) {
-                    if (discreteRange.dataType.from < x._2.elementType.asInstanceOf[DiscreteType].left) addError(discreteRange, "value %s is out of range for type %s", discreteRange.dataType.from.toString(), x._2.elementType.name)
-                    if (discreteRange.dataType.to > x._2.elementType.asInstanceOf[DiscreteType].right) addError(discreteRange, "value %s is out of range for type %s", discreteRange.dataType.to.toString(), x._2.elementType.name)
+                    if (discreteRange.dataType.from < x._2.elementType.asInstanceOf[DiscreteType].left) addError(discreteRange, "value %s is out of range for type %s", discreteRange.dataType.from.toString, x._2.elementType.name)
+                    if (discreteRange.dataType.to > x._2.elementType.asInstanceOf[DiscreteType].right) addError(discreteRange, "value %s is out of range for type %s", discreteRange.dataType.to.toString, x._2.elementType.name)
                   }
                   discreteRange
               }
@@ -1716,7 +1716,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
           case None => NoExpression
         }
     }
-    return checkExpression(context, tmpList.reduceLeft((r1, r2) => LogicalExpression(r1.position, r1, LogicalExpression.Operator.OR, r2)), SymbolTable.booleanType)
+    checkExpression(context, tmpList.reduceLeft((r1, r2) => LogicalExpression(r1.position, r1, LogicalExpression.Operator.OR, r2)), SymbolTable.booleanType)
   }
 
   def visitCaseGenerateStatement(caseGenerateStmt: CaseGenerateStatement, owner: Symbol, context: Context): ReturnType = {
@@ -2231,7 +2231,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
           buffer += ifStmt
           buffer ++= (ifStmt.ifThenList.flatMap(ifThen => toLinearList(ifThen.sequentialStatements)))
           buffer ++= (ifStmt.elseSequentialStatements.map(toLinearList(_)).flatten)
-        case statement => buffer += statement
+        case _ => buffer += statement
       }
       toLinearList(xs, buffer)
     }

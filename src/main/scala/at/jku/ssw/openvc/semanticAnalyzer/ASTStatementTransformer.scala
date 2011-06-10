@@ -28,7 +28,7 @@ import ast.declarativeItems._
 object ASTStatementTransformer {
   type Transformer = ASTNode => ASTNode
 
-  def transform(node: ASTNode)(transformer: Transformer): ASTNode = {
+  def apply(node: ASTNode)(transformer: Transformer): ASTNode = {
 
     def acceptNodes[A <: ASTNode](nodes: Seq[A]): Seq[A] = nodes.map(node => acceptNode(node).asInstanceOf[A])
 
@@ -62,7 +62,7 @@ object ASTStatementTransformer {
       case forGenerateStmt: ForGenerateStatement => forGenerateStmt.copy(declarativeItems = acceptNodes(forGenerateStmt.declarativeItems), concurrentStatements = transformNodes(forGenerateStmt.concurrentStatements))
       case processStmt: ProcessStatement => processStmt.copy(declarativeItems = acceptNodes(processStmt.declarativeItems), sequentialStatements = transformNodes(processStmt.sequentialStatements))
       case blockStmt: BlockStatement => blockStmt.copy(declarativeItems = acceptNodes(blockStmt.declarativeItems), concurrentStatements = transformNodes(blockStmt.concurrentStatements))
-      case node => node
+      case _ => node
     }
 
     acceptNode(node)
