@@ -1635,7 +1635,7 @@ object ByteCodeGenerator {
 
     def createGetSensitivityList(context: Context, name: String, sensitivityList: Seq[SignalSymbol]) {
       //creates code which is the same as : def getSensitivityListProcessName:Seq[Signal]=List(signal1,signal2)
-      val mv = context.cw.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_SYNTHETIC, "getSensitivityList" + name,
+      val mv = context.cw.visitMethod(Opcodes.ACC_PUBLIC, "getSensitivityList" + name,
         "()Lscala/collection/Seq;", "()Lscala/collection/Seq<" + ci(classOf[AbstractSignal[_]]) + ">;")
       import mv._
 
@@ -2130,7 +2130,7 @@ object ByteCodeGenerator {
             endMethod()
           }
           {
-            val mv = cw.createMethod(flags = Opcodes.ACC_SYNTHETIC, name = "getValue", parameters = "I", returnType = "Ljava/lang/String;")
+            val mv = cw.createMethod(name = "getValue", parameters = "I", returnType = "Ljava/lang/String;")
             import mv._
 
             ILOAD(1)
@@ -2139,7 +2139,7 @@ object ByteCodeGenerator {
             endMethod()
           }
           {
-            val mv = cw.createMethod(flags = Opcodes.ACC_STATIC + Opcodes.ACC_SYNTHETIC, name = "value", parameters = "Ljava/lang/String;", returnType = "I")
+            val mv = cw.createMethod(flags = Opcodes.ACC_STATIC, name = "value", parameters = "Ljava/lang/String;", returnType = "I")
             import mv._
             val labels = Array.tabulate(enumType.elements.size)(i => new Label())
             val defaultLabel = createLabel
@@ -2171,7 +2171,7 @@ object ByteCodeGenerator {
                       value
                       }
             */
-            val mv = cw.createMethod(flags = Opcodes.ACC_STATIC + Opcodes.ACC_SYNTHETIC, name = "checkIsInRange", parameters = "III", returnType = "I")
+            val mv = cw.createMethod(flags = Opcodes.ACC_STATIC, name = "checkIsInRange", parameters = "III", returnType = "I")
             import mv._
             val throwLabel = createLabel
             val returnLabel = createLabel
@@ -2211,7 +2211,7 @@ object ByteCodeGenerator {
             endMethod()
           }
           {
-            val mv = cw.createMethod(flags = Opcodes.ACC_STATIC + Opcodes.ACC_SYNTHETIC, name = "image", parameters = "I", returnType = "Ljava/lang/String;")
+            val mv = cw.createMethod(flags = Opcodes.ACC_STATIC, name = "image", parameters = "I", returnType = "Ljava/lang/String;")
             import mv._
 
             GETSTATIC(enumType.implementationName, "valuesArray", "[Ljava/lang/String;")
