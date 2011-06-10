@@ -24,14 +24,10 @@ package at.jku.ssw.openvc
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  */
 abstract class Phase {
- /**
-  * the name of the compiler phase
-  */
+ /** the name of the compiler phase */
   val name: String
 
- /**
-  * a description of the phase
-  */
+ /** a description of the phase */
   def description = name
 
   override def toString = name

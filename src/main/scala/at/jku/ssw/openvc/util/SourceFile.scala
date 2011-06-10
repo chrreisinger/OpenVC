@@ -74,19 +74,13 @@ object SourceFile {
  * @see [[http://www.scala-lang.org/archives/downloads/distrib/files/nightly/docs/library/index.html#scala.io.Source scala.io.Source]]
  */
 sealed abstract class SourceFile extends scala.io.Source {
-  /**
-   * the content of the source file, after it was loaded into memory
-   */
+  /** the content of the source file, after it was loaded into memory */
   val content: Array[Char]
 
- /**
-  * the name of the source file
-  */
+ /** the name of the source file */
   val fileName: String
 
-  /**
-   * the content of the source file as string, the array inside the string is the `content` array
-   */
+  /** the content of the source file as string, the array inside the string is the `content` array */
   lazy val contentAsString = {
     //create a string and set the value, offset and count fields, so we avoid all array copy calls
     //content and contentAsString share the same array

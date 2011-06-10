@@ -60,6 +60,6 @@ object VHDLCompiler {
     run(phases, unit)
   }
 
-  /** all phases needed by the compiler to completely compile one compilation unit*/
+  /** all phases needed by the compiler to completely compile one compilation unit */
   val AllPhases = Seq(SyntaxAnalyzer, PreAnalyzerTransformer, SemanticAnalyzer, BackendPhase)
 }

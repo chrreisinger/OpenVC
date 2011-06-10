@@ -29,16 +29,14 @@ import at.jku.ssw.openvc.util.{Position, NoPosition}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  */
 abstract sealed class Expression extends Locatable {
-  /**
-   * Data type of this expression, NoType if for some reason no data type could be calculated
-   */
+  /**  Data type of this expression, NoType if for some reason no data type could be calculated */
   val dataType: DataType
   /**
    * the first position of the expression
    *
-   * for a expression with a binary operator this returns not the position of the operator but the position of the left expression
+   * For a expression with a binary operator this returns not the position of the operator but the position of the left expression
    *
-   * for a operator b position is the position of the operator, firstPosition is the position of a
+   * For `a operator b` position is the position of the operator, firstPosition is the position of a
    */
   def firstPosition = position
 }
@@ -49,13 +47,9 @@ abstract sealed class Expression extends Locatable {
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  */
 case object NoExpression extends Expression {
-  /**
-   * is always NoType
-   */
+  /** is always NoType */
   val dataType = NoType
-  /**
-   * is always NoPosition
-   */
+  /** is always NoPosition */
   val position = NoPosition
 }
 
@@ -65,21 +59,13 @@ object Term {
   type Operator = Operator.Value
 
   object Operator extends Enumeration {
-    /**
-     * multiplication operator
-     */
+    /** multiplication operator */
     val MUL = Value("*")
-    /**
-     * division operator
-     */
+    /** division operator */
     val DIV = Value("/")
-    /**
-     * modulo operator
-     */
+    /** modulo operator */
     val MOD = Value("mod")
-    /**
-     * remainder operator
-     */
+    /** remainder operator */
     val REM = Value("rem")
   }
 
@@ -88,9 +74,10 @@ object Term {
 /**
  * Represents a term
  *
- * grammar: <pre> factor { multiplying_operator factor } </pre>
+ * grammar: {{{ factor { multiplying_operator factor } }}}
  *
- * example: {{{ a * b }}} {{{ a rem 5 }}} {{{ left / right }}}
+ * @example {{{ a * b }}} {{{ left / right }}}
+ * @example <pre>a <b>REM</b> 5</pre>
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.term]]
  * @param left the first factor (before the operator)
@@ -106,9 +93,9 @@ object Aggregate {
   /**
    * Represents a element association in a aggregate
    *
-   * grammar: <pre> [ choices ARROW ] expression </pre>
+   * grammar: {{{ [ choices => ] expression }}}
    *
-   * example: {{{ a => 1 }}}
+   * @example {{{ a => 1 }}}
    * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
    * @see [[at.jku.ssw.openvc.parser.VHDLParser.element_association]]
    * @param choices the optional choices
@@ -121,9 +108,9 @@ object Aggregate {
 /**
  * Represents a aggregate
  *
- * grammar: <pre> ( element_association {, element_association } ) </pre>
+ * grammar: {{{ ( element_association {, element_association } ) }}}
  *
- * example: {{{ (0,1,2,3) }}} {{{ (a=>0,b=>1,c=>2,d=>3) }}}
+ * @example {{{ (0, 1, 2, 3) }}} {{{ (a => 0, b => 1, c => 2, d => 3) }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.aggregate]]
  * @param elements the different element associations
@@ -134,9 +121,9 @@ final case class Aggregate(position: Position, elements: Seq[Aggregate.ElementAs
 /**
  * Represents a type conversion
  *
- * grammar: <pre> ( expression ) </pre>
+ * grammar: {{{ ( expression ) }}}
  *
- * example: {{{ integer(a) }}}
+ * @example {{{ integer(a) }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @param expression the expression to cast to `dataType`
  */
@@ -148,54 +135,29 @@ object Relation {
   type Operator = Operator.Value
 
   object Operator extends Enumeration {
-    /**
-     * equal operator
-     */
+    /** equal operator */
     val EQ = Value("=")
-    /**
-     * not equal operator
-     */
+    /** not equal operator */
     val NEQ = Value("/=")
-    /**
-     * less than operator
-     */
+    /** less than operator */
     val LT = Value("<")
-    /**
-     * less than or equal operator
-     */
+    /** less than or equal operator */
     val LEQ = Value("<=")
-    /**
-     * greater than operator
-     */
+    /** greater than operator */
     val GT = Value(">")
-    /**
-     * greater than or equal operator
-     */
+    /** greater than or equal operator */
     val GEQ = Value(">=")
-
-    /**
-     * matching equal operator
-     */
+    /** matching equal operator */
     val MEQ = Value("?=")
-    /**
-     * matching not equal operator
-     */
+    /** matching not equal operator */
     val MNEQ = Value("?/=")
-    /**
-     * matching less than operator
-     */
+    /** matching less than operator */
     val MLT = Value("?<")
-    /**
-     * matching less than or equal operator
-     */
+    /** matching less than or equal operator */
     val MLEQ = Value("?<=")
-    /**
-     * matching greater than operator
-     */
+    /** matching greater than operator */
     val MGT = Value("?>")
-    /**
-     * matching greater than or equal operator
-     */
+    /** matching greater than or equal operator */
     val MGEQ = Value("?>=")
   }
 
@@ -204,9 +166,9 @@ object Relation {
 /**
  * Represents a relation
  *
- * grammar: <pre> shift_expression { relational_operator shift_expression } </pre>
+ * grammar: {{{ shift_expression { relational_operator shift_expression } }}}
  *
- * example: {{{ a = b }}} {{{ a >= 5 }}} {{{ left /= right }}}
+ * @example {{{ a = b }}} {{{ a >= 5 }}} {{{ left /= right }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.relation]]
  * @param left the first shift_expression (before the operator)
@@ -220,9 +182,9 @@ final case class Relation(position: Position, left: Expression, operator: Relati
 /**
  * Represents a qualified expression
  *
- * grammar: <pre> selected_name ' aggregate </pre>
+ * grammar: {{{ selected_name ' aggregate }}}
  *
- * example: {{{ complex'(1.0,0.0) }}}
+ * @example {{{ complex'(1.0, 0.0) }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.qualified_expression]]
  * @param typeName the name of the data type
@@ -281,7 +243,7 @@ final case class DefaultExpression(symbol: RuntimeSymbol) extends Expression {
 /**
  * Represents a parameter symbol, where the actual expression is open in a AssociationList
  *
- * example: {{{ foo(a=>open); }}}
+ * @example {{{ foo(a => open); }}}
  *
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @see [[at.jku.ssw.openvc.ast.AssociationList]]
@@ -328,7 +290,7 @@ final case class FieldAccessExpression(symbol: RuntimeSymbol, field: Identifier,
  *
  * The grammar has no production for a function call, because the expressions are created in the semantic analyzer
  *
- * example: {{{ x:=mypackage.myFunction(a,b,c,d).recordField; }}}
+ * @example {{{ x := mypackage.myFunction(a, b, c, d).recordField; }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @param name the name of the function to call
  * @param parameterAssociation the parameters of the function
@@ -351,29 +313,17 @@ object ShiftExpression {
   type Operator = Operator.Value
 
   object Operator extends Enumeration {
-    /**
-     * shift left logical operator
-     */
+    /** shift left logical operator */
     val SLL = Value("sll")
-    /**
-     * shift right logical operator
-     */
+    /** shift right logical operator */
     val SRL = Value("srl")
-    /**
-     * shift left arithmetic operator
-     */
+    /** shift left arithmetic operator */
     val SLA = Value("sla")
-    /**
-     * shift right arithmetic operator
-     */
+    /** shift right arithmetic operator */
     val SRA = Value("sra")
-    /**
-     * rotate left logical operator
-     */
+    /** rotate left logical operator */
     val ROL = Value("rol")
-    /**
-     * rotate right logical operator
-     */
+    /** rotate right logical operator */
     val ROR = Value("ror")
   }
 
@@ -382,9 +332,9 @@ object ShiftExpression {
 /**
  * Represents a shift expression
  *
- * grammar: <pre> simple_expression { shift_operator simple_expression } </pre>
+ * grammar: {{{ simple_expression { shift_operator simple_expression } }}}
  *
- * example: {{{ a sll b }}} {{{ a ror 5 }}} {{{ left sra right }}}
+ * @example {{{ a sll b }}} {{{ a ror 5 }}} {{{ left sra right }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.shift_expression]]
  * @param left the first simple_expression (before the operator)
@@ -399,41 +349,23 @@ object Factor {
   type Operator = Operator.Value
 
   object Operator extends Enumeration {
-    /**
-     * exponentiation operator
-     */
+    /** exponentiation operator */
     val POW = Value("**")
-    /**
-     * absolute value operator
-     */
+    /** absolute value operator */
     val ABS = Value("abs")
-    /**
-     * negation operator
-     */
+    /** negation operator */
     val NOT = Value("not")
-    /**
-     * logical reduction AND operator
-     */
+    /** logical reduction AND operator */
     val AND = Value("and")
-    /**
-     * logical reduction NAND operator
-     */
+    /** logical reduction NAND operator */
     val NAND = Value("nand")
-    /**
-     * logical reduction OR operator
-     */
+    /** logical reduction OR operator */
     val OR = Value("or")
-    /**
-     * logical reduction NOR operator
-     */
+    /** logical reduction NOR operator */
     val NOR = Value("nor")
-    /**
-     * logical reduction XOR operator
-     */
+    /** logical reduction XOR operator */
     val XOR = Value("xor")
-    /**
-     * logical reduction XNOR operator
-     */
+    /** logical reduction XNOR operator */
     val XNOR = Value("xnor")
   }
 
@@ -445,13 +377,11 @@ object Factor {
  * grammar:
  * <pre>
  * primary [** primary]
- *
- * | '''ABS''' primary
- *
- * | '''NOT''' primary
+ * | <b>ABS</b> primary
+ * | <b>NOT</b> primary
  * </pre>
  *
- * example: {{{ abs a }}} {{{ not a }}} {{{ a ** b }}}
+ * @example {{{ abs a }}} {{{ not a }}} {{{ a ** b }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.factor]]
  * @param left the first primary (before the operator)
@@ -466,29 +396,17 @@ object LogicalExpression {
   type Operator = Operator.Value
 
   object Operator extends Enumeration {
-    /**
-     * logical AND operator
-     */
+    /** logical AND operator */
     val AND = Value("and")
-    /**
-     * logical NAND operator
-     */
+    /** logical NAND operator */
     val NAND = Value("nand")
-    /**
-     * logical OR operator
-     */
+    /** logical OR operator */
     val OR = Value("or")
-    /**
-     * logical NOR operator
-     */
+    /**  logical NOR operator */
     val NOR = Value("nor")
-    /**
-     * logical XOR operator
-     */
+    /** logical XOR operator */
     val XOR = Value("xor")
-    /**
-     * logical XNOR operator
-     */
+    /** logical XNOR operator */
     val XNOR = Value("xnor")
   }
 
@@ -506,14 +424,11 @@ object LogicalExpression {
  *
  * grammar:
  * <pre> relation (
- *
- *  ('''NAND'''|'''NOR''') relation
- *
+ *  (<b>NAND</b> | <b>NOR</b>) relation
  *  | { logical_operator relation }
- *
  * ) </pre>
  *
- * example: {{{ a or b or c}}} {{{ a nand b }}} {{{ left xnor right }}}
+ * @example {{{ a or b or c}}} {{{ a nand b }}} {{{ left xnor right }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.expression]]
  * @param left the first relation (before the operator)
@@ -528,30 +443,20 @@ object SimpleExpression {
   type AddOperator = AddOperator.Value
 
   object AddOperator extends Enumeration {
-    /**
-     * addition operator
-     */
+    /** addition operator */
     val PLUS = Value("+")
-    /**
-     * subtraction operator
-     */
+    /** subtraction operator */
     val MINUS = Value("-")
-    /**
-     * concatenation operator
-     */
+    /** concatenation operator */
     val CONCATENATION = Value("&")
   }
 
   type SignOperator = SignOperator.Value
 
   object SignOperator extends Enumeration {
-    /**
-     * unary plus operator
-     */
+    /** unary plus operator */
     val PLUS = Value("+")
-    /**
-     * unary minus operator
-     */
+    /** unary minus operator */
     val MINUS = Value("-")
   }
 
@@ -560,9 +465,9 @@ object SimpleExpression {
 /**
  * Represents a simple expression
  *
- * grammar: <pre> [sign] term { adding_operator term } </pre>
+ * grammar: {{{ [sign] term { adding_operator term } }}}
  *
- * example: {{{ -a }}} {{{ a + b }}}
+ * @example {{{ -a }}} {{{ a + b }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.simple_expression]]
  * @param signOperator the optional sign of the simple expression
@@ -577,16 +482,16 @@ final case class SimpleExpression(position: Position, signOperator: Option[Simpl
 }
 
 /**
- * Represents a new expression aka allocator
+ * Represents a allocator
  *
  * grammar: <pre>
- * NEW selected_name (
+ * <b>NEW</b> selected_name (
  *  qualified_expression
  *  | [index_constraint]
  * )
  * </pre>
  *
- * example: {{{ new integer }}} {{{ new string(0 to 10) }}} {{{ new complex'(1.0,0.0) }}}
+ * @example {{{ new integer }}} {{{ new string(0 to 10) }}} {{{ new complex'(1.0,0.0) }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.allocator]]
  * @param qualifiedExpressionOrSubTypeIndication either the qualified expression or the subtype indication
@@ -630,21 +535,15 @@ trait LiteralConverter {
  * grammar:
  * <pre>
  * REAL_LITERAL
- *
  * | INTEGER_LITERAL
- *
  * | BASED_LITERAL
- *
  * | CHARACTER_LITERAL
- *
  * | STRING_LITERAL
- *
  * | BIT_STRING_LITERAL
- *
- * | '''NULL'''
+ * | <b>NULL</b>
  * </pre>
  *
- * example: {{{ 1.0 }}} {{{ 2.0 }}} {{{ 'a' }}}
+ * @example {{{ 1.0 }}} {{{ 2.0 }}} {{{ 'a' }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.literal]]
  * @param text the text of the literal
@@ -659,19 +558,15 @@ final case class Literal(position: Position, text: String, literalType: Literal.
  * Represents a physical literal
  *
  * grammar:
- * <pre>
+ * {{{
  * (
- *
  * REAL_LITERAL
- *
  * | INTEGER_LITERAL
- *
  * | BASED_LITERAL
- *
  * ) selected_name
- * </pre>
+ * }}}
  *
- * example: {{{ 1.0 ms }}} {{{ 2 ns }}}
+ * @example {{{ 1.0 ms }}} {{{ 2 ns }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
  * @see [[at.jku.ssw.openvc.parser.VHDLParser.physical_literal]]
  * @param text the text of the literal
