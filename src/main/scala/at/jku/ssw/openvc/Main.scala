@@ -30,10 +30,7 @@ object Main {
       /*
       parseCommandLineArguments(arguments).foreach {
         case (configuration, files) =>
-          val filter = new FilenameFilter() {
-            override def accept(dir: File, name: String): Boolean = (name.endsWith(".vhd") || name.endsWith(".vhdl")) && !name.endsWith("in.vhd")
-          }
-          val allVHDLFiles = listFiles(new File("""C:\Users\christian\Desktop\grlib-gpl-1.0.22-b4095\"""), filter, true)
+          val allVHDLFiles = listFiles(new File("""C:\Users\christian\Desktop\grlib-gpl-1.0.22-b4095\"""), true, (dir, name) => (name.endsWith(".vhd") || name.endsWith(".vhdl")) && !name.endsWith("in.vhd"))
           for (i <- 0 to 10) {
             val start = System.currentTimeMillis
             allVHDLFiles.foreach {
@@ -48,11 +45,8 @@ object Main {
       */
       parseCommandLineArguments(arguments).foreach {
         case (configuration, files) =>
-          val classFilter = new FilenameFilter() {
-            override def accept(dir: File, name: String): Boolean = name.endsWith(".class")
-          }
           files.map(file => VHDLCompiler.compile(new CompilationUnit(SourceFile.fromFile(file, configuration.encoding), configuration))).foreach(unit => unit.printMessages(new PrintWriter(System.out)))
-          Simulator.loadFiles(this.getClass.getClassLoader, configuration.outputDirectory, listFiles(new File(configuration.libraryOutputDirectory), classFilter, true).map(file => file.getPath.substring(file.getPath.indexOf('\\') + 1).split('.').head.replace('\\', '.')), List("std.jar", "ieee.jar"))
+          Simulator.loadFiles(this.getClass.getClassLoader, configuration.outputDirectory, listFiles(new File(configuration.libraryOutputDirectory), true, (dir, name) => name.endsWith(".class")).map(file => file.getPath.substring(file.getPath.indexOf('\\') + 1).split('.').head.replace('\\', '.')), List("std.jar", "ieee.jar"))
           Simulator.runClass(this.getClass.getClassLoader, configuration.outputDirectory, configuration.designLibrary + ".alu_tb_body", "main$-1404437944", List("std.jar", "ieee.jar"))
       }
     } catch {
@@ -68,12 +62,16 @@ object Main {
     }
   }
 
-  def listFiles(directory: File, filter: FilenameFilter, recursive: Boolean): Seq[File] =
+  def listFiles(directory: File, recursive: Boolean, filter: (File, String) => Boolean): Seq[File] = {
+    val filenameFilter = new FilenameFilter() {
+      override def accept(dir: File, name: String): Boolean = filter(dir, name)
+    }
     directory.listFiles().toSeq.flatMap {
-      case entry if (filter.accept(directory, entry.getName)) => Seq(entry)
-      case entry if (recursive && entry.isDirectory) => listFiles(entry, filter, recursive)
+      case entry if (filenameFilter.accept(directory, entry.getName)) => Seq(entry)
+      case entry if (recursive && entry.isDirectory) => listFiles(entry, recursive, filter)
       case _ => Seq()
     }
+  }
 
   def parseCommandLineArguments(arguments: Array[String]): Option[(Configuration, Seq[String])] = {
     import org.apache.commons.cli._
