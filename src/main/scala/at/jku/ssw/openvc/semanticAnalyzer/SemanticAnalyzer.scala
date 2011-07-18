@@ -835,10 +835,10 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
             case _ => addError(name, "symbol %s not found", name.identifier)
           }
           case xs => addError(name, "symbol %s not found", name.identifier)
-        }).getOrElse(NoExpression)
+        }).getOrElse(name)
         case Some(symbol) => name.parts match {
           case Seq() => matchSymbol(symbol, name.identifier)
-          case xs => matchParts(xs, symbol).getOrElse(NoExpression)
+          case xs => matchParts(xs, symbol).getOrElse(name)
         }
       }
     }
@@ -1807,8 +1807,8 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
   def visitComponentDeclaration(componentDeclaration: ComponentDeclaration, owner: Symbol, context: Context): ReturnType = {
     checkIdentifiers(componentDeclaration.identifier, componentDeclaration.endIdentifier)
     val component = new ComponentSymbol(componentDeclaration.identifier, Seq(), Seq(), owner)
-    val (generics, genericInterfaceList) = createSymbolsFromInterfaceList(context, componentDeclaration.genericInterfaceList, component)
-    val (ports, portInterfaceList) = createSymbolsFromInterfaceList(context, componentDeclaration.portInterfaceList, component)
+    val (generics, genericInterfaceList) = createSymbolsFromInterfaceList(context.openScope, componentDeclaration.genericInterfaceList, component)
+    val (ports, portInterfaceList) = createSymbolsFromInterfaceList(context.openScope.insertSymbols(generics), componentDeclaration.portInterfaceList, component)
     component.generics = generics
     component.ports = ports
     (componentDeclaration.copy(genericInterfaceList = genericInterfaceList, portInterfaceList = portInterfaceList, symbol = component), context.insertSymbol(component))
@@ -1963,6 +1963,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
             if (!file.canWrite) file.mkdirs
             val writer = new ObjectOutputStream(new FileOutputStream(configuration.outputDirectory + libraryUnit.symbol.implementationName + ".sym", false))
             writer.writeObject(libraryUnit.symbol)
+            writer.close()
           }
         }
         if (!unit.isInstanceOf[ContextDeclaration])
@@ -1988,8 +1989,8 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
 
   def visitEntityDeclaration(entityDeclaration: EntityDeclaration, owner: Symbol, context: Context): ReturnType = {
     val entity = new EntitySymbol(entityDeclaration.identifier, Seq(), Seq(), owner)
-    val (generics, genericInterfaceList) = createSymbolsFromInterfaceList(context, entityDeclaration.genericInterfaceList, entity)
-    val (ports, portInterfaceList) = createSymbolsFromInterfaceList(context, entityDeclaration.portInterfaceList, entity)
+    val (generics, genericInterfaceList) = createSymbolsFromInterfaceList(context.openScope, entityDeclaration.genericInterfaceList, entity)
+    val (ports, portInterfaceList) = createSymbolsFromInterfaceList(context.openScope.insertSymbols(generics), entityDeclaration.portInterfaceList, entity)
     entity.generics = generics
     entity.ports = ports
     val (declarativeItems, c) = acceptDeclarativeItems(entityDeclaration.declarativeItems, entity,
@@ -2439,7 +2440,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
         val subType = createType(context, accessType.subType, isAccessTypeDefinition = true)
         checkIfNotFileProtectedType(subType)
         val deallocateSymbol = if (subType.dataType != IncompleteType)
-          new Some(ProcedureSymbol(Identifier("deallocate"), Seq(VariableSymbol(Identifier("p"), new AccessType(name, subType.dataType), InterfaceList.Mode.INOUT, 0, null)), Runtime, true))
+          new Some(ProcedureSymbol(Identifier(accessType.position, "deallocate"), Seq(VariableSymbol(Identifier("p"), new AccessType(name, subType.dataType), InterfaceList.Mode.INOUT, 0, null)), Runtime, true))
         else None
         (accessType.copy(subType = subType, dataType = new AccessType(name, subType.dataType)), deallocateSymbol.toList)
       case fileTypeDefinition: FileTypeDefinition =>
@@ -2502,7 +2503,7 @@ final class SemanticAnalyzer(unit: CompilationUnit) {
         }).toSeq
         accessTypes.foreach(accessType => accessType.pointerType = newTypeDeclaration.dataType)
         //we can now add the deallocate procedure, as the type is now defined
-        val deallocateProcedures = accessTypes.map(accessType => new ProcedureSymbol(Identifier("deallocate"), Seq(VariableSymbol(Identifier("p"), accessType, InterfaceList.Mode.INOUT, 0, null)), Runtime, true))
+        val deallocateProcedures = accessTypes.map(accessType => new ProcedureSymbol(Identifier(newTypeDeclaration.position, "deallocate"), Seq(VariableSymbol(Identifier("p"), accessType, InterfaceList.Mode.INOUT, 0, null)), Runtime, true))
         (newTypeDeclaration, context.copy(symbolTable = context.insertSymbols(deallocateProcedures).symbolTable.insert(new TypeSymbol(typeDeclaration.identifier, newTypeDeclaration.dataType, owner))))
       case _ =>
         (newTypeDeclaration, if (newTypeDeclaration.dataType == NoType) context else context.insertSymbols(new TypeSymbol(typeDeclaration.identifier, newTypeDeclaration.dataType, owner) +: newSymbols))

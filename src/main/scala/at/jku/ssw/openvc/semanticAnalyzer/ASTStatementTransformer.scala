@@ -62,6 +62,7 @@ object ASTStatementTransformer {
       case forGenerateStmt: ForGenerateStatement => forGenerateStmt.copy(declarativeItems = acceptNodes(forGenerateStmt.declarativeItems), concurrentStatements = transformNodes(forGenerateStmt.concurrentStatements))
       case processStmt: ProcessStatement => processStmt.copy(declarativeItems = acceptNodes(processStmt.declarativeItems), sequentialStatements = transformNodes(processStmt.sequentialStatements))
       case blockStmt: BlockStatement => blockStmt.copy(declarativeItems = acceptNodes(blockStmt.declarativeItems), concurrentStatements = transformNodes(blockStmt.concurrentStatements))
+      case protectedTypeBody: ProtectedTypeBodyDeclaration => protectedTypeBody.copy(declarativeItems = acceptNodes(protectedTypeBody.declarativeItems))
       case _ => node
     }
 
