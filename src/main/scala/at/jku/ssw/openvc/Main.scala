@@ -70,8 +70,8 @@ object Main {
 
   def listFiles(directory: File, filter: FilenameFilter, recursive: Boolean): Seq[File] =
     directory.listFiles().toSeq.flatMap {
-      case entry if (filter.accept(directory, entry.getName())) => Seq(entry)
-      case entry if (recursive && entry.isDirectory()) => listFiles(entry, filter, recursive)
+      case entry if (filter.accept(directory, entry.getName)) => Seq(entry)
+      case entry if (recursive && entry.isDirectory) => listFiles(entry, filter, recursive)
       case _ => Seq()
     }
 
@@ -114,7 +114,7 @@ object Main {
     try {
       val parser = new PosixParser()
       val options = new Options()
-      (Seq(standardOptions.getOptions.toArray(new Array[Option](0)): _*) ++ Seq(extendedOptions.getOptions.toArray(new Array[Option](0)): _*)).foreach(options.addOption)
+      (Seq(standardOptions.getOptions.toArray(new Array[Option](0)): _*) ++ Seq(extendedOptions.getOptions.toArray(new Array[Option](0)): _*)).foreach(options.addOption(_))
       val line = parser.parse(options, arguments)
 
       if (line.hasOption("help")) {
@@ -140,10 +140,10 @@ object Main {
         val XrunOnlyToPhase =
           if (line.hasOption("XparseOnly")) scala.Option(VHDLCompiler.AllPhases.head.name)
           else scala.Option(line.getOptionValue("XrunOnlyToPhase", null)).map {
-            phase => VHDLCompiler.AllPhases.find(_.name == phase) match {
+            phaseName => VHDLCompiler.AllPhases.find(_.name == phaseName) match {
               case Some(phase) => phase.name
               case None =>
-                println("phase:" + phase + " not found")
+                println("phase:" + phaseName + " not found")
                 VHDLCompiler.AllPhases.last.name
             }
           }
@@ -165,7 +165,7 @@ object Main {
     }
     catch {
       case exp: ParseException =>
-        println(exp.getMessage())
+        println(exp.getMessage)
         None
     }
   }
