@@ -18,6 +18,10 @@
 
 package at.jku.ssw.tests
 
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+
+@RunWith(classOf[JUnitRunner])
 class EntityTests extends GenericTest {
   compileAndLoad("compile a empty entity") {
     """
@@ -34,7 +38,7 @@ class EntityTests extends GenericTest {
       port
             (Inputs: in Bit_Vector (1 to N);
              Result: out Bit) ;
-      end entitySymbol AndGate ;
+      end entity AndGate ;
     """
   }
 

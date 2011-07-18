@@ -18,6 +18,10 @@
 
 package at.jku.ssw.tests
 
+import org.scalatest.junit.JUnitRunner
+import org.junit.runner.RunWith
+
+@RunWith(classOf[JUnitRunner])
 final class ArchitectureTests extends GenericTest {
   compileAndLoad("compile a architecture with concurrent signal assignments") {
     """
@@ -40,14 +44,14 @@ final class ArchitectureTests extends GenericTest {
       library Test;
       use Test.Components.all;
       architecture Structure of TestBench is
-      component Full_Adder port (X, Y, Cin: Bit; Cout, Sum: out Bit);
-      end component;
-      signal A,B,C,D,E,F,G: Bit;
-      signal OK: Boolean;
+        component Full_Adder port (X, Y, Cin: Bit; Cout, Sum: out Bit);
+        end component;
+        signal A,B,C,D,E,F,G: Bit;
+        signal OK: Boolean;
       begin
-      UUT: Full_Adder port map (A,B,C,D,E);
-      Generator: AdderTest port map (A,B,C,F,G);
-      Comparator: AdderCheck port map (D,E,F,G,OK);
+        UUT: Full_Adder port map (A,B,C,D,E);
+        Generator: AdderTest port map (A,B,C,F,G);
+        Comparator: AdderCheck port map (D,E,F,G,OK);
       end Structure;
     """
   }
@@ -60,7 +64,7 @@ final class ArchitectureTests extends GenericTest {
       port
             (Inputs: in Bit_Vector (1 to N);
              Result: out Bit) ;
-      end entitySymbol AndGate ;
+      end entity AndGate ;
     architecture Behavior of AndGate is
       begin
       process (Inputs)

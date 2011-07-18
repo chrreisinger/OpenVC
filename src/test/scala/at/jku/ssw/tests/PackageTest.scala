@@ -18,6 +18,10 @@
 
 package at.jku.ssw.tests
 
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+
+@RunWith(classOf[JUnitRunner])
 final class PackageTest extends GenericTest {
   compileAndLoad("compile a package with extended identifiers"){
     """

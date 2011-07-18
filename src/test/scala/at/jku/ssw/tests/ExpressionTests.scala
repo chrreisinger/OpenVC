@@ -18,6 +18,10 @@
 
 package at.jku.ssw.tests
 
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+
+@RunWith(classOf[JUnitRunner])
 final class ExpressionTests extends GenericTest {
   compileCodeInPackageAndLoad("compile constant declarations with value epxressions") {
     """

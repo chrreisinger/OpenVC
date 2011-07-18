@@ -18,6 +18,10 @@
 
 package at.jku.ssw.tests
 
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+
+@RunWith(classOf[JUnitRunner])
 final class TypeDefinitionTests extends GenericTest {
   compileCodeInPackageAndLoad("enumeration type delcaration") {
     """
@@ -36,21 +40,24 @@ final class TypeDefinitionTests extends GenericTest {
     """
   }
 
-  compileCodeInPackageAndLoad("array type declaration") {
+  compileCodeInPackageAndRun("array type declaration") {
     """
-      constant n         : integer := 4;
-      type     MY_WORD is array (0 to 31) of bit;
-      -- A memory word type with an ascending range.
-      type     DATA_IN is array (7 downto 0) of boolean;
-      -- An input port type with a descending range.
-      -- Example of unconstrained array declarations :
-      type     MEMORY is array (integer range <>) of MY_WORD;
-      -- A memory array type.
-      -- Examples of array object declarations :
-      variable DATA_LINE : DATA_IN;
-      -- Defines a data input line.
-      variable MY_MEMORY : MEMORY (0 to 2**n-1);
-      variable l, r      : bit_vector(0 to 10);
+      procedure main is
+        constant n         : integer := 4;
+        type     MY_WORD is array (0 to 31) of bit;
+        -- A memory word type with an ascending range.
+        type     DATA_IN is array (7 downto 0) of boolean;
+        -- An input port type with a descending range.
+        -- Example of unconstrained array declarations :
+        type     MEMORY is array (integer range <>) of MY_WORD;
+        -- A memory array type.
+        -- Examples of array object declarations :
+        variable DATA_LINE : DATA_IN;
+        -- Defines a data input line.
+        variable MY_MEMORY : MEMORY (0 to 2**n-1);
+        variable l, r      : bit_vector(0 to 10);
+      begin
+      end main;
     """
   }
 
@@ -75,22 +82,25 @@ final class TypeDefinitionTests extends GenericTest {
     """
   }
 
-  compileCodeInPackageAndLoad("access type delcaration and variable declarations") {
+  compileCodeInPackageAndRun("access type delcaration and variable declarations") {
     """
-      type Node is record
-        x : integer;
-        y : real;
-      end record;
-      type     nodePointer is access Node;
-      type     intPointer is access integer;
-      type     bitVectorPointer is access bit_vector;
-      variable a : nodePointer      := new Node;
-      variable b : nodePointer      := new Node'(100, 100.0);
-      variable c : nodePointer      := new Node'(y => 100.0, x => 100);
-      variable e : intPointer;
-      variable f : intPointer       := null;
-      variable g : intPointer       := new integer;
-      variable h : bitVectorPointer := new bit_vector(1 to 10);
+      procedure main is
+        type Node is record
+          x : integer;
+          y : real;
+        end record;
+        type     nodePointer is access Node;
+        type     intPointer is access integer;
+        type     bitVectorPointer is access bit_vector;
+        variable a : nodePointer      := new Node;
+        variable b : nodePointer      := new Node'(100, 100.0);
+        variable c : nodePointer      := new Node'(y => 100.0, x => 100);
+        variable e : intPointer;
+        variable f : intPointer       := null;
+        variable g : intPointer       := new integer;
+        variable h : bitVectorPointer := new bit_vector(1 to 10);
+      begin
+      end main;
     """
   }
 
@@ -107,26 +117,29 @@ final class TypeDefinitionTests extends GenericTest {
     """
   }
 
-  compileCodeInPackageAndLoad("mutually dependent access types") {
+  compileCodeInPackageAndRun("mutually dependent access types") {
     """
-      type PART; -- Incomplete type declarations.
-      type WIRE;
-      type PART_PTR is access PART;
-      type WIRE_PTR is access WIRE;
-      type PART_LIST is array (POSITIVE range <>) of PART_PTR;
-      type WIRE_LIST is array (POSITIVE range <>) of WIRE_PTR;
-      type PART_LIST_PTR is access PART_LIST;
-      type WIRE_LIST_PTR is access WIRE_LIST;
-      type PART is
-        record
-          PART_NAME : STRING (1 to MAX_STRING_LEN);
-          CONNECTIONS : WIRE_LIST_PTR;
-        end record;
-      type WIRE is
-        record
-          WIRE_NAME : STRING (1 to MAX_STRING_LEN);
-          CONNECTS : PART_LIST_PTR;
-        end record;
+      procedure main is
+        type PART; -- Incomplete type declarations.
+        type WIRE;
+        type PART_PTR is access PART;
+        type WIRE_PTR is access WIRE;
+        type PART_LIST is array (POSITIVE range <>) of PART_PTR;
+        type WIRE_LIST is array (POSITIVE range <>) of WIRE_PTR;
+        type PART_LIST_PTR is access PART_LIST;
+        type WIRE_LIST_PTR is access WIRE_LIST;
+        type PART is
+          record
+            PART_NAME : STRING (1 to MAX_STRING_LEN);
+            CONNECTIONS : WIRE_LIST_PTR;
+          end record;
+        type WIRE is
+          record
+            WIRE_NAME : STRING (1 to MAX_STRING_LEN);
+            CONNECTS : PART_LIST_PTR;
+          end record;
+      begin
+      end main;
     """
   }
 

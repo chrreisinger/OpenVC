@@ -18,6 +18,10 @@
 
 package at.jku.ssw.tests
 
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+
+@RunWith(classOf[JUnitRunner])
 final class DeclarationTests extends GenericTest {
   compileCodeInPackageAndLoad("compile a group declaration") {
     """
@@ -52,6 +56,8 @@ final class DeclarationTests extends GenericTest {
   }
   compileAndLoad("compile a architecture with a shared protected variable") {
     """
+    entity SomeEntity is
+    end entity SomeEntity;
     architecture UseSharedVariables of SomeEntity is
       subtype ShortRange is INTEGER range -1 to 1;
 

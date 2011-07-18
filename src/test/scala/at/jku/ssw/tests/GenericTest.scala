@@ -18,17 +18,18 @@
 
 package at.jku.ssw.tests
 
-import at.jku.ssw.openvs.Simulator
-import org.scalatest.matchers.ShouldMatchers
-import org.scalatest.FunSuite
 import java.io.{File, PrintWriter}
-import at.jku.ssw.openvc.{CompilationUnit, VHDLCompiler}
-import CompilationUnit.Configuration
-import at.jku.ssw.openvc.util.SourceFile
 
-trait GenericTest extends FunSuite with ShouldMatchers {
+import at.jku.ssw.openvc.util.SourceFile
+import at.jku.ssw.openvs.Simulator
+import at.jku.ssw.openvc.{CompilationUnit, VHDLCompiler}
+
+import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.{BeforeAndAfter, FunSuite}
+
+trait GenericTest extends FunSuite with ShouldMatchers with BeforeAndAfter {
   val library = "testLibrary"
-  val configuration = new Configuration(
+  val configuration = new CompilationUnit.Configuration(
     enableAMS = false,
     enableVhdl2008 = true,
     noWarn = false,
@@ -42,9 +43,16 @@ trait GenericTest extends FunSuite with ShouldMatchers {
   )
   val directory = new File(configuration.libraryOutputDirectory)
 
-  def compile(source: String) {
-    if (directory.exists) directory.listFiles.foreach(_.delete())
+  after {
+    if (directory.exists) directory.listFiles.foreach {
+      file =>
+        if (file.isDirectory)
+          file.listFiles.foreach(_.delete())
+        file.delete()
+    }
+  }
 
+  def compile(source: String) {
     val unit = VHDLCompiler.compile(new CompilationUnit(SourceFile.fromString(source, "testFile"), configuration))
     unit.printMessages(new PrintWriter(System.out))
     unit.hasErrors should equal(false)
@@ -61,7 +69,7 @@ trait GenericTest extends FunSuite with ShouldMatchers {
   def compileAndRun(text: String, packageName: String, procedure: String)(source: String) {
     test(text) {
       compile(source)
-      Simulator.runClass(this.getClass.getClassLoader, configuration.outputDirectory, configuration.designLibrary + "." + packageName, procedure, List("std.jar", "ieee.jar"))
+      Simulator.runClass(this.getClass.getClassLoader, configuration.outputDirectory, configuration.designLibrary + "." + packageName + "_body", procedure, List("std.jar", "ieee.jar"))
     }
   }
 
@@ -77,7 +85,7 @@ trait GenericTest extends FunSuite with ShouldMatchers {
     }
   }
 
-  def compileCodeInPackageAndRun(text: String, packageName: String = "dummy", procedure: String = "main$1106182723")(source: String) {
+  def compileCodeInPackageAndRun(text: String, packageName: String = "dummy", procedure: String = "main$-1404437944")(source: String) {
     compileAndRun(text, packageName, procedure) {
       """
       package dummy is
