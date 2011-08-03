@@ -1,20 +1,28 @@
-output/
-lib_managed/
-project/boot/*
-project/build/target/*
-project/plugins/lib_managed/*
-project/plugins/project/*
-project/plugins/src_managed/*
-project/plugins/target/
-target/
 vhdlLibs/*
 vhdlSrc/*
-/.idea/workspace.xml
-*.swp
-*.iws
+output/
+
 *~
 ! .gitkeep
 *.vhd
 Parser.scala
 Lexer.scala
+
+# SBT
+project/boot/
+target
+
+# Eclipse
+.classpath
+.launch
+.metadata
+.project
 .scala_dependencies
+.settings
+
+# IntelliJ
+.idea/
+.idea_modules/
+
+# Netbeans
+nbproject/
