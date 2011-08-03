@@ -154,7 +154,9 @@ final class JarFileLibraryArchive(val file: String) extends AbstractLibraryArchi
   @transient lazy val jarFile = new java.util.jar.JarFile(file)
 
   @throws(classOf[IOException])
-  override def close() = if (this.jarFile != null) this.jarFile.close()
+  override def close() {
+    if (this.jarFile != null) this.jarFile.close()
+  }
 
   override def getInputStream(file: String): Option[InputStream] =
     jarFile.getEntry(file) match {
@@ -165,7 +167,7 @@ final class JarFileLibraryArchive(val file: String) extends AbstractLibraryArchi
 
 @SerialVersionUID(-3176565630855442198L)
 final class DirectoryLibraryArchive(val directory: String) extends AbstractLibraryArchive {
-  override def close() = {}
+  override def close() {}
 
   override def getInputStream(file: String): Option[InputStream] =
     try {
