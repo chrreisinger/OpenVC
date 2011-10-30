@@ -1,3 +1,8 @@
+//sbt-antlr
+resolvers += "stefri" at "http://stefri.github.com/repo/snapshots"
+
+libraryDependencies += "com.github.stefri" %% "sbt-antlr" % "0.1-SNAPSHOT"
+
 //sbt-idea
 resolvers += "sbt-idea-repo" at "http://mpeltonen.github.com/maven/"
 
