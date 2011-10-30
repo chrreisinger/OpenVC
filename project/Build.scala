@@ -2,7 +2,7 @@ import sbt._
 import Keys._
 import Package.ManifestAttributes
 import java.util.jar.Attributes.Name._
-import sbtantlr._
+//import sbtantlr._
 
 object OpenVCBuild extends Build {
   val dependencies = Seq(
@@ -15,10 +15,10 @@ object OpenVCBuild extends Build {
 
   val buildVersion = "0.1"
   val buildSettings = Defaults.defaultSettings ++ sbtassembly.Plugin.assemblySettings ++ SbtShPlugin.settings ++
-    ProguardPlugin.proguardSettings ++ SbtAntlrPlugin.antlrSettings ++ Seq(
+    ProguardPlugin.proguardSettings /*++ sbtantlr.SbtAntlrPlugin.antlrSettings*/ ++ Seq(
     name := "OpenVC",
     organization := "com.github.chrreisinger",
-    scalaVersion := "2.9.0-1",
+    scalaVersion := "2.9.1",
     //TODO resources := Seq("NOTICE.txt", "LICENSE.txt"), // ++ (path("licenses") * "*"),
     javacOptions ++= Seq("-source", "1.7", "-target", "1.7"),
     scalacOptions ++= Seq("-deprecation", "-unchecked", "-g:vars", "-target:jvm-1.5", "-explaintypes"),
@@ -52,7 +52,7 @@ object OpenVCBuild extends Build {
       "-printconfiguration",
       "-whyareyoukeeping class scala.Tuple5"
     )
-  ) ++ inConfig(SbtAntlrPlugin.Antlr)(Seq(
+  ) /*++ inConfig(SbtAntlrPlugin.Antlr)(Seq(
     //download antlr from github with my scala target changes, switch back to a maven version when the scala target is good enough
     SbtAntlrPlugin.antlrDependency := "org.antlr" % "antlr" % "3.7" from "http://cloud.github.com/downloads/chrreisinger/OpenVC/antlr-3.7.jar",
     SbtAntlrPlugin.pluginConfiguration := new SbtAntlrPlugin.PluginConfiguration(".g", SbtAntlrPlugin.SCALA),
@@ -62,7 +62,7 @@ object OpenVCBuild extends Build {
     javaSource <<= (sourceDirectory in Compile) {
       _ / "scala" / "at" / "jku" / "ssw" / "openvc" / "parser"
     }
-  ))
+  ))*/
 
   lazy val common = Project("OpenVC", file("."), settings = buildSettings)
 }
