@@ -14,7 +14,7 @@ addSbtPlugin("com.jsuereth" % "sbt-git-plugin" % "0.4")
 //usage: gen-idea
 resolvers += "sbt-idea-repo" at "http://mpeltonen.github.com/maven/"
 
-addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "0.11.0")
+addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.0.0")
 
 //xsbt-proguard-plugin
 //usage: proguard
