@@ -1,0 +1,65 @@
+change expression to always use item expression
+create specialized ArrayBuffer for ArrayImpl
+Runtime Exception: assert alu_tb failure: K2'Left = 0 and K2'Right = 4 range in slice oder concatenation falsch
+remove UnconstrainedRangeType
+fix checkIsInRange for scalar values, is assignment genug (arrays,records,function calls)
+change all Ljava/lang/String; to getJVMDataType(SymbolTable.stringType)
+change MutableBoolean to Mutable[T] with specialized and change getMutableScalarAccessName
+
+upgrade to ASM 4.0
+remove all IDE files from repository and generate them from the project e.g. if (!file.exits("OpenVC")) idea
+  /*
+  def createRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](array: Array[Array[A]], range1: VHDLRange, range2: VHDLRange) =
+    new RuntimeArray2D(ArrayImpl(array: _*), range1, range2)
+
+  def createRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](array: Array[Array[Array[A]]], range1: VHDLRange, range2: VHDLRange, range3: VHDLRange) =
+    new RuntimeArray3D(ArrayImpl(array: _*), range1, range2, range3)
+
+  def createRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](array: Array[Array[Array[Array[A]]]], range1: VHDLRange, range2: VHDLRange, range3: VHDLRange, range4: VHDLRange) =
+    new RuntimeArray4D(ArrayImpl(array: _*), range1, range2, range3, range4)
+
+  def createRuntimeArray[@specialized(scala.Boolean, scala.Byte, scala.Char, scala.Int, scala.Double, scala.Long) A](array: Array[Array[Array[Array[A]]]], range1: VHDLRange, range2: VHDLRange, range3: VHDLRange, range4: VHDLRange, range5: VHDLRange) =
+    new RuntimeArray5D(ArrayImpl(array: _*), range1, range2, range3, range4, range5)
+*/
+                    /*
+                    @tailrec
+                    def mapNamedElements(namedElements: Seq[Aggregate.ElementAssociation], map: immutable.SortedMap[Int, Expression]): immutable.SortedMap[Int, Expression] = namedElements match {
+                      case Seq() => map
+                      case Seq(element, xs@_*) =>
+                        @tailrec
+                        def mapChoices(choices: Seq[Choices.Choice], indices: Seq[Int]): (Seq[Int], Boolean) = choices match {
+                          case Seq() => fields
+                          case Seq(choice, xs@_*) =>
+                            val newFields = choice.rangeOrExpressionOrIdentifier match {
+                              case None =>
+                                /*
+                                val othersFields = recordType.fields.indices.diff(fields).diff(map.keys.toSeq)
+                                if (othersFields.isEmpty) addError(choice, "no others fields found, all fields alreay have a value")
+                                othersFields
+                                */
+                                indices
+                              case Some(rangeOrExpressionOrIdentifier) => (rangeOrExpressionOrIdentifier match {
+                                case First(discreteRange) => val newRange = checkDiscreteRange(context, discreteRange)
+                                case Second(expression) =>
+                                case Third(identifier) => addError(identifier, "can not use an identifier in a array aggregate")
+                              }) match {
+                                case Some(x) => (x ++ indices, false)
+                                case None => (indices, false)
+                              }
+                            }
+                            mapChoices(xs, newFields)
+                        }
+                        val indices = mapChoices(element.choices.get, Seq(), false)
+                        if (indices.nonEmpty) {
+                          val expr = checkExpression(context, element.expression, dataType))
+                          mapNamedElements(xs, map ++ immutable.SortedMap(indices.map(i => i -> expr): _*))
+                        } else mapNamedElements(xs, map)
+                    }
+                    mapPositionalElements(positionalElements, immutable.SortedMap(), 0).values.toSeq
+                    val parametersMap = mapNamedElements(namedElements, mapPositionalElements(positionalElements, immutable.SortedMap(), dataType))
+                    */
+                    /*
+                    recordType.fields.zipWithIndex.flatMap {
+                      case ((field, _), i) => parametersMap.get(i).orElse(addError(aggregate, "no value found for field %s", field))
+                    }
+                    */

@@ -1,0 +1,30 @@
+Montag 30. Mai nach Diplomandenseminar
+
+#fertig#
+* bug fixes
+* parser error recovery and reporting
+* type conversions
+* allocators
+* arrays
+    * slices
+    * concatenation
+
+#noch zu tun#
+* gesamte code basis überarbeiten
+* arrays fertigstellen
+* array aggregates z.B. constant x : bit_vector(0 to 20) := (1 | 2 | 3 => '0', 1 to 6 => '1', others => '0');
+* übersetzen von std_logic_1164, numeric_std und numeric_bit
+    mitte Juni
+
+* signals z.B signal x : std_ulogic_vector(0 to 10);
+* simulation cycle
+* signal assignments z.B. Output_pin <= reject 0 ns inertial Input_pin after 10 ns, not Input_pin after 20 ns;
+* wait statements
+    ende August
+
+* component instantiations
+* blocks
+* processes
+    nach den ferien
+
+* schriftliche arbeit danach
