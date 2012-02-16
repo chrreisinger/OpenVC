@@ -22,11 +22,11 @@ libraryDependencies <+= sbtVersion(v => "com.github.siasia" %% "xsbt-proguard-pl
 
 //sbteclipse
 //usage: eclipse same-targets withSource
-addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.0.0-M3")
+addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.0.0-RC1")
 
 //sbt-assembly
 //usage: assembly or assembly-package-dependency
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.7.2")
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.7.3")
 
 //sbt-netbeans-plugin
 //usage: netbeans create transitive
