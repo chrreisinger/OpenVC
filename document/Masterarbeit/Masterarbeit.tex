@@ -1,0 +1,72 @@
+\documentclass[german,12pt,a4paper,oneside]{report}
+\usepackage{hyperref} %sorgt für links im erzeugten pdf
+\usepackage[ngerman]{babel}
+\usepackage{listings} %wird für code listings verwendet
+\usepackage{pdfpages} %wird für includepdf verwendet
+%\usepackage[xindy,toc]{glossaries}
+\usepackage[T1]{fontenc} %damit sonderzeichen wie | richtig angezeigt werden
+\usepackage[latin1]{inputenc} %damit Umlaute verwendet werden können
+\usepackage{fancyhdr} %Packet für fany headers
+\usepackage{todonotes} %Packet für TODOs
+\usepackage{setspace} %für Zeilenabstand
+\usepackage{sectsty} %damit der Abstand der Überschriften verändert werden kann
+\onehalfspacing %1.5 Zeilen Abstand
+\addtolength{\parskip}{\baselineskip} %Macht den Abstand eines Absatzes genau eine Zeile groß.
+\setlength\parindent{0pt} %Schaltet das automatische Einrücken für einen neuen Absatz aus
+%\selectlanguage{\german} %deutsch als Sprache für Überschriften
+%\pagestyle{headings} %Kapitelüberschrift und Seitenzahl in der Kopfzeile
+%\pagestyle{fancy} %fany header and footer
+
+%Überschrift nach links schieben
+\sectionfont{\hspace{-1 cm}}
+\subsectionfont{\hspace{-1 cm}}
+\subsubsectionfont{\hspace{-1 cm}}
+
+%plain wird neu definiert, damit es auch bei chapter funktionert, da diese default mäßig \pagestyle{plain} verwenden
+\fancypagestyle{plain}{%
+\fancyhead{}
+\fancyfoot{}
+\fancyhead[L]{\leftmark}
+\fancyhead[R]{\thepage}
+\setlength{\headheight}{15pt}
+\renewcommand{\headrulewidth}{0.4pt} %obere Trennlinie
+%\renewcommand{\footrulewidth}{0.4pt} %untere Trennlinie
+}
+
+\pagestyle{plain}
+%default format \renewcommand{\chaptermark}[1]{\markboth{\MakeUppercase{\chaptername\ \thechapter.\ #1}}{}}
+\renewcommand{\chaptermark}[1]{\markboth{\textit{#1}}{}} %format vom text im header 
+
+\renewcommand{\lstlistlistingname}{Quellcodeverzeichnis}
+\renewcommand{\lstlistingname}{Quellcode}
+%\includeonly{chapter3}
+\begin{document}
+\includepdf{deckblatt/coversheet} %Titelblatt einfügen
+\setcounter{page}{1} %Beginne wieder bei 1 zu zählen
+
+\renewcommand{\thepage}{\Roman{page}} %große römische Zahlen
+\include{abstract}
+%\setcounter{tocdepth}{3} %Inhaltsverzeichniss bis zur Tiefe 3 rendern
+\tableofcontents %Inhaltsverzeichniss
+\chaptermark{Inhaltsverzeichniss}
+\newpage
+\setcounter{page}{1} %Beginne wieder bei 1 zu zählen
+\renewcommand{\thepage}{\arabic{page}} %arabische Zahlen
+\include{chapter1}
+\include{chapter2}
+\include{chapter3}
+\include{chapter4}
+\include{chapter5}
+\include{appendix}
+\end{document}
+%\section{Kapitel} 1
+%\subsection{Unterkapitel} 1.1
+%\subsubsection{Unterunterkapitel} 1.1.1
+%\paragraph{Abschnitt} keine Numerierung kein Inhaltsverzeichniseintrag
+%\subparagraph{Unterabschnitt} keine Numerierung kein Inhaltsverzeichniseintrag
+%Anhang
+%\begin{appendix}
+%\section{Beispiel}
+%\end{appendix}
+%\footnote{1906 -- 1975}
+%\todo{Add details.}

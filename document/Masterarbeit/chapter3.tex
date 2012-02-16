@@ -1,0 +1,38 @@
+\chapter{Architektur}
+{\em 
+In diese Kapitel wird die Architektur erklärt, dynamische sowie statische. Es wird dabei erklärt wie VHDL Source Code verarbeitet wird.
+}
+\section{statische und dynamiche Architektur}
+\section{Scanner/Parser mit Antlr}
+\begin{quotation}
+Eine Grammatik heißt LL(1) (d.h. analysierbar von links nach rechts mit linkskanonischen Ableitungen und 1 Vorgriffssymbol), wenn an jeder Stelle, an der man zwischen mehreren Alternativen wählen kann, gilt, dass die terminalen Anfänge dieser Alternativen paarweise disjunkt sind. Mit anderen Worten: der Parser muss jederzeit mit einem einzigen Vorgriffssymbol entscheiden können, welche von mehreren möglichen Alternativen er wählen soll. \cite{moess}
+\end{quotation}
+
+Die im Standard \cite{ieee} beschriebene Syntax liegt bereits in Extended Backus-Naur Form (EBNF) \cite{wirth} vor, weist aber einige LL(1) Konflikte auf, die vorher behoben wurden,.
+In der Beschreibung von Coco/R [Möss03] werden drei verschiedene Möglichkeiten erörtert, wie diese Konflikte gelöst werden können. Mit Hilfe dieser drei Varianten ist es auch gelungen, die Grammatik in eine für Coco/R valide LL(1) Form umzuwandeln. Die drei Ansätze zur Behebung der Konflikte werden nachstehend erörtert.
+
+\subsection{Faktorisierung}
+Bei der Faktorisierung werden gemeinsame Teile herausgezogen und an den Anfang der Produktion gestellt. Z.B. kann die folgende Produktion \newline
+\begin{center} A = a b c | a b d. \end{center} 
+in die Produktion A' \newline
+\begin{center} A' = a b (c | d). \end{center} 
+ohne Konflikte umgewandelt werden.
+
+\subsection{Umwandlung in Iterationen}
+Linksrekursion stellt in LL(k) Sprachen im Gegensatz zu LR basierten immer ein Problem dar. In der Produktion
+\begin{center} A = A b | c. \end{center} 
+starten beide Alternativen mit c. Durch eine Umwandlung der Rekursion in eine Iteration kann dieses Problem gelöst werden, z.B wird die Produktion A zu
+
+\begin{center} A' = c {b}. \end{center} 
+\subsection{Einsatz von Conflict Resolvers}
+Bei dem Einsatz von Conflict Resolvers kann unterschieden werden, wie viele Tokens der Parser vorausschauen muss, um eine Entscheidung zu treffen.
+
+\subsubsection{Konstante Anzahl von Lookahead Tokens}
+Diese Fälle könnten meistens auch durch den Einsatz von Faktorisierung gelöst werden, aber die Lesbarkeit der Grammatik würde darunter leiden. Durch die Berücksichtigung von mehreren Tokens in die Entscheidung verhält sich der Parser effektiv wie ein LL(k) basierter.
+
+\subsubsection{Unbekannte Anzahl von Lookahead Tokens}
+Hier muss der Parser beliebig viele Tokens konsumieren und wird dabei in einen LL(*) basierten umgewandelt. [Par07]
+
+\section{AST}
+\section{Symboltabelle}
+\section{Codeerzeugung}
