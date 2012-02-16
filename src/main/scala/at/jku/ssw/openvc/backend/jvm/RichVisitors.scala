@@ -28,7 +28,7 @@ final class RichLabel(mv: MethodVisitor) extends Label {
   def apply() {mv.visitLabel(this)}
 }
 
-final class RichClassWriter(private val outputDirectory: String, val className: String, private val cw: ClassWriter, cv: Option[ClassVisitor] = None) extends ClassAdapter(cv.getOrElse(cw)) {
+final class RichClassWriter(private val outputDirectory: String, val className: String, private val cw: ClassWriter, cv: Option[ClassVisitor] = None) extends ClassVisitor(Opcodes.ASM4, cv.getOrElse(cw)) {
   def writeToFile() {
     //create sub-directories if the do not exist (e.g. for foo/bar/classname.class create folders foo/bar/)
     val directory = new java.io.File(outputDirectory + className.substring(0, className.lastIndexOf('/')))
@@ -82,7 +82,7 @@ final class RichClassWriter(private val outputDirectory: String, val className: 
     new RichMethodVisitor(super.visitMethod(access, name, desc, signature, null))
 }
 
-final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
+final class RichMethodVisitor(mv: MethodVisitor) extends MethodVisitor(Opcodes.ASM4, mv) {
 
   import at.jku.ssw.openvc.ast.Locatable
   import at.jku.ssw.openvc.util.{Position, NoPosition}
@@ -345,7 +345,7 @@ final class RichMethodVisitor(mv: MethodVisitor) extends MethodAdapter(mv) {
 
   def RET(variable: Int) {this.visitVarInsn(Opcodes.RET, variable)}
 
-  def TABLESWITCH(min: Int, max: Int, defaultLabel: Label, labels: Array[Label]) {this.visitTableSwitchInsn(min, max, defaultLabel, labels)}
+  def TABLESWITCH(min: Int, max: Int, defaultLabel: Label, labels: Array[Label]) {this.visitTableSwitchInsn(min, max, defaultLabel, labels: _*)}
 
   def LOOKUPSWITCH(defaultLabel: Label, keys: Array[Int], labels: Array[Label]) {this.visitLookupSwitchInsn(defaultLabel, keys, labels)}
 

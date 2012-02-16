@@ -7,7 +7,7 @@ import java.util.jar.Attributes.Name._
 object OpenVCBuild extends Build {
   val dependencies = Seq(
     "org.antlr" % "antlr-runtime" % "3.4" intransitive(),
-    "asm" % "asm-all" % "3.3.1",
+    "org.ow2.asm" % "asm-all" % "4.0",
     "commons-cli" % "commons-cli" % "1.2",
     "org.scalatest" % "scalatest_2.9.0" % "1.6.1" % "test",
     "junit" % "junit" % "4.8.2" % "test"
