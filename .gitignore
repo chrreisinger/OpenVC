@@ -11,6 +11,18 @@ Lexer.scala
 # SBT
 project/boot/
 target
+.history
+
+# Latex
+*.aux
+*.bbl
+*.blg
+*.lol
+*.lof
+*.log
+*.out
+*.toc
+*.pdf
 
 # Eclipse
 .classpath
