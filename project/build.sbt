@@ -22,7 +22,7 @@ libraryDependencies <+= sbtVersion(v => "com.github.siasia" %% "xsbt-proguard-pl
 
 //sbteclipse
 //usage: eclipse same-targets withSource
-addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.0.0-RC1")
+addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.0.0")
 
 //sbt-assembly
 //usage: assembly or assembly-package-dependency
