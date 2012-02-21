@@ -38,3 +38,6 @@ target
 
 # Netbeans
 nbproject/
+
+#jd-gui
+jd-gui.*
