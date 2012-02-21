@@ -79,7 +79,7 @@ object Term {
  * @example {{{ a * b }}} {{{ left / right }}}
  * @example <pre>a <b>REM</b> 5</pre>
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.term]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.term]]
  * @param left the first factor (before the operator)
  * @param operator the operator of the term
  * @param right the second factor (after the operator)
@@ -97,7 +97,7 @@ object Aggregate {
    *
    * @example {{{ a => 1 }}}
    * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
-   * @see [[at.jku.ssw.openvc.parser.VHDLParser.element_association]]
+   * @see [[at.jku.ssw.openvc.parser.Parser.element_association]]
    * @param choices the optional choices
    * @param expression the expression after the arrow
    */
@@ -112,7 +112,7 @@ object Aggregate {
  *
  * @example {{{ (0, 1, 2, 3) }}} {{{ (a => 0, b => 1, c => 2, d => 3) }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.aggregate]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.aggregate]]
  * @param elements the different element associations
  * @param expressions the calculated expression used for the code generator
  */
@@ -170,7 +170,7 @@ object Relation {
  *
  * @example {{{ a = b }}} {{{ a >= 5 }}} {{{ left /= right }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.relation]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.relation]]
  * @param left the first shift_expression (before the operator)
  * @param operator the operator of the relation
  * @param right the second shift_expression (after the operator)
@@ -186,7 +186,7 @@ final case class Relation(position: Position, left: Expression, operator: Relati
  *
  * @example {{{ complex'(1.0, 0.0) }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.qualified_expression]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.qualified_expression]]
  * @param typeName the name of the data type
  * @param expression the expression after the apostrophe
  */
@@ -336,7 +336,7 @@ object ShiftExpression {
  *
  * @example {{{ a sll b }}} {{{ a ror 5 }}} {{{ left sra right }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.shift_expression]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.shift_expression]]
  * @param left the first simple_expression (before the operator)
  * @param operator the operator of the shift expression
  * @param right the second simple_expression (after the operator)
@@ -383,7 +383,7 @@ object Factor {
  *
  * @example {{{ abs a }}} {{{ not a }}} {{{ a ** b }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.factor]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.factor]]
  * @param left the first primary (before the operator)
  * @param operator the operator of the factor
  * @param rightOption the second primary (after the operator)
@@ -430,7 +430,7 @@ object LogicalExpression {
  *
  * @example {{{ a or b or c}}} {{{ a nand b }}} {{{ left xnor right }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.expression]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.expression]]
  * @param left the first relation (before the operator)
  * @param operator the operator of the logical expression
  * @param right the second relation (after the operator)
@@ -469,7 +469,7 @@ object SimpleExpression {
  *
  * @example {{{ -a }}} {{{ a + b }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.simple_expression]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.simple_expression]]
  * @param signOperator the optional sign of the simple expression
  * @param left the first term (before the operator)
  * @param addOperator the optional adding_operator of the simple expression
@@ -493,7 +493,7 @@ final case class SimpleExpression(position: Position, signOperator: Option[Simpl
  *
  * @example {{{ new integer }}} {{{ new string(0 to 10) }}} {{{ new complex'(1.0,0.0) }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.allocator]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.allocator]]
  * @param qualifiedExpressionOrSubTypeIndication either the qualified expression or the subtype indication
  */
 final case class Allocator(position: Position, qualifiedExpressionOrSubTypeIndication: Either[Expression, SubTypeIndication], dataType: DataType = NoType) extends Expression
@@ -545,7 +545,7 @@ trait LiteralConverter {
  *
  * @example {{{ 1.0 }}} {{{ 2.0 }}} {{{ 'a' }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.literal]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.literal]]
  * @param text the text of the literal
  * @param literalType the type of the literal
  * @param value the value of the literal, only used for real, character and integer literals
@@ -568,7 +568,7 @@ final case class Literal(position: Position, text: String, literalType: Literal.
  *
  * @example {{{ 1.0 ms }}} {{{ 2 ns }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.physical_literal]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.physical_literal]]
  * @param text the text of the literal
  * @param unitName the name of the unit
  * @param literalType the type of the literal
