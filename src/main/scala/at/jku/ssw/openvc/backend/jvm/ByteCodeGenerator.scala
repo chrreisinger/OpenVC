@@ -105,7 +105,7 @@ object ByteCodeGenerator {
   def getJVMDataType(expression: Expression): String = getJVMDataType(expression.dataType)
 
   def getJVMDataType(symbol: RuntimeSymbol): String = symbol match {
-    case signal: SignalSymbol => ci(classOf[AbstractSignal[_]])
+    case signal: SignalSymbol => "L" + p(classOf[ScalarSignal[_]]) + getScalaSpecializedClassSuffix(signal.dataType) + ";"
     case _ => getJVMDataType(symbol.dataType)
   }
 
@@ -138,7 +138,7 @@ object ByteCodeGenerator {
   }
 
   def getJVMName(symbol: RuntimeSymbol): String = symbol match {
-    case signal: SignalSymbol => p(classOf[AbstractSignal[_]])
+    case signal: SignalSymbol => p(classOf[ScalarSignal[_]]) + getScalaSpecializedClassSuffix(signal.dataType)
     case _ => getJVMName(symbol.dataType)
   }
 
@@ -191,7 +191,9 @@ object ByteCodeGenerator {
   def apply(unit: CompilationUnit) {
     acceptNode(unit.astNode, null)
 
-    def acceptNodes(nodes: Seq[ASTNode], context: Context) {for (node <- nodes) acceptNode(node, context)}
+    def acceptNodes(nodes: Seq[ASTNode], context: Context) {
+      for (node <- nodes) acceptNode(node, context)
+    }
 
     def acceptNode(node: ASTNode, context: Context) {
       node match {
@@ -285,7 +287,9 @@ object ByteCodeGenerator {
           }
       }
 
-      def acceptExpressionInnerOption(expression: Option[Expression], innerContext: ExpressionContext = null) {expression.foreach(acceptExpressionInner(_, innerContext))}
+      def acceptExpressionInnerOption(expression: Option[Expression], innerContext: ExpressionContext = null) {
+        expression.foreach(acceptExpressionInner(_, innerContext))
+      }
 
       def acceptExpressionInner(expression: Expression, innerContext: ExpressionContext = null) {
         expression match {
@@ -1214,6 +1218,7 @@ object ByteCodeGenerator {
       val cw = createClass(Opcodes.ACC_ABSTRACT, entityDeclaration.symbol.implementationName, "java/lang/Object", classOf[EntityAnnotation], createEmptyConstructor = true)
       createDefaultValuesMethods(entityDeclaration.genericInterfaceList, entityDeclaration.symbol.name, cw)
       createDefaultValuesMethods(entityDeclaration.portInterfaceList, entityDeclaration.symbol.name, cw)
+      (entityDeclaration.symbol.ports ++ entityDeclaration.symbol.generics).foreach(s => cw.visitField(Opcodes.ACC_PUBLIC, s.name, getJVMDataType(s)))
       createClinitAndAcceptItems(entityDeclaration.identifier.text, entityDeclaration.declarativeItems, cw)
       acceptNodes(entityDeclaration.concurrentStatements, Context(cw = cw, designUnit = entityDeclaration.identifier.text))
       cw.writeToFile()
@@ -1279,7 +1284,6 @@ object ByteCodeGenerator {
       val ports = architectureDeclaration.symbol.entity.ports
       val generics = architectureDeclaration.symbol.entity.generics
       val combinedList = generics ++ ports
-      combinedList.foreach(s => cw.visitField(Opcodes.ACC_PUBLIC, s.name, getJVMDataType(s)))
 
       val processSymbols = architectureDeclaration.concurrentStatements.collect(_ match {
         case processStatement: ProcessStatement => processStatement.symbol
@@ -1808,8 +1812,24 @@ object ByteCodeGenerator {
       }
     }
 
-    def visitSignalDeclaration(signalDeclaration: SignalDeclaration, context: Context) =
-      sys.error("not implemented")
+    def visitSignalDeclaration(signalDeclaration: SignalDeclaration, context: Context) {
+      initSymbols(signalDeclaration.symbols, context) {
+        symbol =>
+          import context._
+
+          mv.NEW(getJVMName(symbol))
+          mv.DUP
+          signalDeclaration.defaultExpression match {
+            case Some(expression) =>
+              acceptExpression(expression)
+              checkIsInRange(symbol.dataType)
+            case None =>
+              mv.createDebugLineNumberInformation(signalDeclaration)
+              loadDefaultSubTypeValue(signalDeclaration.subType)
+          }
+          mv.INVOKESPECIAL(getJVMName(symbol), "<init>", "(" + getJVMDataType(symbol.dataType) + ")V")
+      }
+    }
 
     def visitConstantDeclaration(constantDeclaration: ConstantDeclaration, context: Context) {
       for (defaultExpression <- constantDeclaration.value) initSymbols(constantDeclaration.symbols, context) {
