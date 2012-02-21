@@ -88,7 +88,7 @@ object VHDLRuntime {
     var outputStream: DataOutputStream = null
     private[this] var readOnlyMode = false
 
-    def open(external_Name: String, open_Kind: Int) =
+    def open(external_Name: String, open_Kind: Int) {
       FILE_OPEN_KIND(open_Kind) match {
         case FILE_OPEN_KIND.READ_MODE =>
           inputStream = new DataInputStream(new BufferedInputStream(new FileInputStream(external_Name)))
@@ -96,10 +96,11 @@ object VHDLRuntime {
         case FILE_OPEN_KIND.WRITE_MODE => outputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(external_Name, false)))
         case FILE_OPEN_KIND.APPEND_MODE => outputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(external_Name, true)))
       }
+    }
 
     def close() {
-      if (inputStream != null) inputStream.close
-      if (outputStream != null) outputStream.close
+      if (inputStream != null) inputStream.close()
+      if (outputStream != null) outputStream.close()
       inputStream = null
       outputStream = null
     }
@@ -107,13 +108,13 @@ object VHDLRuntime {
     def isOpen: Boolean = this.inputStream != null || this.outputStream != null
 
     @throws(classOf[VHDLRuntimeException])
-    def writeChecks {
+    def writeChecks() {
       if (!isOpen) throw new VHDLRuntimeException("file is not open")
       if (readOnlyMode) throw new VHDLRuntimeException("file is in read mode")
     }
 
     @throws(classOf[VHDLRuntimeException])
-    def readChecks {
+    def readChecks() {
       if (!isOpen) throw new VHDLRuntimeException("file is not open")
       if (!readOnlyMode) throw new VHDLRuntimeException("file is in write mode")
     }
@@ -158,23 +159,33 @@ object VHDLRuntime {
       case SEVERITY_LEVEL.FAILURE => "failure: "
     }
 
-  def report(designUnit: String, message: String, level: Byte): Unit =
+  def report(designUnit: String, message: String, level: Byte) {
     println("report " + designUnit + " " + levelToString(level) + message)
+  }
 
-  def report(designUnit: String, message: String): Unit = report(designUnit, message, DefaultReportLevel)
+  def report(designUnit: String, message: String) {
+    report(designUnit, message, DefaultReportLevel)
+  }
 
   @throws(classOf[VHDLRuntimeException])
-  def assertVHDL(designUnit: String, message: String, level: Byte): Unit =
+  def assertVHDL(designUnit: String, message: String, level: Byte) {
     throw new VHDLRuntimeException("assert " + designUnit + " " + levelToString(level) + message)
+  }
 
   @throws(classOf[VHDLRuntimeException])
-  def assertVHDL(designUnit: String): Unit = assertVHDL(designUnit, DefaultAssertionMessage, DefaultAssertLevel)
+  def assertVHDL(designUnit: String) {
+    assertVHDL(designUnit, DefaultAssertionMessage, DefaultAssertLevel)
+  }
 
   @throws(classOf[VHDLRuntimeException])
-  def assertVHDL(designUnit: String, level: Byte): Unit = assertVHDL(designUnit, DefaultAssertionMessage, level)
+  def assertVHDL(designUnit: String, level: Byte) {
+    assertVHDL(designUnit, DefaultAssertionMessage, level)
+  }
 
   @throws(classOf[VHDLRuntimeException])
-  def assertVHDL(designUnit: String, message: String): Unit = assertVHDL(designUnit, message, DefaultAssertLevel)
+  def assertVHDL(designUnit: String, message: String) {
+    assertVHDL(designUnit, message, DefaultAssertLevel)
+  }
 
   @throws(classOf[VHDLRuntimeException])
   def checkIsInRange(value: Int, low: Int, high: Int): Int =
@@ -435,16 +446,19 @@ object VHDLRuntime {
 
 
   @throws(classOf[VHDLRuntimeException])
-  def file_open(file: RuntimeFile, external_Name: String): Unit = file_open(file, external_Name, FILE_OPEN_KIND.READ_MODE.id)
+  def file_open(file: RuntimeFile, external_Name: String) {
+    file_open(file, external_Name, FILE_OPEN_KIND.READ_MODE.id)
+  }
 
   @throws(classOf[VHDLRuntimeException])
-  def file_open(file: RuntimeFile, external_Name: String, open_Kind: Int) =
+  def file_open(file: RuntimeFile, external_Name: String, open_Kind: Int) {
     try {
       if (file.isOpen) throw new VHDLRuntimeException("file is alreay open")
       file.open(external_Name, open_Kind)
     } catch {
       case fileNotFoundException: java.io.FileNotFoundException => throw new VHDLRuntimeException("file not found:" + fileNotFoundException.getMessage)
     }
+  }
 
   //scala can not overload a method with only a different return type
   def file_open_status(file: RuntimeFile, external_Name: String): Int = file_open_status(file, external_Name, FILE_OPEN_KIND.READ_MODE.id)
@@ -459,66 +473,68 @@ object VHDLRuntime {
       case fileNotFoundException: java.io.FileNotFoundException => FILE_OPEN_STATUS.NAME_ERROR.id
     }
 
-  def file_close(file: RuntimeFile) = file.close
+  def file_close(file: RuntimeFile) {
+    file.close()
+  }
 
   //TODO read and write array types and record types
   def readB(file: RuntimeFile): Byte = {
-    file.readChecks
+    file.readChecks()
     file.inputStream.readByte
   }
 
   def write(file: RuntimeFile, value: Byte) {
-    file.writeChecks
+    file.writeChecks()
     file.outputStream.writeByte(value)
   }
 
   def readZ(file: RuntimeFile): Boolean = {
-    file.readChecks
+    file.readChecks()
     file.inputStream.readBoolean
   }
 
   def write(file: RuntimeFile, value: Boolean) {
-    file.writeChecks
+    file.writeChecks()
     file.outputStream.writeBoolean(value)
   }
 
   def readC(file: RuntimeFile): Char = {
-    file.readChecks
+    file.readChecks()
     file.inputStream.readChar
   }
 
   def write(file: RuntimeFile, value: Char) {
-    file.writeChecks
+    file.writeChecks()
     file.outputStream.writeChar(value)
   }
 
   def readI(file: RuntimeFile): Int = {
-    file.readChecks
+    file.readChecks()
     file.inputStream.readInt
   }
 
   def write(file: RuntimeFile, value: Int) {
-    file.writeChecks
+    file.writeChecks()
     file.outputStream.writeInt(value)
   }
 
   def readD(file: RuntimeFile): Double = {
-    file.readChecks
+    file.readChecks()
     file.inputStream.readDouble
   }
 
   def write(file: RuntimeFile, value: Double) {
-    file.writeChecks
+    file.writeChecks()
     file.outputStream.writeDouble(value)
   }
 
   def readJ(file: RuntimeFile): Long = {
-    file.readChecks
+    file.readChecks()
     file.inputStream.readLong
   }
 
   def write(file: RuntimeFile, value: Long) {
-    file.writeChecks
+    file.writeChecks()
     file.outputStream.writeLong(value)
   }
 
