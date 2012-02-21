@@ -88,7 +88,7 @@ final class Identifier(val position: Position, val originalText: String) extends
  *
  * @example {{{ a(0).x  }}} {{{ (a(0),a(1),a(2) for aggregate  }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.target]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.target]]
  * @see [[at.jku.ssw.openvc.ast.sequentialStatements.SignalAssignmentStatement]]
  * @see [[at.jku.ssw.openvc.ast.sequentialStatements.VariableAssignmentStatement]]
  * @see [[at.jku.ssw.openvc.ast.concurrentStatements.ConcurrentSignalAssignmentStatement]]
@@ -146,7 +146,7 @@ final class DiscreteRange(val rangeOrSubTypeIndication: Either[Range, SubTypeInd
  *
  * @example {{{ integer range 0 to 10 }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.subtype_indication]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.subtype_indication]]
  * @param resolutionFunction the optional name of a resolution function
  * @param typeName the name of the type or subtype
  * @param constraint the optional contraint for the new subtype
@@ -167,7 +167,7 @@ final case class SubNatureIndication(natureMark: SelectedName, ranges: Option[Se
  *
  * @example {{{ [integer,integer,real return integer] }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.signature]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.signature]]
  * @param parameterTypes the optional list of parameter types for a subprogram
  * @param returnType the optional return type of a subprogram or a enumeration literal
  */
@@ -182,7 +182,7 @@ object Waveform {
    *
    * @example {{{ '0' after 20 ns }}}
    * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
-   * @see [[at.jku.ssw.openvc.parser.VHDLParser.waveform_element]]
+   * @see [[at.jku.ssw.openvc.parser.Parser.waveform_element]]
    * @param valueExpression the value of this element
    * @param timeExpression the optional delay of this element
    */
@@ -205,7 +205,7 @@ object Waveform {
  *  '0' after 40 ns;
  * }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.waveform]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.waveform]]
  * @param elements the elements of this wavefrom
  */
 final class Waveform(val position: Position, val elements: Seq[Waveform.Element]) extends Locatable {
@@ -242,7 +242,7 @@ final case class AssociationList(elements: Seq[AssociationList.Element], paramet
  *
  * @example {{{ std.standard.integer }}} {{{ Work.myPackage.myProcedure }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.selected_name]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.selected_name]]
  * @param identifiers the identifiers that identify the VHDL entity
  */
 final class SelectedName(val identifiers: Seq[Identifier]) extends Locatable {
@@ -332,7 +332,7 @@ sealed trait ContextItem extends ASTNode
  *
  * @example {{{ use ieee.std_logic_1164.all; std.standard.all; ieee.math_complex."+"; }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.use_clause]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.use_clause]]
  * @param names the names of the symbols to import in the current scope of the symbol table
  */
 final case class UseClause(position: Position, names: Seq[SelectedName]) extends declarativeItems.DeclarativeItem with ContextItem
@@ -347,7 +347,7 @@ final case class ContextReference(position: Position, contexts: Seq[SelectedName
  * grammar: <pre> (design_unit)+ EOF </pre>
  *
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.design_file]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.design_file]]
  * @param designUnits the design units in this design file
  */
 final case class DesignFile(designUnits: Seq[DesignUnit]) extends ASTNode {
@@ -368,7 +368,7 @@ final case class DesignUnit(contextItems: Seq[ContextItem], libraryUnit: Library
  * Base class for all library units
  *
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.library_unit]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.library_unit]]
  */
 sealed trait LibraryUnit extends ASTNode {
   val symbol: Symbol
@@ -401,7 +401,7 @@ final case class ConfigurationDeclaration(position: Position, identifier: Identi
  * end architecture rtl;
  * }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.architecture_body]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.architecture_body]]
  * @param entityName the name of the entity to which this architecture body is associated
  * @param concurrentStatements the concurrent statments in this architecture body
  */
@@ -428,7 +428,7 @@ final case class EntityDeclaration(position: Position, identifier: Identifier, g
  * </pre>
  *
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.package_declaration]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.package_declaration]]
  * @param genericInterfaceList generic interface list
  * @param genericAssociationList generic associations list
  */
@@ -446,7 +446,7 @@ final case class PackageDeclaration(position: Position, identifier: Identifier, 
  * </pre>
  *
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.package_body]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.package_body]]
  */
 final case class PackageBodyDeclaration(position: Position, identifier: Identifier, declarativeItems: Seq[DeclarativeItem], endIdentifier: Option[Identifier], symbol: PackageSymbol = null) extends LibraryUnit with DeclarativeItem
 
@@ -468,16 +468,16 @@ import at.jku.ssw.openvc.symbolTable.dataTypes.ProtectedType
  * Base class for all declarative items
  *
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.entity_declarative_item]] ams_simultaneous_procedural_declarative_item
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.block_declarative_item]]
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.configuration_declarative_item]]
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.package_declarative_item]]
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.package_body_declarative_item]]
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.subprogram_declarative_item]]
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.protected_type_declarative_item]]
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.protected_type_body_declarative_item]]
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.process_declarative_item]]
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.ams_simultaneous_procedural_declarative_item]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.entity_declarative_item]] ams_simultaneous_procedural_declarative_item
+ * @see [[at.jku.ssw.openvc.parser.Parser.block_declarative_item]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.configuration_declarative_item]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.package_declarative_item]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.package_body_declarative_item]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.subprogram_declarative_item]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.protected_type_declarative_item]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.protected_type_body_declarative_item]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.process_declarative_item]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.ams_simultaneous_procedural_declarative_item]]
  */
 sealed trait DeclarativeItem extends ASTNode
 
@@ -497,7 +497,7 @@ final case class AttributeSpecification(position: Position, identifier: Identifi
  *
  * @example {{{ attribute myAttribute : string; }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.attribute_declaration]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.attribute_declaration]]
  * @param identifier the name of the attribute
  * @param typeName the type of the attribute
  */
@@ -532,7 +532,7 @@ abstract sealed class ObjectDeclaration extends DeclarativeItem {
  *
  * @example {{{ variable i : INTEGER range 0 to 99 := 0; }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.variable_declaration]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.variable_declaration]]
  * @param isShared true if this is a shared variable declaration
  * @param initialValue the optional initial value of the variables
  */
@@ -546,7 +546,7 @@ final case class VariableDeclaration(position: Position, isShared: Boolean, iden
  *
  * @example {{{ constant pi : real := 3.141592; }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.constant_declaration]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.constant_declaration]]
  * @param value if None this are deferred constants else it specifies the value of the constants
  */
 final case class ConstantDeclaration(position: Position, identifiers: Seq[Identifier], subType: SubTypeIndication, value: Option[Expression], symbols: Seq[RuntimeSymbol] = Seq())
@@ -559,7 +559,7 @@ final case class ConstantDeclaration(position: Position, identifiers: Seq[Identi
  *
  * @example {{{ file f : myFileType open write_mode is "test.dat"; }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.file_declaration]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.file_declaration]]
  * @param openKind the kind of the file (read_mode,write_mode or append_mode)
  * @param logicalName the name of the file
  */
@@ -599,7 +599,7 @@ final case class SignalDeclaration(position: Position, identifiers: Seq[Identifi
  * end component myComponent;
  * }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.component_declaration]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.component_declaration]]
  * @param identifier the name of the component
  * @param genericInterfaceList the generics of the component
  * @param portInterfaceList the ports of the component
@@ -616,7 +616,7 @@ final case class ComponentDeclaration(position: Position, identifier: Identifier
  *
  * @example {{{ subtype myType is integer range 5 to 10; }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.subtype_declaration]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.subtype_declaration]]
  * @param identifier the name of the new subtype
  * @param subType the the type of the new subtype
  */
@@ -679,7 +679,7 @@ object GroupTemplateDeclaration {
  *
  * @example {{{ group PIN2PIN is (signal, signal); }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.group_template_declaration]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.group_template_declaration]]
  * @param entries the entity class entires for this template
  */
 final case class GroupTemplateDeclaration(position: Position, identifier: Identifier, entries: Seq[GroupTemplateDeclaration.EntityClassEntry]) extends DeclarativeItem
@@ -719,7 +719,7 @@ enumeration_type_definition
  *  </pre>
  *
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.type_declaration]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.type_declaration]]
  */
 abstract sealed class AbstractTypeDeclaration extends DeclarativeItem {
   /**
@@ -748,7 +748,7 @@ final case class IncompleteTypeDeclaration(position: Position, identifier: Ident
  * @example {{{ type myInteger is range 0 to 10; }}} {{{ type myInteger is range a'range }}}
  *
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.integer_or_floating_point_type_definition]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.integer_or_floating_point_type_definition]]
  * @param range the range of the new integer or real type
  */
 final case class IntegerOrFloatingPointTypeDefinition(position: Position, identifier: Identifier, range: Range, dataType: DataType = NoType) extends AbstractTypeDeclaration
@@ -761,7 +761,7 @@ final case class IntegerOrFloatingPointTypeDefinition(position: Position, identi
  * @example {{{ type myAccess is integer; }}}
  *
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.access_type_definition]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.access_type_definition]]
  * @param subType the type of the access type
  */
 final case class AccessTypeDefinition(position: Position, identifier: Identifier, subType: SubTypeIndication, dataType: DataType = NoType) extends AbstractTypeDeclaration
@@ -790,7 +790,7 @@ final case class PhysicalTypeDefinition(position: Position, identifier: Identifi
  * @example {{{ type myFile is file of integer; }}}
  *
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.file_type_definition]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.file_type_definition]]
  * @param typeName the type of the file
  */
 final case class FileTypeDefinition(position: Position, identifier: Identifier, typeName: SelectedName, dataType: DataType = NoType) extends AbstractTypeDeclaration
@@ -813,7 +813,7 @@ final case class FileTypeDefinition(position: Position, identifier: Identifier, 
  * @example {{{ type myArray is array (integer RANGE <>, integer RANGE <> ) of integer; }}} {{{ type myArray is array (0 to 10, 20 to 30) of real; }}}
  *
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.array_type_definition]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.array_type_definition]]
  * @param dimensions the information about the dimension of the array type
  */
 final case class ArrayTypeDefinition(position: Position, identifier: Identifier, dimensions: Either[Seq[SelectedName], Seq[DiscreteRange]], subType: SubTypeIndication, dataType: DataType = NoType) extends AbstractTypeDeclaration
@@ -826,7 +826,7 @@ final case class ArrayTypeDefinition(position: Position, identifier: Identifier,
  * @example {{{ type myEnum is ('0', '1', 'H', 'L'); }}}
  *
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.enumeration_type_definition]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.enumeration_type_definition]]
  * @param elements the different enumeration values
  */
 final case class EnumerationTypeDefinition(position: Position, identifier: Identifier, elements: Seq[Identifier], dataType: DataType = NoType) extends AbstractTypeDeclaration
@@ -866,7 +866,7 @@ import at.jku.ssw.openvc.symbolTable.symbols.{SignalSymbol, ConstantSymbol, Proc
  * Base class for all sequential statements
  *
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.sequential_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.sequential_statement]]
  */
 sealed trait SequentialStatement extends ASTNode {
   /**
@@ -898,7 +898,7 @@ final case class ThrowStatement(position: Position, message: String) extends Seq
  *
  * @example {{{ assert a==b report "a!=b" severity failure; }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.assertion_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.assertion_statement]]
  * @param condition the condition
  * @param reportExpression the optional report expression
  * @param severityExpression the optional severity expression
@@ -912,7 +912,7 @@ final case class AssertionStatement(position: Position, label: Option[Identifier
  *
  * @example {{{ wait on a,b until a for 10 ns; }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.wait_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.wait_statement]]
  * @param signals the optional signal names
  * @param untilCondition the optional condition
  * @param forExpression the optional time expression
@@ -927,7 +927,7 @@ final case class WaitStatement(position: Position, label: Option[Identifier], si
  *
  * @example {{{ next some_label when a!=b; }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.next_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.next_statement]]
  * @param loopLabel the label of the enclosing loop statement
  * @param condition the optional condition
  * @param loopStatement the position of the enclosing loop statement is used in the code generation phase to identify the jump labels
@@ -941,7 +941,7 @@ final case class NextStatement(position: Position, label: Option[Identifier], lo
  *
  * @example {{{ exit some_label when a!=b; }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.exit_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.exit_statement]]
  * @param loopLabel the label of the enclosing loop statement
  * @param condition the optional condition
  * @param loopStatement the position of the enclosing loop statement is used in the code generation phase to identify the jump labels
@@ -955,7 +955,7 @@ final case class ExitStatement(position: Position, label: Option[Identifier], lo
  *
  * @example {{{ null; }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.null_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.null_statement]]
  */
 final case class NullStatement(position: Position, label: Option[Identifier]) extends SequentialStatement
 
@@ -966,7 +966,7 @@ final case class NullStatement(position: Position, label: Option[Identifier]) ex
  *
  * @example {{{ report "some debug information" severity note; }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.report_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.report_statement]]
  * @param reportExpression the report expression
  * @param severityExpression the optional severity expression
  */
@@ -979,7 +979,7 @@ final case class ReportStatement(position: Position, label: Option[Identifier], 
  *
  * @example {{{ return a+b-c*5; }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.return_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.return_statement]]
  * @param expression the value to return
  * @param procedureSymbol the procedure which contains this return statement, else null
  */
@@ -1004,7 +1004,7 @@ final case class ReturnStatement(position: Position, label: Option[Identifier], 
  * | '''FOR''' identifier '''IN''' discrete_range
  * </pre>
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.loop_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.loop_statement]]
  */
 abstract sealed class AbstractLoopStatement extends SequentialStatement {
   /**
@@ -1027,7 +1027,7 @@ abstract sealed class AbstractLoopStatement extends SequentialStatement {
  * end loop;
  * }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.loop_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.loop_statement]]
  */
 final case class LoopStatement(position: Position, label: Option[Identifier], sequentialStatements: Seq[SequentialStatement], endLabel: Option[Identifier]) extends AbstractLoopStatement
 
@@ -1041,7 +1041,7 @@ final case class LoopStatement(position: Position, label: Option[Identifier], se
  * end loop;
  * }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.loop_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.loop_statement]]
  * @param condition the condition of the while loop
  */
 final case class WhileStatement(position: Position, label: Option[Identifier], condition: Expression, sequentialStatements: Seq[SequentialStatement], endLabel: Option[Identifier]) extends AbstractLoopStatement
@@ -1056,7 +1056,7 @@ final case class WhileStatement(position: Position, label: Option[Identifier], c
  * end loop;
  * }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.loop_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.loop_statement]]
  * @param identifier the name of the loop parameter
  * @param discreteRange the values to iterate over
  * @param symbol the symbol of the loop parameter
@@ -1068,7 +1068,7 @@ final case class ForStatement(position: Position, label: Option[Identifier], ide
  * Base class for all signal assignment statements
  *
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.signal_assignment_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.signal_assignment_statement]]
  */
 abstract sealed class SignalAssignmentStatement extends SequentialStatement
 
@@ -1079,7 +1079,7 @@ abstract sealed class SignalAssignmentStatement extends SequentialStatement
  *
  * @example {{{ a<=b when 0 }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.simple_signal_assignment]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.simple_signal_assignment]]
  * @param target the target of the assignment
  * @param delayMechanism the optional of the delays in the assignment
  * @param waveform the waveform to assign
@@ -1117,7 +1117,7 @@ final case class ConditionalForceAssignment(position: Position, label: Option[Id
  * Base class for all variable assignment statements
  *
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.variable_assignment_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.variable_assignment_statement]]
  */
 abstract sealed class VariableAssignmentStatement extends SequentialStatement
 
@@ -1128,7 +1128,7 @@ abstract sealed class VariableAssignmentStatement extends SequentialStatement
  *
  * @example {{{ a:=b*c*d-e; }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.return_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.return_statement]]
  * @param target the target of the assignment
  * @param expression the value to assign
  */
@@ -1157,7 +1157,7 @@ final case class SelectedVariableAssignment(position: Position, label: Option[Id
  *
  * @example {{{ mypackage.foo(a,b,c,d); }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.procedure_call_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.procedure_call_statement]]
  * @param name the name of the procedure to call
  * @param parameterAssociation the parameters of the procedure
  * @param symbol the procedure to call
@@ -1203,7 +1203,7 @@ object CaseStatement {
  * end case;
  * }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.case_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.case_statement]]
  * @param isMatchingCase when true then this is a matching case statement else it is a ordinary case statement
  * @param expression the expression of the case statement
  * @param alternatives the different ''when'' alternatives
@@ -1260,7 +1260,7 @@ object IfStatement {
  * end if;
  * }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.if_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.if_statement]]
  * @param ifThenList the target of the assignment
  * @param elseSequentialStatements the value to assign
  * @param endLabel the value to assign
@@ -1280,7 +1280,7 @@ import declarativeItems.DeclarativeItem
  * Base class for all concurrent statements
  *
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.concurrent_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.concurrent_statement]]
  */
 sealed trait ConcurrentStatement extends ASTNode {
   /**
@@ -1299,7 +1299,7 @@ sealed trait ConcurrentStatement extends ASTNode {
  * </pre>
  *
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.concurrent_signal_assignment_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.concurrent_signal_assignment_statement]]
  */
 abstract sealed class ConcurrentSignalAssignmentStatement extends ConcurrentStatement with sequentialStatements.WaveformAssignment {
   /**
@@ -1328,7 +1328,7 @@ object ConcurrentConditionalSignalAssignment {
    * grammar: <pre> waveform ['''WHEN''' condition] </pre>
    *
    * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
-   * @see [[at.jku.ssw.openvc.ast.parser.VHDLParser.conditional_waveforms]]
+   * @see [[at.jku.ssw.openvc.ast.parser.Parser.conditional_waveforms]]
    * @param waveform the different values for this alternative
    * @param condition the optional condition of the alternative
    */
@@ -1370,7 +1370,7 @@ object ConcurrentConditionalSignalAssignment {
  * end if;
  * }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.conditional_signal_assignment]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.conditional_signal_assignment]]
  * @param alternatives the different ''when'' alternatives
  */
 final case class ConcurrentConditionalSignalAssignment(position: Position, label: Option[Identifier], isPostponed: Boolean, target: Target, isGuarded: Boolean,
@@ -1384,7 +1384,7 @@ object ConcurrentSelectedSignalAssignment {
    * grammar: <pre> waveform '''WHEN''' choices </pre>
    *
    * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
-   * @see [[at.jku.ssw.openvc.ast.parser.VHDLParser.selected_waveform]]
+   * @see [[at.jku.ssw.openvc.ast.parser.Parser.selected_waveform]]
    * @param waveform the different values for this alternative
    * @param choices the choices of the alternative
    */
@@ -1424,7 +1424,7 @@ object ConcurrentSelectedSignalAssignment {
  * end case;
  * }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.selected_signal_assignment]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.selected_signal_assignment]]
  * @param expression the expression of the equivalent case statement
  * @param isMatchingCase is this a matching case statement see [[at.jku.ssw.openvc.sequentialStatement.CaseStatement]]
  * @param alternatives the different ''when'' alternatives
@@ -1439,7 +1439,7 @@ final case class ConcurrentSelectedSignalAssignment(position: Position, label: O
  *
  * @example {{{ foo: postponed mypackage.foo(a,b,c,d); }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.concurrent_procedure_call_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.concurrent_procedure_call_statement]]
  * @see [[at.jku.ssw.openvc.ast.sequentialStatements.ProcedureCallStatement]]
  * @param isPostponed postponed flag of the equivalent process
  * @param name the name of the procedure to call
@@ -1456,7 +1456,7 @@ final case class ConcurrentProcedureCallStatement(label: Option[Identifier], isP
  *
  * @example {{{ foo: postponed assert a==b report "a!=b" severity failure; }}}
  * @author <a href="mailto:chr_reisinger@yahoo.de">Christian Reisinger</a>
- * @see [[at.jku.ssw.openvc.parser.VHDLParser.concurrent_assertion_statement]]
+ * @see [[at.jku.ssw.openvc.parser.Parser.concurrent_assertion_statement]]
  * @see [[at.jku.ssw.openvc.ast.sequentialStatements.AssertionStatement]]
  * @param isPostponed postponed flag of the equivalent process
  * @param condition the condition
