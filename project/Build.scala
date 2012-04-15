@@ -18,7 +18,7 @@ object OpenVCBuild extends Build {
     ProguardPlugin.proguardSettings /*++ sbtantlr.SbtAntlrPlugin.antlrSettings*/ ++ Seq(
     name := "OpenVC",
     organization := "com.github.chrreisinger",
-    scalaVersion := "2.9.1",
+    scalaVersion := "2.9.2",
     //TODO resources := Seq("NOTICE.txt", "LICENSE.txt"), // ++ (path("licenses") * "*"),
     javacOptions ++= Seq("-source", "1.7", "-target", "1.7"),
     scalacOptions ++= Seq("-deprecation", "-unchecked", "-g:vars", "-target:jvm-1.5", "-explaintypes"),
