@@ -1,15 +1,15 @@
 \chapter{Architektur}
 {\em 
-In diese Kapitel wird die Architektur erklï¿½rt, dynamische sowie statische. Es wird dabei erklï¿½rt wie VHDL Source Code verarbeitet wird.
+In diese Kapitel wird die Architektur erläutert, dynamische sowie statische. Es wird dabei erklärt wie VHDL Source Code durch den Compiler verarbeitet wird.
 }
 \section{statische und dynamiche Architektur}
 \section{Scanner/Parser mit Antlr}
 \begin{quotation}
-Eine Grammatik heiï¿½t LL(1) (d.h. analysierbar von links nach rechts mit linkskanonischen Ableitungen und 1 Vorgriffssymbol), wenn an jeder Stelle, an der man zwischen mehreren Alternativen wï¿½hlen kann, gilt, dass die terminalen Anfï¿½nge dieser Alternativen paarweise disjunkt sind. Mit anderen Worten: der Parser muss jederzeit mit einem einzigen Vorgriffssymbol entscheiden kï¿½nnen, welche von mehreren mï¿½glichen Alternativen er wï¿½hlen soll. \cite{moess}
+Eine Grammatik heißt LL(1) (d.h. analysierbar von links nach rechts mit linkskanonischen Ableitungen und einem Vorgriffssymbol), wenn an jeder Stelle, an der man zwischen mehreren Alternativen wählen kann, gilt, dass die terminalen Anfänge dieser Alternativen paarweise disjunkt sind. Mit anderen Worten: Der Parser muss jederzeit mit einem einzigen Vorgriffssymbol entscheiden können, welche von mehreren möglichen Alternativen er wählen soll. \cite{moess}
 \end{quotation}
 
-Die im Standard \cite{ieee} beschriebene Syntax liegt bereits in Extended Backus-Naur Form (EBNF) \cite{wirth} vor, weist aber einige LL(1) Konflikte auf, die vorher behoben wurden,.
-In der Beschreibung von Coco/R [Mï¿½ss03] werden drei verschiedene Mï¿½glichkeiten erï¿½rtert, wie diese Konflikte gelï¿½st werden kï¿½nnen. Mit Hilfe dieser drei Varianten ist es auch gelungen, die Grammatik in eine fï¿½r Coco/R valide LL(1) Form umzuwandeln. Die drei Ansï¿½tze zur Behebung der Konflikte werden nachstehend erï¿½rtert.
+Die im Standard \cite{ieee} beschriebene Syntax liegt bereits in Extended Backus-Naur Form (EBNF) \cite{wirth} vor, weist aber einige LL(1) Konflikte auf, die vorher behoben wurden.
+In der Beschreibung von Coco/R [Möss03] werden drei verschiedene Möglichkeiten erläutert, wie diese Konflikte gelöst werden können. Mit Hilfe dieser drei Varianten ist es auch gelungen, die Grammatik in eine für Antlr valide LL(1) Form umzuwandeln. Die drei Ansätze zur Behebung der Konflikte werden nachstehend erläutert.
 
 \subsection{Faktorisierung}
 Bei der Faktorisierung werden gemeinsame Teile herausgezogen und an den Anfang der Produktion gestellt. Z.B. kann die folgende Produktion
@@ -20,15 +20,15 @@ ohne Konflikte umgewandelt werden.
 \subsection{Umwandlung in Iterationen}
 Linksrekursion stellt in LL(k) Sprachen im Gegensatz zu LR basierten immer ein Problem dar. In der Produktion
 \begin{center} A = A b | c. \end{center} 
-starten beide Alternativen mit c. Durch eine Umwandlung der Rekursion in eine Iteration kann dieses Problem gelï¿½st werden, z.B wird die Produktion A zu
+starten beide Alternativen mit c. Durch eine Umwandlung der Rekursion in eine Iteration kann dieses Problem gelöst werden, z.B wird die Produktion A zu
 \begin{center} A' = c \{b\}. \end{center} 
-\subsection{Einsatz von Conflict Resolvers}
-Bei dem Einsatz von Conflict Resolvers kann unterschieden werden, wie viele Tokens der Parser vorausschauen muss, um eine Entscheidung zu treffen.
+\subsection{Einsatz von \textit{Conflict Resolvers}}
+Bei dem Einsatz von \textit{Conflict Resolvers} kann unterschieden werden, wie viele Tokens der Parser vorausschauen muss, um eine Entscheidung zu treffen.
 
-\subsubsection{Konstante Anzahl von Lookahead Tokens}
-Diese Fï¿½lle kï¿½nnten meistens auch durch den Einsatz von Faktorisierung gelï¿½st werden, aber die Lesbarkeit der Grammatik wï¿½rde darunter leiden. Durch die Berï¿½cksichtigung von mehreren Tokens in die Entscheidung verhï¿½lt sich der Parser effektiv wie ein LL(k) basierter.
+\subsubsection{Konstante Anzahl von \textit{Lookahead Tokens}}
+Diese Fälle könnten meistens auch durch den Einsatz von Faktorisierung gelöst werden, aber die Lesbarkeit der Grammatik würde darunter leiden. Durch die Berücksichtigung von mehreren Tokens in die Entscheidung verhält sich der Parser effektiv wie ein LL(k) basierter.
 
-\subsubsection{Unbekannte Anzahl von Lookahead Tokens}
+\subsubsection{Unbekannte Anzahl von \textit{Lookahead Tokens}}
 Hier muss der Parser beliebig viele Tokens konsumieren und wird dabei in einen LL(*) basierten umgewandelt. [Par07]
 
 \section{AST}

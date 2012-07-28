@@ -4,6 +4,7 @@
 \usepackage{listings} %wird für code listings verwendet
 \usepackage{color}
 \usepackage{pdfpages} %wird für includepdf verwendet
+\usepackage{graphicx} %wird für includeimage verwendet
 %\usepackage[xindy,toc]{glossaries}
 \usepackage[T1]{fontenc} %damit sonderzeichen wie | richtig angezeigt werden
 \usepackage[latin1]{inputenc} %damit Umlaute verwendet werden können
@@ -11,6 +12,7 @@
 \usepackage{todonotes} %Packet für TODOs
 \usepackage{setspace} %für Zeilenabstand
 \usepackage{sectsty} %damit der Abstand der Überschriften verändert werden kann
+\usepackage{datetime} %für \monthname{}
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
 \definecolor{mauve}{rgb}{0.58,0,0.82}
@@ -47,7 +49,7 @@
 \setlength\parindent{0pt} %Schaltet das automatische Einrücken für einen neuen Absatz aus
 %\selectlanguage{\german} %deutsch als Sprache für Überschriften
 %\pagestyle{headings} %Kapitelüberschrift und Seitenzahl in der Kopfzeile
-%\pagestyle{fancy} %fany header and footer
+%\pagestyle{fancy} %fancy header and footer
 
 %Überschrift nach links schieben
 \sectionfont{\hspace{-1 cm}}
@@ -68,6 +70,7 @@
 \pagestyle{plain}
 %default format \renewcommand{\chaptermark}[1]{\markboth{\MakeUppercase{\chaptername\ \thechapter.\ #1}}{}}
 \renewcommand{\chaptermark}[1]{\markboth{\textit{#1}}{}} %format vom text im header 
+\newcommand{\myaddcontentsline}[3]{\begin{singlespace} \addcontentsline{#1}{#2}{\vspace{-2ex} #3} \end{singlespace}} %\addcontentsline{toc}{chapter}{Lebenslauf}
 
 \renewcommand{\lstlistlistingname}{Quellcodeverzeichnis}
 \renewcommand{\lstlistingname}{Quellcode}
@@ -79,11 +82,13 @@
 \renewcommand{\thepage}{\Roman{page}} %große römische Zahlen
 \include{abstract}
 %\setcounter{tocdepth}{3} %Inhaltsverzeichniss bis zur Tiefe 3 rendern
+\singlespacing
 \tableofcontents %Inhaltsverzeichniss
 \chaptermark{Inhaltsverzeichniss}
 \newpage
 \setcounter{page}{1} %Beginne wieder bei 1 zu zählen
 \renewcommand{\thepage}{\arabic{page}} %arabische Zahlen
+\onehalfspacing
 \include{chapter1}
 \include{chapter2}
 \include{chapter3}

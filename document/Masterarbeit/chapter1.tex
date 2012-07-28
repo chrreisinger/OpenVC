@@ -6,6 +6,15 @@ Zusätzlich wird wird eine Übersicht über die verschiedenen Themen die in den ein
 
 Die in VHDL beschriebenen Schaltungen müssen vor der Logiksynthese am Computer simuliert werden, um sie auf mögliche Fehler zu überprüfen. Die dazu benötigten Software-Werkzeuge sind bis auf eine Ausnahme nur von kommerziellen Anbietern erhältlich und für Studenten gar nicht oder nur für in der Größe beschränkte Schaltungen erhältlich.
 
+Diese Einschränkungen waren die Motivation dieser Arbeit und das Ziel dieser ist es, einen Compiler für einen ausreichend großen Teilbereich des VHDL 2002 Standards zu implementieren, um damit reale Chip-Designs erfolgreich simulieren zu können.
+
+Folgende Probleme sind dabei zu lösen:
+\begin{itemize}
+\item Es muss ein Parser erstellt werden und es soll darin durch semantische Aktionen ein Abstrakter Syntaxbaum erzeugt werden, der in weiteren Verarbeitungsschritten manipuliert werden kann.
+\item Im nächsten Schritt muss der erzeugte AST traversiert werden um die Symboltabelle zu verwalten damit die nötigen Typüberprüfungen durchgeführt werden können. Es soll auch darauf geachtet werden, dass für den Benutzer des Compilers gute und hilfreiche Fehlermeldungen erzeugt werden.
+\item Anschließend muss der erzeugte Zwischencode in JVM-Bytecode übersetzt werden. Dabei ist zu beachten, dass die Semantik der Sprache nicht verloren geht und wie eventuelle Beschränkungen der JVM zu umgehen sind (z.B out Parameter).
+\end{itemize}
+
 \section{Aufbau}
 Diese Masterabeit ist wie folgt aufgebaut:
 \begin{itemize}

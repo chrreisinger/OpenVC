@@ -1,32 +1,50 @@
 \chapter{VHDL}
 {\em 
-In diese Kapitel wird ein Überblick über die Sprache VHDL geben. Zuerst wird die Geschichte und Standards erläutert, anschließend die Sprache selbst.
+In diese Kapitel wird ein Überblick über die Sprache VHDL geben. Zuerst wird die Geschichte und die damit verbundenen Standards erläutert, anschließend die Sprache selbst.
 }
 \section{Geschichte}
 VHDL (Very High Speed Integrated Circuit Hardware Description Language oder auch VHSIC Hardware Description Language) ist eine vom IEEE standardisierte Sprache zur Beschreibung digitaler Schaltungen, die von Hardware Designern für aktuelle Designs verwendet wird.
 
-VDHL ist neben Verilog eine der weltweit am meisten genutzten Hardwarebeschreibungssprachen und hat sich in Europa zum "Quasi-Standard" entwickelt. Die erste Spezifikation der Sprache wurde in den frühen 1980er Jahren entwickelt und ist das Ergebnis von Normierungsbestrebungen eines Komitees, in dem die meisten größeren CAD-Anbieter und CAD-Nutzer, aber auch Vereinigungen wie die IEEE, vertreten waren. Der größte nordamerikanische Anwender, das US-Verteidigungsministerium, hat VHDL zum Durchbruch verholfen, indem es die Einhaltung der Syntax von VHDL als notwendige Voraussetzung für die Erteilung von Aufträgen gemacht hat. \cite{ash}
+VDHL ist neben Verilog eine der weltweit am meisten genutzten Hardwarebeschreibungssprachen und hat sich in Europa zum "'Quasi-Standard"' entwickelt. Die erste Spezifikation der Sprache wurde in den frühen 1980er Jahren entwickelt und ist das Ergebnis von Normierungsbestrebungen eines Komitees, in dem die meisten größeren CAD-Anbieter und CAD-Nutzer, aber auch Vereinigungen wie die IEEE, vertreten waren. Der größte nordamerikanische Anwender, das US-Verteidigungsministerium, hat VHDL zum Durchbruch verholfen, indem es die Einhaltung der Syntax von VHDL als notwendige Voraussetzung für die Erteilung von Aufträgen gemacht hat. \cite{ash}
 
-VHDL was originally developed at the behest of the U.S Department of Defense in order to document the behavior of the ASICs that supplier companies were including in equipment. That is to say, VHDL was developed as an alternative to huge, complex manuals which were subject to implementation-specific details.
+VHDL wurde ursprünglich entwickelt aufgrund der Forderung des US-Verteidigungsministerium, das komplexe Verhalten von ASICs das Zulieferer in
+ihren Geräten einbauten, zu dokumentieren. Mann kann daher sagen, VHDL wurde als Alternative zu großen, komplexen Handbüchern die implementierungs-spezifische Details enthalten, entwickelt.
 
-The idea of being able to simulate this documentation was so obviously attractive that logic simulators were developed that could read the VHDL files. The next step was the development of logic synthesis tools that read the VHDL, and output a definition of the physical implementation of the circuit.
+Die Idee das man in der Lage ist diese Dokumentation zu simulieren war natürlich so attraktiv, dass Logik-Simulatoren entwickelt wurden, die die VHDL Dateien lesen konnte. Der nächste Schritt war die Entwicklung von Logik-Synthese Tool die VHDL lesen konnten und die physische Implementierung des Schaltkreisses erzeugen konnten.
 
-Due to the Department of Defense requiring as much of the syntax as possible to be based on Ada, in order to avoid re-inventing concepts that had already been thoroughly tested in the development of Ada,[citation needed] VHDL borrows heavily from the Ada programming language in both concepts and syntax.
+Aufgrund der Vorderung des Ministerium das soviel wie möglich der Syntax auf Ada basieren solle, um zu vermeiden dass Konzepte die schon
+ausführlich getestet wurden während der Entwicklung von Ada, übernimmt VHDL viel von der Ada Programmiersprache sowohl in Konzepten als auch Syntax.
 
 \subsection{Versionen und Standards}
-Die Initiale Version von VHDL wurde unter dem IEEE Standard 1076-1987 veröffentlicht, und enthielt verschiedene Datentypen, numerische (integer and real), logische (bit and boolean), character und time, und arrays von bit und character (bit\_vector string)
+Die initiale Version von VHDL wurde unter dem IEEE Standard 1076-1987 veröffentlicht, und enthielt verschiedene Datentypen, numerische (integer and real), logische (bit and boolean), character und time, und arrays von bit und character (bit\_vector string)
 
-Danach wurde erkannt, dass sich mit den vorhanden Datentypen "multi-valued logic" wo ein Signal mehrere Zustände (undefiniert, schwach, stark) nicht modellieren lassen kann. Dieses Problem wurde mit dem IEEE 1164 Standard gelöst, der die zusätzlichen 9-wertige logische Datentypen scalar std\_ulogic und std\_ulogic\_vector definiert.
+Danach wurde erkannt, dass sich mit den vorhanden Datentypen "'multi-valued logic"' in dem  ein Signal mehrere Zustände (undefiniert, schwach, stark) annehmen kann, nicht modellieren lassen kann. Dieses Problem wurde mit dem IEEE 1164 Standard gelöst, der die zusätzlichen 9-wertige logische Datentypen scalar std\_ulogic und std\_ulogic\_vector definiert.
 
 Im Jahr 1993 wurde eine Aktualisierung des Standards veröffentlicht, der die Syntax konsistenter machte, den Zeichensatz auf ISO-8859-1 erweiterte und den XNOR Operator einführte.
 
-Kleiner Änderungen des Standards im Jahr 2002 und 2002 fügten VHDL unter anderem die schon den in Ada bekannten protected types hinzu, mit dem sich wechselseite Ausschlüsse definieren lassen können.
+Kleiner Änderungen des Standards im Jahr 2000 und 2002 fügten VHDL unter anderem die schon in Ada bekannten protected types hinzu, mit dem sich wechselseitige Ausschlüsse definieren lassen können.
 
-Neben dem IEEE Standard 1076, der die eigentliche Sprache definiert, gibt es zusätzlich noch verwandte die Sprache erweitern oder Funktionalität von verschiedenen Libraries beschreibt. Der Standard 1076.2 fügt mehr added better handling of real and complex data types, 1076.3 führt signed und unsigned Datentypen ein, mit denen arithmetische Operationen auf arrays ausgeführt werden können. IEEE Standard 1076.1 (besser bekannt als VHDL-AMS) beschreibt Erweiterungen für gemischte analog und digitale Schaltungen.
+Neben dem IEEE Standard 1076, der die eigentliche Sprache definiert, gibt es zusätzlich noch verwandte die die Sprache erweitern oder Funktionalität von verschiedenen Libraries beschreibt. Der Standard 1076.2 führt Datentypen und Funktionen für die bessere Behandlung von komplexen Zahlen ein, 1076.3 führt \textit{signed} und \textit{unsigned} Datentypen ein, mit denen arithmetische Operationen auf arrays ausgeführt werden können. IEEE Standard 1076.1 (besser bekannt als VHDL-AMS) beschreibt Erweiterungen für gemischte analog und digitale Schaltungen.
 
-Im Juni 2006, wurde durch eine technisches Komittee ein Enwurf für VHDL-2006 vorgelegt. Dieser Entwurf war vollkommen abwärtskompatibel mit älteren Versionen, fügte aber viele Erweiterungen hinzu die das Schreiben von Code erleichterten. Die wichtigste Änderung war, dass die verwandten Standards 1164, 1076.2, 1076.3 in den 1076 Standard hinzugefügt wurden. Zusätzlich wurden neue Operatoren , flexiblere Syntax für case und generate Statements und es wurde ein Interface zu C/C++ hinzugefügt.
+Im Juni 2006, wurde durch ein technisches Komitee ein Entwurf für VHDL-2006 vorgelegt. Dieser Entwurf war vollkommen abwärtskompatibel mit älteren Versionen, fügte aber viele Erweiterungen hinzu die das Schreiben von Code erleichtern. Die wichtigste Änderung war, dass die verwandten Standards 1164, 1076.2, 1076.3 in den 1076 Standard hinzugefügt wurden. Zusätzlich wurden neue Operatoren, flexiblere Syntax für \textit{case} und \textit{generate} Statements und ein Interface zu C/C++ hinzugefügt.
 
-Im Jahr 2008 wurde eine neuere Version dieses Entwurf, nachdem die bisher darin entdecken Probleme gelöst wurden, veröffentlicht. Anschließen wurde die letzte Version als IEEE 1076-2008 Standard im Januar 2009 veröffentlicht.
+Im Jahr 2008 wurde eine neuere Version dieses Entwurf, nachdem die bisher darin entdeckten Probleme gelöst wurden, veröffentlicht. Anschließen wurde die letzte Version als IEEE 1076-2008 Standard im Januar 2009 veröffentlicht.
 \section{Sprachumfang}
+\lstset{caption={Beispiel für ein Entity Statement},label=reg4Entity}
+\lstinputlisting{src/reg4Entity.vhd}
+\begin{figure}
+  \centering
+    \includegraphics[scale=0.75]{images/reg4Entity.png}
+    \caption{Schlatdiagramm der Reg4 Entity}
+\end{figure}
+
+\lstset{caption={Beispiel für ein Architecture Statement},label=reg4Behv}
+\lstinputlisting{src/reg4Behv.vhd}
+\begin{figure}
+  \centering
+    \includegraphics[scale=0.75]{images/reg4Behv.png}
+    \caption{Schlatdiagramm der Reg4 Behaviour}
+\end{figure}
+
 \lstset{caption={Beispiel für ein AND Gate},label=ANDGATE}
 \lstinputlisting{src/ANDGATE.vhd}
