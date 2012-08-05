@@ -1,0 +1,52 @@
+digraph {
+	ordering=out;
+	ranksep=.3;
+	node [shape=box, fixedsize=false, fontsize=11, fontname="Helvetica-bold", width=.25, height=.25];
+	edge [arrowsize=.5, color="black"]
+
+	LogicalExpression;
+	Relation;
+	AND;
+	Factor;
+	ShiftExpression;
+	LEQ;
+	Term;
+	NOT;
+	e;
+	None;
+	SimpleExpression;
+	SLL;
+	Literal;
+	c;
+	MUL;
+	d;
+	sign [label="None"]
+	a;
+	PLUS;
+	b;
+	text [label="1"]
+	INTEGER_LITERAL;
+
+	LogicalExpression -> Relation [label="left"]
+	LogicalExpression -> AND [label="operator"]
+	LogicalExpression -> Factor [label="right"]
+	Relation -> ShiftExpression [label="left"]
+	Relation -> LEQ [label="operator"]
+	Relation -> Term [label="right"]
+	Factor -> NOT [label="operator"]
+	Factor -> e [label="left"]
+	Factor -> None [label="right"]
+	ShiftExpression -> SimpleExpression [label="left"]
+	ShiftExpression -> SLL [label="operator"]
+	ShiftExpression -> Literal [label="right"]
+	Term-> c [label="left"]
+	Term-> MUL [label="operator"]
+	Term-> d [label="right"]
+	SimpleExpression -> sign [label="sign"]
+	SimpleExpression -> a [label="left"]
+	SimpleExpression -> PLUS [label="operator"]
+	SimpleExpression -> b [label="right"]
+	Literal -> text [label="text"]
+	Literal -> INTEGER_LITERAL [label="literalType"]
+	
+}

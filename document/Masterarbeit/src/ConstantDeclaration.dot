@@ -1,0 +1,27 @@
+digraph {
+	ordering=out;
+	ranksep=.3;
+	node [shape=box, fixedsize=false, fontsize=11, fontname="Helvetica-bold", width=.25, height=.25];
+	edge [arrowsize=.5, color="black"]
+
+	ConstantDeclaration;
+	List;
+	pi;
+	SubTypeIndication;
+	resolutionFunction [label="None"];
+	real; 
+	constraint [label="None"];
+	Literal;
+	text [label="3.14159_26535_89793_23846"]
+	REAL_LITERAL;
+
+	ConstantDeclaration-> List [label="identifiers"]
+	ConstantDeclaration -> SubTypeIndication [label="subtype"]
+	List -> pi
+	SubTypeIndication -> resolutionFunction [label="resolutionFunction"]
+	SubTypeIndication -> real [label="typeName"]
+	SubTypeIndication -> constraint [label="constraint"]
+	ConstantDeclaration  -> Literal [label="defaultExpression"]
+	Literal -> text [label="text"]
+	Literal -> REAL_LITERAL [label="literalType"]
+}

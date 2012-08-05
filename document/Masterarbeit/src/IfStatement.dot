@@ -1,0 +1,36 @@
+digraph {
+	ordering=out;
+	ranksep=.3;
+	node [shape=box, fixedsize=false, fontsize=11, fontname="Helvetica-bold", width=.25, height=.25];
+	edge [arrowsize=.5, color="black"]
+
+	IfStatement;
+	None;
+	ifList [label="List"];
+	elseList [label="List"];
+	IfThenpart1 [label="IfThenPart"];
+	IfThenpart2 [label="IfThenPart"];
+	List1 [label="List"];
+	List2 [label="List"];
+	expr1;
+	expr2;
+	statement1;
+	statement2;
+	statement3;
+
+	IfStatement-> None [label="label"]
+	IfStatement-> ifList [label="ifThenList"]
+	IfStatement-> elseList [label="elseStatements"]
+	ifList -> IfThenpart1
+	ifList -> IfThenpart2
+
+	IfThenpart1 -> expr1 [label="condition"]
+	IfThenpart1 -> List1 [label="statements"]
+	List1 -> statement1
+
+	IfThenpart2 -> expr2 [label="condition"]
+	IfThenpart2 -> List2 [label="statements"]
+	List2 -> statement2
+
+	elseList -> statement3
+}
