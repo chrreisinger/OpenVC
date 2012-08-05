@@ -13,6 +13,8 @@
 \usepackage{setspace} %für Zeilenabstand
 \usepackage{sectsty} %damit der Abstand der Überschriften verändert werden kann
 \usepackage{datetime} %für \monthname{}
+\usepackage{titletoc} % Inhaltsverzeichnis anpassen
+ 
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
 \definecolor{mauve}{rgb}{0.58,0,0.82}
@@ -43,8 +45,39 @@
 %  escapeinside={\%*}{*)},         % if you want to add a comment within your code
 %  morekeywords={*,...}            % if you want to add more keywords to the set
 }
+% taken from: http://tex.stackexchange.com/questions/42030/using-listings-package-to-colorize-the-source-code-of-antlr-grammar-file
+\lstdefinestyle{ANTLR}{
+    %basicstyle=\small\ttfamily\color{magenta},%
+    %breaklines=true,%                                      allow line breaks
+    moredelim=[s][\color{green!50!black}\ttfamily]{'}{'},% single quotes in green
+    moredelim=*[s][\color{black}\ttfamily]{options}{\}},%  options in black (until trailing })
+    commentstyle={\color{gray}\itshape},%                  gray italics for comments
+    morecomment=[l]{//},%                                  define // comment
+    emph={%
+        STRING%                                            literal strings listed here
+        },emphstyle={\color{blue}\ttfamily},%              and formatted in blue
+    alsoletter={:,|,;},%
+    morekeywords={:,|,;},%                                 define the special characters
+    %keywordstyle={\color{black}},%                         and format them in black
+}
 
-\onehalfspacing %1.5 Zeilen Abstand
+% —– Start: Angaben zur Formatierung von Überschriften —– %
+%from http://tom.hirschvogel.org/blog/latex-4-abstaende-im-inhaltsverzeichnis-festlegen/
+\titlecontents{chapter}[1.5em]{\addvspace{1pc}\bfseries}{\contentslabel{1.5em}}
+ {\hspace*{-1.5em}}{\titlerule*[0.3pc]{.}\contentspage}
+\titlecontents{section}[3.7em]{}{\contentslabel{2.2em}}{}
+ {\titlerule*[0.3pc]{.}\contentspage}
+\titlecontents{subsection}[6.7em]{}{\contentslabel{2.95em}}{}
+ {\titlerule*[0.3pc]{.}\contentspage}
+\titlecontents{subsubsection}[10.6em]{}{\contentslabel{3.8em}}{}
+ {\titlerule*[0.3pc]{.}\contentspage}
+\titlecontents{paragraph}[15.25em]{}{\contentslabel{4.6em}}{}
+ {\titlerule*[0.3pc]{.}\contentspage} 
+
+\setcounter{tocdepth}{4}
+\setcounter{secnumdepth}{4}
+ % —– Ende: Angaben zur Formatierung von Überschriften —– %
+ 
 \addtolength{\parskip}{\baselineskip} %Macht den Abstand eines Absatzes genau eine Zeile groß.
 \setlength\parindent{0pt} %Schaltet das automatische Einrücken für einen neuen Absatz aus
 %\selectlanguage{\german} %deutsch als Sprache für Überschriften
@@ -66,11 +99,8 @@
 \renewcommand{\headrulewidth}{0.4pt} %obere Trennlinie
 %\renewcommand{\footrulewidth}{0.4pt} %untere Trennlinie
 }
-
+%Legt die Art des Seitenformats für alle nachfolgenden Seiten fest. Die Voreinstellung plain steht für eine zentrierte Seitennummer am Seitenfuß. Durch empty erreicht man Seiten, die keinerlei Kopf oder Fuß enthalten. headings erzeugt eine Kopfzeile aus der Seitennummer und der Überschrift des laufenden Abschnitts. myheadings schließlich erlaubt es, den Seitenkopf selbst mit den markright und markboth-Befehlen zu definieren.
 \pagestyle{plain}
-%default format \renewcommand{\chaptermark}[1]{\markboth{\MakeUppercase{\chaptername\ \thechapter.\ #1}}{}}
-\renewcommand{\chaptermark}[1]{\markboth{\textit{#1}}{}} %format vom text im header 
-\newcommand{\myaddcontentsline}[3]{\begin{singlespace} \addcontentsline{#1}{#2}{\vspace{-2ex} #3} \end{singlespace}} %\addcontentsline{toc}{chapter}{Lebenslauf}
 
 \renewcommand{\lstlistlistingname}{Quellcodeverzeichnis}
 \renewcommand{\lstlistingname}{Quellcode}
@@ -80,6 +110,7 @@
 \setcounter{page}{1} %Beginne wieder bei 1 zu zählen
 
 \renewcommand{\thepage}{\Roman{page}} %große römische Zahlen
+\onehalfspacing %1.5 Zeilen Abstand
 \include{abstract}
 %\setcounter{tocdepth}{3} %Inhaltsverzeichniss bis zur Tiefe 3 rendern
 \singlespacing

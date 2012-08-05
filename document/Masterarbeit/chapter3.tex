@@ -1,8 +1,18 @@
-\chapter{Architektur}
+\chapter{Architektur des OpenVC Compilers}
 {\em 
-In diese Kapitel wird die Architektur erläutert, dynamische sowie statische. Es wird dabei erklärt wie VHDL Source Code durch den Compiler verarbeitet wird.
+In diese Kapitel wird die Architektur erläutert, dynamische sowie statische. Es wird dabei erklärt wie VHDL Source Code durch den OpenVC Compiler verarbeitet wird.
 }
-\section{statische und dynamiche Architektur}
+\section{Statische und dynamiche Architektur}
+\subsection{Phasen}
+Der Compiler verarbeitet den Source Code in vier verschiedenen Phasen
+\begin{figure}
+  \centering
+    \includegraphics[scale=0.7]{images/CompilerPhasen.png}
+    \caption{Die vier Phasen des Compiler}
+\end{figure}
+
+\subsection{Klassenübersicht}
+\todo{Text}
 \section{Scanner/Parser mit Antlr}
 \begin{quotation}
 Eine Grammatik heißt LL(1) (d.h. analysierbar von links nach rechts mit linkskanonischen Ableitungen und einem Vorgriffssymbol), wenn an jeder Stelle, an der man zwischen mehreren Alternativen wählen kann, gilt, dass die terminalen Anfänge dieser Alternativen paarweise disjunkt sind. Mit anderen Worten: Der Parser muss jederzeit mit einem einzigen Vorgriffssymbol entscheiden können, welche von mehreren möglichen Alternativen er wählen soll. \cite{moess}
@@ -17,20 +27,75 @@ Bei der Faktorisierung werden gemeinsame Teile herausgezogen und an den Anfang d
 in die Produktion A'
 \begin{center} A' = a b (c | d). \end{center} 
 ohne Konflikte umgewandelt werden.
+\todo{Beispiel}
+%\lstset{caption={}}
+%\lstinputlisting[style=ANTLR]{src/test.g}
+
 \subsection{Umwandlung in Iterationen}
 Linksrekursion stellt in LL(k) Sprachen im Gegensatz zu LR basierten immer ein Problem dar. In der Produktion
 \begin{center} A = A b | c. \end{center} 
 starten beide Alternativen mit c. Durch eine Umwandlung der Rekursion in eine Iteration kann dieses Problem gelöst werden, z.B wird die Produktion A zu
-\begin{center} A' = c \{b\}. \end{center} 
+\begin{center} A' = c \{b\}. \end{center}
+\todo{Beispiel}
 \subsection{Einsatz von \textit{Conflict Resolvers}}
 Bei dem Einsatz von \textit{Conflict Resolvers} kann unterschieden werden, wie viele Tokens der Parser vorausschauen muss, um eine Entscheidung zu treffen.
 
 \subsubsection{Konstante Anzahl von \textit{Lookahead Tokens}}
 Diese Fälle könnten meistens auch durch den Einsatz von Faktorisierung gelöst werden, aber die Lesbarkeit der Grammatik würde darunter leiden. Durch die Berücksichtigung von mehreren Tokens in die Entscheidung verhält sich der Parser effektiv wie ein LL(k) basierter.
+\todo{Beispiel}
 
 \subsubsection{Unbekannte Anzahl von \textit{Lookahead Tokens}}
 Hier muss der Parser beliebig viele Tokens konsumieren und wird dabei in einen LL(*) basierten umgewandelt. [Par07]
+\todo{Beispiel}
 
 \section{AST}
+\subsection{AST Konstruktion}
+\todo{Text}
+
+\subsection{AST Beispiel}
+Im folgenden Abschnitt wird anhand von konkreten Beispielen genauer verdeutlich, wie der konstruierte AST im Speicher dargestellt wird, wobei die einzelnen Kanten der Graphen die Variablen der verschiedenen Klassen darstellen. Es wird zuerst immer der entsprechende Programmcode gezeigt und anschließend der entsprechende Graph mit den AST-Knoten.
+
+\subsubsection{WhileStatement}
+\lstset{caption={},language=VHDL}
+\lstinputlisting{src/WhileStatement.vhd}
+\begin{figure}
+  \centering
+    \includegraphics[scale=0.6]{images/WhileStatement.png}
+    \caption{AST-Knoten für ein While-Statement}
+\end{figure}
+Ein While-Statement besteht aus einer Expression, die in der Variable \textit{expression} gespeichert wird und einer Liste von Statements die in \textit{statements} gespeichert werden.
+
+\subsubsection{IfStatement}
+\lstset{caption={}}
+\lstinputlisting{src/IfStatement.vhd}
+\begin{figure}
+  \centering
+    \includegraphics[scale=0.6]{images/IfStatement.png}
+    \caption{AST-Knoten für ein While-Statement}
+\end{figure}
+Ein If-Statement besteht aus mehreren Zweigen, wobei die einzelnen Zweige Instanzen der Klasse IfThenPart sind, wo die Condition und die Liste der Statements gespeichert werden. Die Variable elseStatements enthält die Statements aus dem else-Zweig.
+
+\subsubsection{LogicalExpression}
+\lstset{caption={}}
+\lstinputlisting{src/LogicalExpression.vhd}
+\begin{figure}
+  \centering
+    \includegraphics[scale=0.6]{images/LogicalExpression.png}
+    \caption{AST-Knoten für eine Logical-Expression}
+\end{figure}
+Eine Logical-Expression besteht wie alle Binary-Expression aus einer linken und rechten Expression und einem Operator der beide miteinader verknüpft.
+
+\subsubsection{ConstantDeclaration}
+\lstset{caption={}}
+\lstinputlisting{src/ConstantDeclaration.vhd}
+\begin{figure}
+  \centering
+    \includegraphics[scale=0.6]{images/ConstantDeclaration.png}
+    \caption{AST Knoten für eine Constant-Declaration}
+\end{figure}
+Die Deklaration für eine Konstante besteht aus einer Liste von Identifiers, einer Type Beschreibung und einem Default-Wert.
+
+\subsection{AST Manipulation}
+\todo{Text}
 \section{Symboltabelle}
 \section{Codeerzeugung}

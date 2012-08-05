@@ -7,44 +7,48 @@ VHDL (Very High Speed Integrated Circuit Hardware Description Language oder auch
 
 VDHL ist neben Verilog eine der weltweit am meisten genutzten Hardwarebeschreibungssprachen und hat sich in Europa zum "'Quasi-Standard"' entwickelt. Die erste Spezifikation der Sprache wurde in den frühen 1980er Jahren entwickelt und ist das Ergebnis von Normierungsbestrebungen eines Komitees, in dem die meisten größeren CAD-Anbieter und CAD-Nutzer, aber auch Vereinigungen wie die IEEE, vertreten waren. Der größte nordamerikanische Anwender, das US-Verteidigungsministerium, hat VHDL zum Durchbruch verholfen, indem es die Einhaltung der Syntax von VHDL als notwendige Voraussetzung für die Erteilung von Aufträgen gemacht hat. \cite{ash}
 
-VHDL wurde ursprünglich entwickelt aufgrund der Forderung des US-Verteidigungsministerium, das komplexe Verhalten von ASICs das Zulieferer in
-ihren Geräten einbauten, zu dokumentieren. Mann kann daher sagen, VHDL wurde als Alternative zu großen, komplexen Handbüchern die implementierungs-spezifische Details enthalten, entwickelt.
+VHDL wurde ursprünglich entwickelt aufgrund der Forderung des US-Vertei\-digungsministerium, das komplexe Verhalten von ASICs die Zulieferer in ihren Geräten einbauten, zu dokumentieren. So gesehen Mann kann daher sagen, VHDL wurde als Alternative zu großen, komplexen Handbüchern die implementierungs-spezifische Details enthalten, entwickelt.
 
-Die Idee das man in der Lage ist diese Dokumentation zu simulieren war natürlich so attraktiv, dass Logik-Simulatoren entwickelt wurden, die die VHDL Dateien lesen konnte. Der nächste Schritt war die Entwicklung von Logik-Synthese Tool die VHDL lesen konnten und die physische Implementierung des Schaltkreisses erzeugen konnten.
+Der Vorteil dieser simulierbaren Dokumentation war so bestechend, dass Logik-Simulatoren entwickelt wurden, die die VHDL Dateien lesen konnte. Der nächste Schritt war die Entwicklung von Logik-Synthese Tools die basierend auf dem VHDL-Code die physische Implementierung des Schaltkreisses erzeugen konnten.
 
 Aufgrund der Vorderung des Ministerium das soviel wie möglich der Syntax auf Ada basieren solle, um zu vermeiden dass Konzepte die schon
 ausführlich getestet wurden während der Entwicklung von Ada, übernimmt VHDL viel von der Ada Programmiersprache sowohl in Konzepten als auch Syntax.
 
-\subsection{Versionen und Standards}
-Die initiale Version von VHDL wurde unter dem IEEE Standard 1076-1987 veröffentlicht, und enthielt verschiedene Datentypen, numerische (integer and real), logische (bit and boolean), character und time, und arrays von bit und character (bit\_vector string)
+\section{Versionen und Standards von VHDL}
+Die initiale Version von VHDL wurde unter dem IEEE Standard 1076-1987 veröffentlicht, und enthielt verschiedene Datentypen, numerische (\textit{integer} und \textit{real}), logische (\textit{bit} und \textit{boolean}), \textit{character} und \textit{time}, und arrays von \textit{bit} und \textit{character} (bit\_vector string)
 
-Danach wurde erkannt, dass sich mit den vorhanden Datentypen "'multi-valued logic"' in dem  ein Signal mehrere Zustände (undefiniert, schwach, stark) annehmen kann, nicht modellieren lassen kann. Dieses Problem wurde mit dem IEEE 1164 Standard gelöst, der die zusätzlichen 9-wertige logische Datentypen scalar std\_ulogic und std\_ulogic\_vector definiert.
+Danach wurde erkannt, dass sich mit den vorhanden Datentypen \textit{bit} und \textit{boolean} "'multi-valued logic"', in dem  ein Signal die Zustände (undefiniert, schwach, stark) annehmen kann, nicht modellieren lassen kann. Dieses Problem wurde mit dem IEEE 1164 Standard gelöst, der die zusätzlichen 9-wertige logische Datentypen std\_ulogic und std\_ulogic\_vector definiert.
 
-Im Jahr 1993 wurde eine Aktualisierung des Standards veröffentlicht, der die Syntax konsistenter machte, den Zeichensatz auf ISO-8859-1 erweiterte und den XNOR Operator einführte.
+Im Jahr 1993 wurde eine Aktualisierung des Standards veröffentlicht, der vorallem die Syntax konsistenter machte, den Zeichensatz auf ISO-8859-1 erweiterte und den XNOR Operator einführte.
 
-Kleiner Änderungen des Standards im Jahr 2000 und 2002 fügten VHDL unter anderem die schon in Ada bekannten protected types hinzu, mit dem sich wechselseitige Ausschlüsse definieren lassen können.
+Kleiner Änderungen des Standards im Jahr 2000 und 2002 fügten VHDL unter anderem die schon in Ada bekannten \textit{protected types} hinzu, mit dem sich wechselseitige Ausschlüsse definieren lassen können.
 
 Neben dem IEEE Standard 1076, der die eigentliche Sprache definiert, gibt es zusätzlich noch verwandte die die Sprache erweitern oder Funktionalität von verschiedenen Libraries beschreibt. Der Standard 1076.2 führt Datentypen und Funktionen für die bessere Behandlung von komplexen Zahlen ein, 1076.3 führt \textit{signed} und \textit{unsigned} Datentypen ein, mit denen arithmetische Operationen auf arrays ausgeführt werden können. IEEE Standard 1076.1 (besser bekannt als VHDL-AMS) beschreibt Erweiterungen für gemischte analog und digitale Schaltungen.
 
-Im Juni 2006, wurde durch ein technisches Komitee ein Entwurf für VHDL-2006 vorgelegt. Dieser Entwurf war vollkommen abwärtskompatibel mit älteren Versionen, fügte aber viele Erweiterungen hinzu die das Schreiben von Code erleichtern. Die wichtigste Änderung war, dass die verwandten Standards 1164, 1076.2, 1076.3 in den 1076 Standard hinzugefügt wurden. Zusätzlich wurden neue Operatoren, flexiblere Syntax für \textit{case} und \textit{generate} Statements und ein Interface zu C/C++ hinzugefügt.
+Im Juni 2006 wurde durch ein technisches Komitee ein Entwurf für VHDL-2006 vorgelegt. Dieser Entwurf war vollkommen abwärtskompatibel mit älteren Versionen, fügte aber viele Erweiterungen hinzu, die das Schreiben von Code erleichtern. Die wichtigste Änderung war, dass die verwandten Standards 1164, 1076.2, 1076.3 in den 1076 Standard hinzugefügt wurden. Zusätzlich wurden neue Operatoren, flexiblere Syntax für \textit{case} und \textit{generate} Statements und ein Interface zu C/C++ hinzugefügt.
 
-Im Jahr 2008 wurde eine neuere Version dieses Entwurf, nachdem die bisher darin entdeckten Probleme gelöst wurden, veröffentlicht. Anschließen wurde die letzte Version als IEEE 1076-2008 Standard im Januar 2009 veröffentlicht.
+Im Jahr 2008 wurde eine neuere Version dieses Entwurf, nachdem die bisher darin entdeckten Probleme gelöst wurden, veröffentlicht. Anschließend wurde die letzte Version als IEEE 1076-2008 Standard im Januar 2009 veröffentlicht.
 \section{Sprachumfang}
 \lstset{caption={Beispiel für ein Entity Statement},label=reg4Entity}
 \lstinputlisting{src/reg4Entity.vhd}
 \begin{figure}
   \centering
     \includegraphics[scale=0.75]{images/reg4Entity.png}
-    \caption{Schlatdiagramm der Reg4 Entity}
+    \caption{Schaltungssymbol der Reg4 Entity}
 \end{figure}
 
 \lstset{caption={Beispiel für ein Architecture Statement},label=reg4Behv}
 \lstinputlisting{src/reg4Behv.vhd}
 \begin{figure}
   \centering
-    \includegraphics[scale=0.75]{images/reg4Behv.png}
-    \caption{Schlatdiagramm der Reg4 Behaviour}
+    \includegraphics[scale=0.6]{images/reg4Behv.png}
+    \caption{Schaltungssymbol der Reg4 Behaviour}
 \end{figure}
 
 \lstset{caption={Beispiel für ein AND Gate},label=ANDGATE}
 \lstinputlisting{src/ANDGATE.vhd}
+
+\todo{5 Seiten}
+\section{VHDL Compiler, Simulatoren und Synthesetools}
+\section{Leistungsumfang des OpenVC in Bezug auf VHDL-2002}
+VHDL 2002, Erweiterungen von 2008
