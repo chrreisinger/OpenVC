@@ -6,7 +6,7 @@ Danach wird der Unterschied zwischen Simulation und Synthese besprochen und der 
 \section{Geschichte}
 VHDL (Very High Speed Integrated Circuit Hardware Description Language oder auch VHSIC Hardware Description Language) ist eine vom IEEE standardisierte Sprache zur Beschreibung digitaler Schaltungen, die von Hardware Designern für aktuelle Designs verwendet wird.
 
-VDHL ist neben Verilog eine der weltweit am meisten genutzten Hardwarebeschreibungssprachen und hat sich in Europa zum "'Quasi-Standard"' entwickelt. Die erste Spezifikation der Sprache wurde in den frühen 1980er Jahren entwickelt und ist das Ergebnis von Normierungsbestrebungen eines Komitees, in dem die meisten größeren CAD-Anbieter und CAD-Nutzer, aber auch Vereinigungen wie die IEEE, vertreten waren. Der größte nordamerikanische Anwender, das US-Verteidigungsministerium, hat VHDL zum Durchbruch verholfen, indem es die Einhaltung der Syntax von VHDL als notwendige Voraussetzung für die Erteilung von Aufträgen gemacht hat. \cite{ash}
+VDHL ist neben Verilog eine der weltweit am meisten genutzten Hardwarebeschreibungssprachen und hat sich in Europa zum "'Quasi-Standard"' entwickelt. Die erste Spezifikation der Sprache wurde in den frühen 1980er Jahren entwickelt und ist das Ergebnis von Normierungsbestrebungen eines Komitees, in dem die meisten größeren CAD-Anbieter und CAD-Nutzer, aber auch Vereinigungen wie die IEEE, vertreten waren. Der größte nordamerikanische Anwender, das US-Verteidigungsministerium, hat VHDL zum Durchbruch verholfen, indem es die Einhaltung der Syntax von VHDL als notwendige Voraussetzung für die Erteilung von Aufträgen gemacht hat. \cite{Ashenden}
 
 VHDL wurde ursprünglich entwickelt aufgrund der Forderung des US-Verteidigungsministerium, das komplexe Verhalten von ASICs die Zulieferer in ihren Geräten einbauten, zu dokumentieren. So gesehen kann mann daher sagen, VHDL wurde als Alternative zu großen, komplexen Handbüchern die implementierungs-spezifische Details enthalten, entwickelt.
 
@@ -35,21 +35,21 @@ In VHDL wird der Source Code in Bibliotheken organisiert, wobei jede Bibliotheke
 und durch den Simulator ausführbaren VHDL-Code enthalten. Bibliotheken können folgende vier Teile enthalten:
 \begin{itemize}
 	\item \textit{package} globale Deklarationen
-	\item \textit{entity} Design – Sicht von Außen (black box)
+	\item \textit{entity} Design Sicht von Außen (black box)
 	\item \textit{architecture} Design Implementation
-	\item \textit{configuration} Festlegung einer Design-Version (Zuordnung: entity – architecture)
+	\item \textit{configuration} Festlegung einer Design-Version (Zuordnung: entity architecture)
 \end{itemize}
 
 Neben herstellereigenen- und benutzerdefinierten Bibliotheken gibt es zwei Standardbibliotheken:
 \begin{itemize}
 	\item \textit{work} Standard-Bibliothek des Benutzers. Wenn nicht anders angegeben, dann ist WORK die Bibliothek, mit der die Programme arbeiten.
 	\item \textit{std} enthält die beiden Packages \textit{standard} und \textit{TEXTIO} mit vordefinierten Datentypen und Funktionen.
-\end{itemize} \todo{VHDL Kompakt}
+\end{itemize} \cite{VHDLKompakt}
 
 \subsection{Package}
 Deklarationen die in mehreren Designs benutzt werden, z.B.: Unterprogramme(Funktionen, Prozeduren) oder Typen, Konstanten, lassen sich in Packages 
 sammeln und in Bibliotheken hinterlegen. Neben eigenen Bibliotheken werden so auch die Zellbibliotheken der ASIC-Hersteller ausgeliefert. 
-Auch die Hersteller von CAD-Software stellen Hilfsroutinen und Funktionen als Packages bereit, die den Umgang mit den Werkzeugen erleichtern. \todo{VHDL Kompakt}
+Auch die Hersteller von CAD-Software stellen Hilfsroutinen und Funktionen als Packages bereit, die den Umgang mit den Werkzeugen erleichtern. \cite{VHDLKompakt}
 
 Durch verschiedene Standards werden eine Reihe von Packages definiert um den Entwickler ein Herstellerunabhängiges arbeiten zu ermöglichen:
 
