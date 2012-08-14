@@ -4,15 +4,32 @@ In diese Kapitel wird die Architektur erläutert, dynamische sowie statische. Es 
 }
 \section{Statische und dynamiche Architektur}
 \subsection{Phasen}
-Der Compiler verarbeitet den Source Code in vier verschiedenen Phasen
+OpenVC verarbeitet, wie all modernen Compiler, den Source Code in verschiedenen Phasen und ist diesen entsprechend gegliedert. Diese Phasen übernehmen verschiedene unabhängige Teiltaufgaben und werden werden sequentiell ausgeführt. 
+
 \begin{figure}
   \centering
     \includegraphics[scale=0.7]{images/CompilerPhasen.png}
     \caption{Die vier Phasen des Compiler}
 \end{figure}
 
+\begin{itemize}
+\item
+Im \textit{SyntaxAnalyzer} ist der Parser gekapselt und überprüft, ob der eingelesene Quellcode der Grammatik von VHDL entspricht. Dabei wird die Eingabe in einen Syntaxbaum umgewandelt. Falls der Quellcode nicht zur Grammatik passt, werden vom Parser passende Syntaxfehler generiert.
+
+\item
+In der zweiten Phase, dem \textit{PreAnalyzerTransformer}, werden Syntaxbaum Manipulationen durchgeführt. Dabei werden verschiedene VHDL 2008 AST-Knoten in VHDL-2002 Knoten umgewandelt um die folgenden Phasen zu vereinfachen. Durch diese Umwandlung werden diese Konstrukte aus dem Baum entfernt und müssen daher nicht behandelt werden.
+
+\item
+Der \textit{SemanticAnalyzert} überprüft die statische Semantik von VHDL, also über die syntaktische Analyse hinausgehende Bedingungen an den Source Code. Zum Beispiel muss eine Variable deklariert sein, bevor sie verwendet wird, und Zuweisungen müssen mit kompatiblen Datentypen erfolgen. Dies wurde mit Hilfe von Attributgrammatiken realisiert und als Ausgabe entsteht daher ein attributierten Syntaxbaum. Dabei werden die Knoten des vom Parser generierten Syntaxbaums mit Attributen versehen, die Informationen enthalten. \todo {cit Dragonbook}
+
+\item
+In der letzten Phase, dem \textit{Backend}, wird der JVM Bytecode direkt aus dem attributierten Syntaxbaum generiert. Es gibt darin für
+jedes VHDL-Konstrukt eine Zuordnung zu JVM Bytecode und Semantik. Aufgrund der Tatsache, dass die JVM als Backend gewählt wurde, müssen keine Programmoptimierung und daher auch kein Zwischencode erzeugt werden, da die gesamte Optimierung durch die virtuelle Maschine zur Laufzeit durchgeführt wird.
+\end{itemize}
+
 \subsection{Klassenübersicht}
 \todo{Text}
+\todo{Klassendiagramme}
 \section{Scanner/Parser mit Antlr}
 \begin{quotation}
 Eine Grammatik heißt LL(1) (d.h. analysierbar von links nach rechts mit linkskanonischen Ableitungen und einem Vorgriffssymbol), wenn an jeder Stelle, an der man zwischen mehreren Alternativen wählen kann, gilt, dass die terminalen Anfänge dieser Alternativen paarweise disjunkt sind. Mit anderen Worten: Der Parser muss jederzeit mit einem einzigen Vorgriffssymbol entscheiden können, welche von mehreren möglichen Alternativen er wählen soll. \cite{moess}
@@ -99,3 +116,8 @@ Die Deklaration für eine Konstante besteht aus einer Liste von Identifiers, eine
 \todo{Text}
 \section{Symboltabelle}
 \section{Codeerzeugung}
+Foreign Subprograms
+JVM Mapping von Datentypen (subtypes, Records, enums)
+Default Values
+Packages
+Statements

@@ -1,0 +1,44 @@
+%%% Header
+% Präambel ist ausgelagert
+\input{header_rudi}
+% Silben-Trennung ebenfalls
+\input{syllables}
+
+\begin{document}
+%%% Titel
+\pagenumbering{Roman}
+\includepdf{coversheet/coversheet.pdf}
+\setcounter{page}{1} %Beginne wieder bei 1 zu zählen
+\onehalfspacing
+\include{abstract}
+\singlespacing
+\tableofcontents %Inhaltsverzeichniss
+
+%%% actual content
+\newpage
+\pagenumbering{arabic}
+
+\onehalfspacing
+\include{chapter1}
+\include{chapter2}
+\include{chapter3}
+\include{chapter4}
+%\include{chapter5}
+%\include{appendix}
+\include{danksagung}
+\singlespacing
+\include{abbreviations}
+\listoffigures %Abbildungsverzeichnis
+%\listoftables %Tabellenverzeichnis
+\lstlistoflistings %Quellcodeverzeichnis
+
+%\bibliographystyle{apalike} %plain, ieeetr, alpha, acm
+%\bibliography{ma_ball}
+
+% Lebenslauf und Eidesstattliche Erklärung am Ende
+%\includepdf[pages=-, addtotoc={1, addchap, 0, Lebenslauf, sec:cv}]{lebenslauf/Lebenslauf.pdf}
+\includepdf{lebenslauf/Lebenslauf.pdf}
+\onehalfspacing
+\include{eidesstattliche_erklaerung}
+
+\end{document}
