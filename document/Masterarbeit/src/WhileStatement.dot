@@ -1,4 +1,5 @@
 digraph {
+	graph [ dpi = 300 ];
 	ordering=out;
 	ranksep=.3;
 	node [shape=box, fixedsize=false, fontsize=11, fontname="Helvetica-bold", width=.25, height=.25];
@@ -11,9 +12,9 @@ digraph {
 	statement1;
 	statement2;
 
-	WhileStatement -> None [label="label"]
-	WhileStatement -> expr [label="expression"]
-	WhileStatement -> List [label="statements"]
+	WhileStatement -> None [label=" label"]
+	WhileStatement -> expr [label=" expression"]
+	WhileStatement -> List [label=" statements"]
 	List -> statement1
 	List -> statement2
 }

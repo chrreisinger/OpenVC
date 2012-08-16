@@ -1,4 +1,5 @@
 digraph {
+	graph [ dpi = 300 ];
 	ordering=out;
 	ranksep=.3;
 	node [shape=box, fixedsize=false, fontsize=11, fontname="Helvetica-bold", width=.25, height=.25];
@@ -15,13 +16,13 @@ digraph {
 	text [label="3.14159_26535_89793_23846"]
 	REAL_LITERAL;
 
-	ConstantDeclaration-> List [label="identifiers"]
-	ConstantDeclaration -> SubTypeIndication [label="subtype"]
+	ConstantDeclaration-> List [label=" identifiers"]
+	ConstantDeclaration -> SubTypeIndication [label=" subtype"]
 	List -> pi
-	SubTypeIndication -> resolutionFunction [label="resolutionFunction"]
-	SubTypeIndication -> real [label="typeName"]
-	SubTypeIndication -> constraint [label="constraint"]
-	ConstantDeclaration  -> Literal [label="defaultExpression"]
-	Literal -> text [label="text"]
-	Literal -> REAL_LITERAL [label="literalType"]
+	SubTypeIndication -> resolutionFunction [label=" resolutionFunction"]
+	SubTypeIndication -> real [label=" typeName"]
+	SubTypeIndication -> constraint [label=" constraint"]
+	ConstantDeclaration  -> Literal [label=" defaultExpression"]
+	Literal -> text [label=" text"]
+	Literal -> REAL_LITERAL [label=" literalType"]
 }
