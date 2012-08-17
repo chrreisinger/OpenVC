@@ -14,6 +14,8 @@
 \usepackage{sectsty} %damit der Abstand der Überschriften verändert werden kann
 \usepackage{datetime} %für \monthname{}
 \usepackage{titletoc} % Inhaltsverzeichnis anpassen
+\usepackage{mdwlist} %sorgt für normale Textabstände in der Itemize-Umgebung
+%does not work \usepackage{underscore} %damit man underscrote ohne escape zeichen verwenden kann
  
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
@@ -78,7 +80,7 @@
 \setcounter{tocdepth}{4}
 \setcounter{secnumdepth}{4}
  % —– Ende: Angaben zur Formatierung von Überschriften —– %
- 
+
 \setlength\parindent{0pt} %Schaltet das automatische Einrücken für einen neuen Absatz aus
 %\selectlanguage{\german} %deutsch als Sprache für Überschriften
 %\pagestyle{headings} %Kapitelüberschrift und Seitenzahl in der Kopfzeile
@@ -104,11 +106,10 @@
 \pagestyle{plain}
 %default format \renewcommand{\chaptermark}[1]{\markboth{\MakeUppercase{\chaptername\ \thechapter.\ #1}}{}}
 \renewcommand{\chaptermark}[1]{\markboth{\textit{#1}}{}} %format vom text im header 
-\renewcommand{\markright}[1]{\markboth{\textit{#1}}{}} %format vom text im header 
+\newcommand{\myaddcontentsline}[3]{\begin{singlespace} \addcontentsline{#1}{#2}{\vspace{-2ex} #3} \end{singlespace}} %\addcontentsline{toc}{chapter}{Lebenslauf}
 
 \renewcommand{\lstlistlistingname}{Quellcodeverzeichnis}
 \renewcommand{\lstlistingname}{Quellcode}
-%\renewcommand{\contentsname}{Inhaltsverzeichnis}
 
 %\section{Kapitel} 1
 %\subsection{Unterkapitel} 1.1

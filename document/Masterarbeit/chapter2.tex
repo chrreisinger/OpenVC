@@ -4,65 +4,72 @@ In diese Kapitel wird ein Überblick über die Sprache VHDL geben. Zuerst wird die
 Danach wird der Unterschied zwischen Simulation und Synthese besprochen und der Funktionsumfang des OpenVC.
 }
 \section{Geschichte}
-VHDL (Very High Speed Integrated Circuit Hardware Description Language oder auch VHSIC Hardware Description Language) ist eine vom IEEE standardisierte Sprache zur Beschreibung digitaler Schaltungen, die von Hardware Designern für aktuelle Designs verwendet wird.
+VHDL (Very High Speed Integrated Circuit Hardware Description Language oder auch VHSIC Hardware Description Language) ist eine vom Institute of Electrical and Electronics Engineers (IEEE) standardisierte Sprache zur Beschreibung digitaler Schaltungen, die von Hardware Entwicklern für aktuelle Projekt verwendet wird.
 
-VDHL ist neben Verilog eine der weltweit am meisten genutzten Hardwarebeschreibungssprachen und hat sich in Europa zum "'Quasi-Standard"' entwickelt. Die erste Spezifikation der Sprache wurde in den frühen 1980er Jahren entwickelt und ist das Ergebnis von Normierungsbestrebungen eines Komitees, in dem die meisten größeren CAD-Anbieter und CAD-Nutzer, aber auch Vereinigungen wie die IEEE, vertreten waren. Der größte nordamerikanische Anwender, das US-Verteidigungsministerium, hat VHDL zum Durchbruch verholfen, indem es die Einhaltung der Syntax von VHDL als notwendige Voraussetzung für die Erteilung von Aufträgen gemacht hat. \cite{Ashenden}
+VDHL ist neben Verilog eine der zwei weltweit am meisten genutzten Hardwarebeschreibungssprachen und hat sich in Europa zum "'Quasi-Standard"' entwickelt. Die erste Spezifikation der Sprache wurde in den frühen 1980er Jahren entwickelt und ist das Ergebnis von Normierungsbestrebungen eines Komitees, in dem die meisten größeren Computer Aided Design (CAD)-Anbieter und CAD-Nutzer, aber auch Vereinigungen wie das IEEE, vertreten waren. Der größte nordamerikanische Anwender, das US-Verteidigungsministerium, hat VHDL zum Durchbruch verholfen, indem es die Einhaltung der Syntax von VHDL als notwendige Voraussetzung für die Erteilung von Aufträgen gemacht hat.
 
-VHDL wurde ursprünglich entwickelt aufgrund der Forderung des US-Verteidigungsministerium, das komplexe Verhalten von ASICs die Zulieferer in ihren Geräten einbauten, zu dokumentieren. So gesehen kann mann daher sagen, VHDL wurde als Alternative zu großen, komplexen Handbüchern die implementierungs-spezifische Details enthalten, entwickelt.
+VHDL wurde ursprünglich entwickelt aufgrund der Forderung des US-Verteidigungsministerium, das komplexe Verhalten von Application Specific Integrated Circuits (ASIC) die Zulieferer in ihren Geräten einbauten, zu dokumentieren. So gesehen kann mann daher sagen, VHDL wurde als Alternative zu großen, komplexen Handbüchern die implementierungsspezifische Details enthalten, entwickelt.
 
 Der Vorteil dieser simulierbaren Dokumentation war so bestechend, dass Logik-Simulatoren entwickelt wurden, die die VHDL Dateien lesen konnte. Der nächste Schritt war die Entwicklung von Logik-Synthese Tools die basierend auf dem VHDL-Code die physische Implementierung des Schaltkreisses erzeugen konnten.
 
 Aufgrund der Vorderung des Ministerium das soviel wie möglich der Syntax auf Ada basieren solle, um zu vermeiden dass Konzepte die schon
-ausführlich getestet wurden während der Entwicklung von Ada, wieder erfunden werden mussten, übernimmt VHDL viel von der Ada Programmiersprache sowohl in Konzepten als auch Syntax.
+ausführlich während der Entwicklung von Ada getestet wurden, wieder erfunden werden mussten, übernimmt VHDL viel von der Ada Programmiersprache sowohl in Konzepten als auch in der Syntax. 
+Im Gegensatz zu Ada ist aber VHDL nicht case-sensitive.\cite{Ashenden}
 
 \section{Versionen und Standards von VHDL}
-Die initiale Version von VHDL wurde unter dem IEEE Standard 1076-1987 veröffentlicht, und enthielt verschiedene Datentypen, numerische (\textit{integer} und \textit{real}), logische (\textit{bit} und \textit{boolean}), \textit{character} und \textit{time}, und arrays von \textit{bit} und \textit{character} (bit\_vector string)
+Die initiale Version von VHDL wurde unter dem IEEE Standard 1076-1987 veröffentlicht, und enthielt verschiedene Datentypen, numerische (\textit{integer} und \textit{real}), logische (\textit{bit} und \textit{boolean}), \textit{character} und \textit{time}, und arrays von \textit{bit} und \textit{character} (\textit{bit\_vector} und \textit{string}) \cite{VHDL87}
 
-Danach wurde erkannt, dass sich mit den vorhanden Datentypen \textit{bit} und \textit{boolean} "'multi-valued logic"', in dem  ein Signal die Zustände (undefiniert, schwach, stark) annehmen kann, nicht modellieren lassen kann. Dieses Problem wurde mit dem IEEE 1164 Standard gelöst, der die zusätzlichen 9-wertige logische Datentypen std\_ulogic und std\_ulogic\_vector definiert.
+Danach wurde erkannt, dass sich mit den vorhanden Datentypen \textit{bit} und \textit{boolean} "'multi-valued logic"', in dem  ein Signal die Zustände (undefiniert, schwach, stark) annehmen kann, nicht modellieren lassen kann. Dieses Problem wurde mit dem IEEE 1164 Standard gelöst, der die zusätzlichen 9-wertige logische Datentypen \textit{std\_ulogic} und \textit{std\_ulogic\_vector} definiert. \cite{VHDL_1164}
 
-Im Jahr 1993 wurde eine Aktualisierung des Standards veröffentlicht, der vorallem die Syntax konsistenter machte, den Zeichensatz auf ISO-8859-1 erweiterte und den XNOR Operator einführte.
+Im Jahr 1993 wurde eine Aktualisierung des Standards veröffentlicht, der vorallem die Syntax konsistenter machte, den Zeichensatz auf ISO-8859-1 erweiterte und den \textit{xnor} Operator einführte. \cite{VHDL93}
 
-Kleinere Änderungen des Standards im Jahr 2000 und 2002 fügten VHDL unter anderem die schon in Ada bekannten \textit{protected types} hinzu, mit dem sich wechselseitige Ausschlüsse definieren lassen können.
+Kleinere Änderungen des Standards im Jahr 2000 und 2002 fügten VHDL unter anderem die schon in Ada bekannten \textit{protected types} hinzu, mit dem sich wechselseitige Ausschlüsse definieren lassen können. \cite{VHDL2000} \cite{VHDL2002}
 
-Neben dem IEEE Standard 1076, der die eigentliche Sprache definiert, gibt es zusätzlich noch verwandte die die Sprache erweitern oder Funktionalität von verschiedenen Libraries beschreibt. Der Standard 1076.2 führt Datentypen und Funktionen für die bessere Behandlung von komplexen Zahlen ein, 1076.3 führt \textit{signed} und \textit{unsigned} Datentypen ein, mit denen arithmetische Operationen auf arrays ausgeführt werden können. IEEE Standard 1076.1 (besser bekannt als VHDL-AMS) beschreibt Erweiterungen für gemischte analog und digitale Schaltungen.
+Neben dem IEEE Standard 1076, der die eigentliche Sprache definiert, gibt es zusätzlich noch verwandte die die Sprache erweitern oder Funktionalität von verschiedenen Libraries beschreibt. Der Standard 1076.2 führt Datentypen und Funktionen für die bessere Behandlung von komplexen Zahlen ein, 1076.3 führt \textit{signed} und \textit{unsigned} Datentypen ein, mit denen arithmetische Operationen auf arrays ausgeführt werden können. IEEE Standard 1076.1 (besser bekannt als VHDL-AMS) beschreibt Erweiterungen für gemischte analog und digitale Schaltungen. \cite{VHDL_MATH} \cite{VHDL_SYNTHESIS} \cite{VHDL_AMS99} \cite{VHDL_AMS2007}
 
-Im Juni 2006 wurde durch ein technisches Komitee ein Entwurf für VHDL-2006 vorgelegt. Dieser Entwurf war vollkommen abwärtskompatibel mit älteren Versionen, fügte aber viele Erweiterungen hinzu, die das Schreiben von Code erleichtern. Die wichtigste Änderung war, dass die verwandten Standards 1164, 1076.2, 1076.3 in den 1076 Standard hinzugefügt wurden. Zusätzlich wurden neue Operatoren, flexiblere Syntax für \textit{case} und \textit{generate} Statements und ein Interface zu C/C++ hinzugefügt.
+Im Juni 2006 wurde durch ein technisches Komitee ein Entwurf für VHDL-2006 vorgelegt. Dieser Entwurf war vollkommen abwärtskompatibel mit älteren Versionen, fügte aber viele Erweiterungen hinzu, die das Schreiben von Code erleichtern. Die wichtigste Änderung war, dass die verwandten Standards 1164, 1076.2, 1076.3 in den 1076 Standard hinzugefügt wurden. Zusätzlich sind neue Operatoren, eine flexiblere Syntax für \textit{case} und \textit{generate} Statements und ein Interface zu C/C++ dazu gekommen.
 
-Im Jahr 2008 wurde eine neuere Version dieses Entwurf, nachdem die bisher darin entdeckten Probleme gelöst wurden, veröffentlicht. Anschließend wurde die letzte Version als IEEE 1076-2008 Standard im Januar 2009 veröffentlicht.
+Im Jahr 2008 wurde eine neuere Version dieses Entwurf, nachdem die bisher darin entdeckten Probleme gelöst wurden, veröffentlicht. Anschließend wurde die letzte Version als IEEE 1076-2008 Standard im Januar 2009 veröffentlicht. \cite{VHDL2008}
 
 \section{Sprachumfang}
-In VHDL wird der Source Code in Bibliotheken organisiert, wobei jede Bibliotheken jeweils compilierten
-und durch den Simulator ausführbaren VHDL-Code enthalten. Bibliotheken können folgende vier Teile enthalten:
-\begin{itemize}
-	\item \textit{package} globale Deklarationen
-	\item \textit{entity} Design Sicht von Außen (black box)
-	\item \textit{architecture} Design Implementation
-	\item \textit{configuration} Festlegung einer Design-Version (Zuordnung: entity architecture)
-\end{itemize}
+In VHDL wird der Source Code in Bibliotheken organisiert, wobei jede Bibliothek jeweils compilierten
+und durch den Simulator ausführbaren VHDL-Code enthält. Bibliotheken können folgende vier Teile enthalten:
+\begin{itemize*}
+	\item \textit{package} enthält globale Deklarationen
+	\item \textit{entity} legt die Schnittstelle fest
+	\item \textit{architecture} enthält die Implemntierung
+	\item \textit{configuration} legt die Zuordnung einer \textit{architecture} zu einer \textit{entity} fest
+\end{itemize*}
 
 Neben herstellereigenen- und benutzerdefinierten Bibliotheken gibt es zwei Standardbibliotheken:
-\begin{itemize}
-	\item \textit{work} Standard-Bibliothek des Benutzers. Wenn nicht anders angegeben, dann ist WORK die Bibliothek, mit der die Programme arbeiten.
-	\item \textit{std} enthält die beiden Packages \textit{standard} und \textit{TEXTIO} mit vordefinierten Datentypen und Funktionen.
-\end{itemize} \cite{VHDLKompakt}
+\begin{itemize*}
+	\item \textit{work} ist die Standard-Bibliothek des Benutzers. Wenn nicht anders spezifiziert, dann ist \textit{work} die Bibliothek, mit der die Programme arbeiten.
+	\item \textit{std} enthält die beiden Packages \textit{standard} und \textit{textio} mit vordefinierten Datentypen und Funktionen.
+\end{itemize*} \cite{VHDLKompakt}
 
 \subsection{Package}
-Deklarationen die in mehreren Designs benutzt werden, z.B.: Unterprogramme(Funktionen, Prozeduren) oder Typen, Konstanten, lassen sich in Packages 
-sammeln und in Bibliotheken hinterlegen. Neben eigenen Bibliotheken werden so auch die Zellbibliotheken der ASIC-Hersteller ausgeliefert. 
-Auch die Hersteller von CAD-Software stellen Hilfsroutinen und Funktionen als Packages bereit, die den Umgang mit den Werkzeugen erleichtern. \cite{VHDLKompakt}
+Deklarationen die in mehreren Designs benutzt werden, z.B.: Unterprogramme (Funktionen, Prozeduren) oder Typen, Konstanten, lassen sich in \textit{packages} sammeln und in Bibliotheken hinterlegen. 
+Dabei wird wie in Ada zwischen der Deklaration (\textit{package}) und Definition unterschieden (\textit{package body}).
+Neben eigenen Bibliotheken werden so auch die Zellbibliotheken der ASIC-Hersteller ausgeliefert. 
+Auch die Hersteller von CAD-Software stellen Hilfsroutinen und Funktionen als \textit{packages} bereit, die den Umgang mit den Werkzeugen erleichtern. \cite{VHDLKompakt}
 
-Durch verschiedene Standards werden eine Reihe von Packages definiert um den Entwickler ein Herstellerunabhängiges arbeiten zu ermöglichen:
+Durch verschiedene Standards werden eine Reihe von \textit{packages} definiert um den Entwickler ein Herstellerunabhängiges arbeiten zu ermöglichen:
 
-\begin{itemize}
-	\item \textit{standard} definiert elementare Datentypen wie \textit{BOOLEAN}, \textit{BIT}, \textit{CHARACTER}, \textit{INTEGER}, \textit{REAL}, \textit{TIME} und wird automatisch von alles Designs verwendet
-	\item in \textit{math\_complex} wird der type \textit{COMPLEX} und Funktionen zum arbeiten mit komplexen Zahlen definiert
+\begin{itemize*}
+	\item \textit{standard} definiert elementare Datentypen wie \textit{boolean}, \textit{bit}, \textit{character}, \textit{integer}, \textit{real}, \textit{time} und wird automatisch von allen Bibliotheken geladen
+	\item in \textit{math\_complex} wird der Datentyp \textit{complex} und dazugehörige Funktionen zum Arbeiten mit komplexen Zahlen definiert
 	\item \textit{math\_real} definiert Konstanten wie Pi und eine Reihe von trigonometrischen und logarithmischen Funktionen
 	\item \textit{std\_logic\_1164} bietet wie schon in de Einleitung erwähnt die 9-wertige logische Datentypen mit der sich verschiedene Zustände eines Signals beschreiben lassen.
-	\item \textit{numeric\_std} definiert die Typen \textit{SIGNED} und \textit{UNSIGNED} und zusätzlich werden die arithmetischen Operatoren für ein komfortables Arbeiten überladen
+	\item \textit{numeric\_std} definiert die Typen \textit{signed} und \textit{unsigned} und zusätzlich werden die arithmetischen Operatoren für ein komfortables Arbeiten überladen
 	\item \textit{textio} bietet Funktionen zum Lesen und Schreiben von Text Dateien mit dem sich z.B. stimuli Werte einlesen lassen
-\end{itemize}
-\lstset{caption={Auszug aus dem im IEEE Standard 1164 beschriebenen std\_logic\_1164 \textit{package}},label=reg4Entity}
-\lstinputlisting{src/std_logic_1164.vhd}
+\end{itemize*}
+
+\subsubsection*{Beispiel}
+\lstset{caption={Auszug aus dem im IEEE Standard 1076.2-1996 beschriebenen \textit{math\_complex} \textit{package}},label=mathComplexPackage}
+\lstinputlisting{src/math_complex.vhd}
+In diesem Beispiel \ref{mathComplexPackage} werden in den Zeilen 4 bis 8 die Datentypen \textit{complex}, \textit{complex\_vector} und \textit{complex\_polar} deklariert.
+Anschließend werden die Konstanten \textit{cbase\_1}, \textit{cbase\_j} und \textit{czero} und die Funktionen \textit{cabs} und \textit{carg} deklariert.
+In der Zeile 21 kann man das Beispiel für einen überladenen Operator sehen.
 
 \subsection{Entity}
 Mit Hilfe einer \textit{entity} wird die externe Sichtweise, d.h. die Schnittstelle einer Komponente definiert. Diese Schnittstelle umfasst den Namen, die Ein- und Ausgänge und zusätzliche 
@@ -72,16 +79,24 @@ Komponente als Teil der Hierarch in einer anderen \textit{architecture} instanzi
 Eine Entity-Deklaration kann zusätzlich zu den Ein- und Ausgängen (\textit{ports}) auch Parameter der Entity (\textit{generics}) festlegen. 
 Mit ihnen lassen sich interne Eigenschaften und Wortbreiten einstellen. In den Architekturen entsprechen die Generics dann Konstanten. 
 
+\subsubsection*{Beispiel}
 \lstset{caption={Beispiel für ein Entity Statement},label=reg4Entity}
 \lstinputlisting{src/reg4Entity.vhd}
+In Beispiel \ref{reg4Entity} wird die Schnittstelle für ein 4-Bit Register deklarariert. Dieses Register hat als Eingang die 4 Bits \textit{d0} - \textit{d3} 
+und zusätzlich ein Bit für die \textit{clock} und \textit{enable} Leitung. Der Inhalt wird über die Signale \textit{q0} - \textit{q3} ausgegeben. 
+In \ref{reg4EntitySymbol} sieht man das Schaltungssymbol.
+
 \begin{figure}
   \centering
     \includegraphics[scale=0.75]{images/reg4Entity.png}
-    \caption{Schaltungssymbol der Reg4 Entity}
+    \caption{Schaltungssymbol des 4-Bit Registers}
+	\label{reg4EntitySymbol}
 \end{figure}
 
 \subsection{Architecture}
 
+\todo{text}
+\subsubsection*{Beispiel}
 \lstset{caption={Beispiel für ein Architecture Statement},label=reg4Behv}
 \lstinputlisting{src/reg4Behv.vhd}
 \begin{figure}
@@ -89,11 +104,40 @@ Mit ihnen lassen sich interne Eigenschaften und Wortbreiten einstellen. In den A
     \includegraphics[scale=0.6]{images/reg4Behv.png}
     \caption{Schaltungssymbol der Reg4 Behaviour}
 \end{figure}
+\todo{Beispiel erklären}
 
-\lstset{caption={Beispiel für ein AND Gate},label=ANDGATE}
-\lstinputlisting{src/ANDGATE.vhd}
+\subsection{Configuration}
+Durch Konfigurationen kann der Entwickler zwischen verschiedenen Alternativen und -Versionen auswählen. Dabei bestimmt eine Konfiguration, welche Realisierung von
+möglicherweise mehreren vorhandenen Architekturen, für eine Entity aus der Bibliothek, verwendet wird. 
+Innerhalb der Architektur werden für instanziierte Komponenten Paare aus \textit{entity} und \textit{architecture} bestimmt. Diese Bindung der Komponenten kann beliebig weit in die Hierarchie hinein stattfinden.
+\cite{VHDLKompakt}
 
-\todo{5 Seiten}
+\subsubsection*{Beispiel}
+\todo{Besseres Beispiel und Erlärung}
+\lstset{caption={Beispiel für ein Configuration Statement},label=reg4Behv}
+\lstinputlisting{src/configuration.vhd}
+
 \section{VHDL Compiler, Simulatoren und Synthesetools}
 \section{Leistungsumfang des OpenVC in Bezug auf VHDL-2002}
-VHDL 2002, Erweiterungen von 2008
+Als Basis wurde der VHDL 2002 Standard verwendet, aufgrund des großen Umfangs werden aber einige Features nicht unterstützt.
+Zusätzlich werden einige Erweiterungen des neuen 2008er Standards, die sich leicht implementieren lassen, akzeptiert.
+
+Unter Anderem wird folgendes nicht unterstützt:
+\begin{itemize*}
+	\item Konfigurationen mit \textit{context declarations}
+	\item innere Funktionen
+	\item \todo{weitere Punkte}
+\end{itemize*}
+
+folgendes wird von VHDL 2008 unterstützt:
+\begin{itemize*}
+	\item conditional und selected variable assignments, als Kurzschreibweise für if-und case Statements
+	\item Conditional und Selected signal assignments
+	\item der condition operator ??
+	\item verbesserte Bit-String Literale, z.B. 6Ux'"f"' für binär '"001111"'
+	\item block comments (C-style Kommentare /* */)
+	\item context declarations
+	\item neue unäre logische Operatoren
+	\item matching relational operator
+\end{itemize*}
+Zu den neuen Arten von Zuweisen gibt es später Beispiele wie der Compiler sie behandelt.

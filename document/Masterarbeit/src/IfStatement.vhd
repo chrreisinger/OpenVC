@@ -3,5 +3,5 @@ if expr1 then
 elsif expr2 then
   statement2;
 else
-  statment3;
+  statement3;
 end if;

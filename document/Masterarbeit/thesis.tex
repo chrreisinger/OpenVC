@@ -1,6 +1,6 @@
 %%% Header
 % Pr‰ambel ist ausgelagert
-\input{header_rudi}
+\input{header}
 % Silben-Trennung ebenfalls
 \input{syllables}
 
@@ -10,24 +10,27 @@
 \includepdf{coversheet/coversheet.pdf}
 \setcounter{page}{1} %Beginne wieder bei 1 zu z‰hlen
 \onehalfspacing
+\setlength{\parskip}{\baselineskip} %Macht den Abstand eines Absatzes genau eine Zeile groﬂ.
 \include{abstract}
+\setlength{\parskip}{0pt} %entfernt den Abstand eines Absatzes.
 \singlespacing
 \tableofcontents %Inhaltsverzeichniss
 
 %%% actual content
 \newpage
 \pagenumbering{arabic}
-
+\setlength{\parskip}{\baselineskip} %Macht den Abstand eines Absatzes genau eine Zeile groﬂ.
 \onehalfspacing
 \include{chapter1}
 \include{chapter2}
 \include{chapter3}
-\include{chapter4}
+%\include{chapter4}
 %\include{chapter5}
-%\include{appendix}
+\include{chapter6}
 \include{danksagung}
 \singlespacing
 \include{abbreviations}
+\setlength{\parskip}{0pt} %entfernt den Abstand eines Absatzes.
 \listoffigures %Abbildungsverzeichnis
 %\listoftables %Tabellenverzeichnis
 \lstlistoflistings %Quellcodeverzeichnis
@@ -36,9 +39,10 @@
 \bibliography{openvc}
 
 % Lebenslauf und Eidesstattliche Erkl‰rung am Ende
-%\includepdf[pages=-, addtotoc={1, addchap, 0, Lebenslauf, sec:cv}]{lebenslauf/Lebenslauf.pdf}
+%TODO \includepdf[pages=-, addtotoc={1, addchap, 0, Lebenslauf, sec:cv}]{lebenslauf/Lebenslauf.pdf}
 \includepdf{lebenslauf/Lebenslauf.pdf}
 \onehalfspacing
+\setlength{\parskip}{\baselineskip} %Macht den Abstand eines Absatzes genau eine Zeile groﬂ.
 \include{eidesstattliche_erklaerung}
 
 \end{document}
