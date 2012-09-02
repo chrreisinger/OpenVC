@@ -2,7 +2,7 @@ digraph {
 	graph [ dpi = 300 ];
 	ordering=out;
 	ranksep=.3;
-	node [shape=box, fixedsize=false, fontsize=11, fontname="Helvetica-bold", width=.25, height=.25];
+	node [shape=box, fixedsize=false, fontsize=11, fontname="Courier-Bold", width=.25, height=.25];
 	edge [arrowsize=.5, color="black"]
 
 	IfStatement;
