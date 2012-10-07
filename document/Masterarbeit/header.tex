@@ -14,7 +14,9 @@
 \usepackage{sectsty} %damit der Abstand der Überschriften verändert werden kann
 \usepackage{datetime} %für \monthname{}
 \usepackage{titletoc} % Inhaltsverzeichnis anpassen
+\usepackage{here} %lädt das Paket zum erzwingen der Grafikposition
 \usepackage{mdwlist} %sorgt für normale Textabstände in der Itemize-Umgebung
+\usepackage[font=small,justification=centering]{caption} %formatierung von Bildunterschriften
 %does not work \usepackage{underscore} %damit man underscrote ohne escape zeichen verwenden kann
  
 \definecolor{dkgreen}{rgb}{0,0.6,0}
@@ -23,8 +25,8 @@
  
 \lstset{ %
   language=VHDL,                  % the language of the code
- % basicstyle=\footnotesize,       % the size of the fonts that are used for the code
-  basicstyle=\small,              % print whole listing small
+  basicstyle=\footnotesize,       % the size of the fonts that are used for the code
+  %basicstyle=\small,              % print whole listing small
   numbers=left,                   % where to put the line-numbers
   numberstyle=\tiny\color{gray},  % the style that is used for the line-numbers
   stepnumber=1,                   % the step between two line-numbers. If it's 1, each line will be numbered

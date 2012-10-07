@@ -1,1 +1,195 @@
-\chapter{Vergleich}
+%\chapter{Semantische Analyse}
+\chapter{Codeerzeugung}
+In der letzten Phase, dem \textit{Backend}, wird der komplete AST noch einmal rekursiv traversiert um als Ergebnis des Übersetzungsvorgangs JVM-Byte Code zu erzeugen.
+In diesem Kapitel wird der Einfachheit halber nicht direkt der erzeugte Byte Code besprochen, sondern es wird VHDL-Code mit Java Code verglichen. Dieser ist
+äquivalent zum tatsächlich produzierten Byte Code lässt sich aber leichter erklären.
+Auch wird hier die Umwandlung aus Platzgründen nur für ausgewählte Aspekte und VHDL-Konstrukte erläutert, die interessant oder repräsentativ für die restlichen sind.
+
+Die eigentliche Codeerzeugung wurde mit der Hilfe der ASM Library \cite{ASM} implementiert. 
+ASM nimmt dem Entwickler viele Details ab, wie das Verwalten des Konstantenpools, und bietet mit seiner API ein abstrahiertes Modell der JVM.
+
+Im nachfolgenden Code werden teilweise Namen mit einem \$-Zeichen gezeigt. Der Grund liegt darin, dass \$ kein valides Zeichen für VHDL Bezeichner ist, aber die JVM akzeptiert diese.
+Durch die Verwendung von \$ kann es zu keinen Namens-Konflikten für zusätzlich vom Compiler erzeugte Variablen und Methoden kommen. 
+
+\section{VHDL-Packages}
+\subsection{Package Header}
+
+\todo{text}
+\lstset{caption={\textit{Package Header}}, label=package_vhdl, numbers=left, language=VHDL}
+\lstinputlisting{src/backend/package.vhd}
+
+\lstset{caption={Generierter Code}, label=package_java, language=Java}
+\lstinputlisting{src/backend/package.java}
+\subsubsection*{\textit{Name Mangling}}
+Die etwas kryptisch erscheinenden Namen der generierten Funktionen sind nötig, da beide Funktionen die gleiche JVM Signature aufweisen. \textit{IntA} und \textit{IntB} sind zwar in VHDL unterschiedliche Typen, aber für beide wird der gleiche Code produziert.
+Diese Umbennenung wird durch das \textit{name mangling} durchgeführt. Dazu wird zum ursprünglichen Namen der Hash-Wert aus den Namen und Typen aller Parameter der Prozedur angehängt.
+
+\subsubsection*{\textit{Standardwerte}}
+Auch wird hier die Behandlung von Standardwerten ersichtlich. Die beiden Funktionen \textit{\$default\$proc\$1636619\_x} und \textit{\$default\$proc\$4355160\_x} werden erzeugt und liefern nur den Standardwert für \textit{x} in den zwei \textit{proc} Prozeduren zurück.
+Standardwerte können beliebige Ausdrücke sein, die unterschiedliche Werte ergben und werden daher jedesmal neu ausgewertet. Daher reichen Konstanten nicht und es müssen Methoden verwendet werden.
+
+\subsection{\textit{Package Body}}
+\begin{minipage}{.48\textwidth}
+	\lstset{caption={\textit{Package Body}-Deklaration}, label=package_body_vhdl, numbers=left, language=VHDL}
+	\lstinputlisting{src/backend/package_body.vhd}
+\end{minipage}
+\hfill
+\begin{minipage}{.48\textwidth}
+	\lstset{caption={Erzeugter Code für \textit{Package Body}}, label=package_body_java, language=Java}
+	\lstinputlisting{src/backend/package_body.java}
+\end{minipage}
+Nachdem die Schnittstellen im \textit{header} festgelegt sind, werden die Funktionen im \textit{body} definiert. Dabei entsteht aus dem \textit{package} \textit{p} die Klasse \textit{p\_body} mit nur statischen Methoden, da es nur eine Instanz des \textit{body} gibt.
+Hierbei ist wieder das name-mangling durch den Compiler ersichtlich.
+
+\section{Statements}
+Im Anschluß werden einige Statements näher erläutert. 
+Alle weiteren wie \textit{While}-, \textit{Procedure-Call-}, \textit{Case} und \textit{If}-Statement können meistens leicht eins zu eins übersetzt werden und werden daher auch nicht näher erklärt.
+
+\subsection{Schleifen}
+\subsubsection{\textit{For}-Schleife}
+\todo{text}
+\begin{minipage}{.35\textwidth}
+	\lstset{caption={\textit{For}-Schleife mit \textit{to} Zählrichtung}, label=for_statement_1_vhdl, numbers=left, language=VHDL}
+	\lstinputlisting{src/backend/for_statement_1.vhd}
+\end{minipage}
+\hfill
+\begin{minipage}{.58\textwidth}
+	\lstset{caption={Generierter Code für \textit{to}}, label=for_statement_1_java, numbers=left, language=Java}
+	\lstinputlisting{src/backend/for_statement_1.java}
+\end{minipage}
+
+Die Klasse \textit{Range} enthält folgende Variablen, die der Reihe nach dem Konstruktur übergeben werden:
+\begin{itemize*}
+\item \textit{Start} ist der Startwert der Schleife.
+\item \textit{End} definiert den Endwert der Schleife.
+\item \textit{Step} ist die Schrittweite die zum Schleifen-Index addiert wird.
+\end{itemize*}
+
+Im Gegensatz zum Beispiel in \ref{for_statement_1_vhdl} ist im nachfolgenden Beispiel \ref{for_statement_2_vhdl} die Richtung umgedreht:
+
+\begin{minipage}{.35\textwidth}
+	\lstset{caption={\textit{For}-Schleife mit \textit{downto} Zählrichtung}, label=for_statement_2_vhdl, numbers=left, language=VHDL}
+	\lstinputlisting{src/backend/for_statement_2.vhd}
+\end{minipage}
+\hfill
+\begin{minipage}{.58\textwidth}
+	\lstset{caption={Generierter Code for \textit{downto}}, label=for_statement_2_java, numbers=left, language=Java}
+	\lstinputlisting{src/backend/for_statement_2.java}
+\end{minipage}
+
+Wie hier in \ref{for_statement_2_java} ersichtlich ist der Schleifenkopf der Gleiche und der einzige Unterschied zum vorherigen Beispiel ist die unterschiedliche Instanzierung der Hilfsvariable \textit{\$range}.
+Durch dieses gewählte Implementierungsschema werden \textit{For}-Schleifen generisch behandelt und es konnte Implementierungsaufwand gespart werden.
+
+\subsubsection{\textit{Loop-Statement}}
+\textit{Loop-Statements} sind Endlosschleifen die explizit verlassen werden müssen.
+
+\begin{minipage}{.35\textwidth}
+	\lstset{caption={\textit{Loop-Statement}}, label=loop_statement_vhdl, numbers=left, language=VHDL}
+	\lstinputlisting{src/backend/loop_statement.vhd}
+\end{minipage}
+\hfill
+\begin{minipage}{.48\textwidth}
+	\lstset{caption={Erzeugte While-Schleife}, label=loop_statement_java, language=Java}
+	\lstinputlisting{src/backend/loop_statement.java}
+\end{minipage}
+
+Die Schleife in \ref{loop_statement_vhdl} wird wie in \ref{loop_statement_java} ersichtlich in eine \textit{while}-Schleife ohne Abbruchsbedingung übersetzt.
+Die darin enthaltenen \textit{exit}- und \textit{next}-Statements haben die gleiche Semantik wie \textit{break} und \textit{continue} in C-basierten Sprachen und werden als Sprünge nach der Schleife oder an den Anfang auf Bytecode Ebene übersetzt.
+
+\subsection{\textit{Assert}-Statement}
+
+\textit{Assert}-Statement dienen der Überprüfung von Invarianten zur Laufzeit.
+\lstset{caption={Einfaches \textit{Assert}-Statement}, label=assert_statement_vhdl, numbers=none, language=VHDL}
+\lstinputlisting{src/backend/assert_statement.vhd}
+
+\lstset{caption={Generierter Code für \textit{Assert}-Statement}, label=assert_statement_java, numbers=left, language=Java}
+\lstinputlisting{src/backend/assert_statement.java}
+Der OpenVC transformiert aus \textit{Assert}-Statements wie in \ref{assert_statement_vhdl} eine \textit{If}-Abfrage die die gleiche Bedingung enthält. 
+Ist diese verletzt wird durch die Runtime Funktion \textit{assertVHDL} eine Ausnahme erzeugt. Diese Funktion bekommt neben der Nachricht und dem \textit{severity level} implizit auch den Namen der Bibiliothek übergeben.
+
+\section{Datentypen}
+Abbildung \ref{TypeHierarchie} zeigt eine Klassifikation aller Datentypen. Im nachfolgenden Abschnitt wird erklärt welcher Code für verschiedene Typen im \textit{Backend} erzeugt wird.
+\begin{figure}[H]
+  \centering
+    \includegraphics[scale=0.5]{images/TypeHierarchie.png}
+    \caption{VHDL Typ Klassifikation}
+	\label{TypeHierarchie}
+\end{figure}
+
+\subsection{\textit{Integer}}
+Die skalaren \textit{Integer}-Datentypen werden in den JVM-Typ \textit{int} umgewandelt, da der Standard fordert, dass diese mindestens 32-Bit breit sein müssen.
+Sie werden mit dem linkesten Werte ihres Wertebereichs initialisiert und bei Zuweisungen kann eine Laufzeitüberprüfung notwending sein.
+
+\lstset{caption={Variablendeklaration mit einem \textit{integer} Typ}, label=datatype_integer_vhdl, numbers=left, language=VHDL}
+\lstinputlisting{src/backend/datatype_integer.vhd}
+
+In diesem Beispiel \ref{datatype_integer_vhdl} wird eine Variable \textit{x} mit einem Integer-Subtype mit einem Wertebereich von fünf bis zehn deklariert.
+\lstset{caption={Erzeugter JVM Code}, label=datatype_integer_java, language=Java}
+\lstinputlisting{src/backend/datatype_integer.java}
+
+Der aus \ref{datatype_integer_vhdl} erzeugte Code in \ref{datatype_integer_java} enthält als erstes die Initialisierung von \textit{x} mit fünf.
+Bei der Zuweisung muss eine Laufzeitüberprüfung durchgeführt werden, ob der neue Wert in dem Wertebereich zwischen fünf und zehn liegt. Dies geschieht mit Hilfe der Runtime Funktion \textit{checkIsInRange}.
+Schlägt diese Überprüfung fehl, wird eine Ausnahme geworfen.
+
+Der Datentyp \textit{real} wird gleich behandelt nur mit dem Unterschied, dass natürlich der JVM-Typ \textit{float} verwendet wird.
+\subsection{Enumerationen}
+Der Aufzählungs-Typ \todo{text}
+
+\lstset{caption={VHDL Aufzählungstyp Deklaration}, label=datatype_enum_vhdl, numbers=left, language=VHDL}
+\lstinputlisting{src/backend/datatype_enum.vhd}
+
+\lstset{caption={Äquivalenter JVM Code}, label=datatype_enum_java, language=Java}
+\lstinputlisting{src/backend/datatype_enum.java}
+
+
+\lstset{caption={Verwendung des Typs}, label=datatype_enum_usage_vhdl, numbers=left, language=VHDL}
+\lstinputlisting{src/backend/datatype_enum_usage.vhd}
+
+\lstset{caption={Äquivalenter JVM Code}, label=datatype_enum_usage_java, language=Java}
+\lstinputlisting{src/backend/datatype_enum_usage.java}
+
+\subsection{\textit{Records}}
+Da \textit{VHDL-Records} zusammengesetzte Datentypen sind, werden diese in eigene Klassen übersetzt, wobei es für jeden \textit{record} eine Klasse erzeugt wird.
+
+\begin{minipage}{.30\textwidth}
+	\lstset{caption={\textit{Record}-Deklaration}, label=datatype_record_vhdl, numbers=left, language=VHDL}
+	\lstinputlisting{src/backend/datatype_record.vhd}
+\end{minipage}
+\hfill
+\begin{minipage}{.65\textwidth}
+	\lstset{caption={Erzeugte Klasse}, label=datatype_record_java, language=Java}
+	\lstinputlisting{src/backend/datatype_record.java}
+\end{minipage}
+
+Für den Typ \textit{rec} wird die gleichnamige Klasse generiert. Diese hat einen leeren Konstruktur und einen mit dem alle Felder gesetzt werden.
+Zusätzlich wird die \textit{equlas} Methode überschrieben, damit die Vergleichsoperatoren auf Instanzen der Klasse anwendbar sind. In dieser Methode werden der Reihe nach alle Felder miteinander verglichen.
+In \textit{toString} wird eine Text-Repräsentation der Werte der Felder zurückgegben.
+
+\section{\textit{Foreign Subprograms}}
+\textit{Foreign Subprograms} sind Prozeduren und Funktionen die in einer anderen Sprache implementiert sind und vom VHDL Code aus aufgerufen werden, um z.B. C-Code innerhalb von Simulationen verwenden zu können. Aufgrund der Tatsache das die JVM als Ziel gewählt wurde, ergibt sich ein einzigartiger Vorteil.  
+Viel von dem für die virtuelle Maschine geschriebenen Code kann relativ einfach wieder verwendet werden, in dem nur die entsprechenden Deklarationen geschrieben werden. Die nächsten zwei Beispiel verdeutlichen dies.
+
+\subsection*{Aufruf einer C-Funktion}
+\todo{text}
+\lstset{caption={Beispiel für einfaches \textit{foreign subprogram}}, label=foreign_sin, language=VHDL}
+\lstinputlisting{src/backend/foreign_sin.vhd}
+
+Bei einer Attribute-Deklaration können bis zu drei Parameter angeben werden, wobei die letzen zwei optional sind:
+\begin{itemize*}
+\item Der volle Pfad zu der Klasse mit der Implementierung.
+\item Der Name der Funktion die aufgerufen werden soll.
+\item Die Signatur der Funktion.
+\end{itemize*}
+Wird der Name und die Signatur nicht angeben, werden sie vom Compiler aus der Deklaration der Prozedur ode Funktion berechnet.
+
+\subsection*{Wiederverwendung von JVM Code}
+In \ref{foreign_sin} wir eine Sinus-Funktion deklariert mit einem \textit{real} Parameter. In der zweiten Zeile wird diese Funktion durch das Attribute \textit{foreign} als \textit{foreign subprogram} markiert, wobei der ganze JVM Klassenpfad der Implementierung der Funktion als Parameter angegben wird.
+Wird diese Funktion dann später aufgerufen wird vom Compiler Code erzeugt um \textit{java.lang.Math.sin} aufzurufen.
+
+\lstset{caption={\textit{Foreign Subprogram}, dass einen Swing Dialog öffnet}, label=foreign_showMessage, language=VHDL}
+\lstinputlisting{src/backend/foreign_showMessage.vhd}
+
+Das zweite, komplexere Beispiel in \ref{foreign_showMessage} verdeutlicht wie bei der Attribute-Deklaration neben der Klasse auch der Name \textit{showMessageDialog} der aufzurufenden Prozedur spezifiziert wird.
+Als dritte Wert des Attributes wird die Signature der Prozedur angegben.
+
+Wird diese Prozedur \textit{showMessage} aufgerufen, öffnet sich ein ein Java Swing Fenster und gibt den Text in \textit{msg} aus.

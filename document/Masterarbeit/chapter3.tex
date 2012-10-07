@@ -1,4 +1,4 @@
-\chapter{Architektur des OpenVC Compilers}
+\chapter{Architektur des OpenVC}
 {\em 
 In diese Kapitel wird die Architektur erläutert, dynamische sowie statische des OpenVC. Es wird dabei erklärt wie VHDL Source Code durch den OpenVC Compiler verarbeitet wird.
 }
@@ -6,7 +6,7 @@ In diese Kapitel wird die Architektur erläutert, dynamische sowie statische des 
 \subsection{Phasen}
 OpenVC verarbeitet, wie all modernen Compiler, den Source Code in verschiedenen Phasen und ist diesen entsprechend gegliedert. Diese Phasen übernehmen verschiedene unabhängige Teilaufgaben und werden werden sequentiell ausgeführt. 
 
-\begin{figure}
+\begin{figure}[H]
   \centering
     \includegraphics[scale=0.7]{images/CompilerPhasen.png}
     \caption{Die vier Phasen des Compiler}
@@ -14,7 +14,7 @@ OpenVC verarbeitet, wie all modernen Compiler, den Source Code in verschiedenen 
 
 \begin{itemize}
 \item Im \textit{SyntaxAnalyzer} ist der Parser gekapselt und überprüft, ob der eingelesene Quellcode der Grammatik von VHDL entspricht. Dabei wird die Eingabe in einem Syntaxbaum umgewandelt. Falls der Quellcode nicht zur Grammatik passt, werden vom Parser passende Syntaxfehler generiert.
-\item In der zweiten Phase, dem \textit{PreAnalyzerTransformer}, werden Manipulationen am Syntaxbaum durchgeführt. Dabei werden verschiedene VHDL 2008 Abstract Syntax Tree (AST)-Knoten in VHDL-2002 Knoten umgewandelt um die folgenden Phasen zu vereinfachen. Durch diese Umwandlung werden diese Knoten aus dem Baum entfernt und müssen daher nicht behandelt werden.
+\item In der zweiten Phase, dem \textit{ASTNodeTransformer}, werden Transformationen des Syntaxbaums durchgeführt. Dabei werden verschiedene VHDL 2008 Abstract Syntax Tree (AST)-Knoten in VHDL-2002 Knoten umgewandelt. Durch diese Umwandlung werden diese Knoten aus dem Baum entfernt und müssen daher in den folgenden Phasen nicht behandelt werden und vereinfachen deswegen diese.
 \item Der \textit{SemanticAnalyzer} überprüft die statische Semantik von VHDL, also über die syntaktische Analyse hinausgehende Bedingungen an den Source Code. Zum Beispiel muss eine Variable deklariert sein, bevor sie verwendet wird, und Zuweisungen müssen mit kompatiblen Datentypen erfolgen. Dies wurde mit Hilfe von Attributgrammatiken realisiert und als Ausgabe entsteht daher ein attributierter Syntaxbaum. Dabei werden die Knoten des vom Parser generierten Syntaxbaums mit Attributen versehen, die Informationen aus der Symboltabelle enthalten. \cite{Aho}
 \item In der letzten Phase, dem \textit{Backend}, wird der JVM Bytecode direkt aus dem attributierten Syntaxbaum generiert. Es gibt darin für
 jedes VHDL-Konstrukt eine Zuordnung zu JVM Bytecode und Semantik. Aufgrund der Tatsache, dass die JVM als Backend gewählt wurde, müssen keine Programmoptimierung und daher auch kein Zwischencode erzeugt werden, da die gesamte Optimierung durch die virtuelle Maschine zur Laufzeit durchgeführt wird.
@@ -22,7 +22,35 @@ jedes VHDL-Konstrukt eine Zuordnung zu JVM Bytecode und Semantik. Aufgrund der T
 
 \subsection{Klassenübersicht}
 \todo{Text}
-\todo{Klassendiagramme}
+\subsubsection{AST-Hierarchie}
+\begin{figure}[H]
+  \centering
+    \includegraphics[scale=0.45]{images/astHierarchie.png}
+	\caption{Hierachie der AST-Knoten}
+	\label{astHierachie}
+\end{figure}
+Wie aus der Abb. \ref{astHierachie} ersichtlich, ist \textit{ASTNode} die Basisklasse aller AST-Knoten. 
+Für fast alle Produktionen der Grammatik gibt es eine entsprechende Klasse, wobei die verschiedenen Knoten in den fünf Packages nach ihrer Art gruppiert sind. In diesen Packages gibt es wieder eine Basisklasse mit dem gleichen Namen, die von \textit{ASTNode} erbt und von der alle anderen Klassen im selben Package abgeleitet sind.
+
+\begin{figure}
+\begin{minipage}{.5\textwidth}
+    \centering
+    \includegraphics[scale=0.4]{images/sequentialStatements.png}
+	\caption{Hierachie der AST-Knoten}
+	\label{sequentialStatements}
+\end{minipage}
+\hfill
+\begin{minipage}{.5\textwidth}
+    \centering
+    \includegraphics[scale=0.4]{images/declarativeItems.png}
+	\caption{Hierachie der AST-Knoten}
+	\label{declarativeItems}
+\end{minipage}
+\end{figure}
+
+Mit dem in den Abbildungen \ref{sequentialStatements} und \ref{declarativeItems} gezeigten Schema sind auch die Klassen in den Packages \textit{expressions}, \textit{concurrentStatements} und \textit{designUnits} implementiert und bilden damit alle VHDL Konstrukte ab.
+\subsubsection{Phasen des OpenVC}
+\todo{bild und text}
 \section{Scanner/Parser mit Antlr}
 \begin{quotation}
 Eine Grammatik heißt LL(1) (d.h. analysierbar von links nach rechts mit linkskanonischen Ableitungen und einem Vorgriffssymbol), wenn an jeder Stelle, an der man zwischen mehreren Alternativen wählen kann, gilt, dass die terminalen Anfänge dieser Alternativen paarweise disjunkt sind. Mit anderen Worten: Der Parser muss jederzeit mit einem einzigen Vorgriffssymbol entscheiden können, welche von mehreren möglichen Alternativen er wählen soll. \cite{moess}
@@ -68,8 +96,8 @@ Im folgenden Abschnitt wird anhand von konkreten Beispielen genauer verdeutlicht
 
 \subsubsection{While-Statement}
 \lstset{caption={While-Statement},language=VHDL}
-\lstinputlisting{src/WhileStatement.vhd}
-\begin{figure}
+\lstinputlisting{src/ast/WhileStatement.vhd}
+\begin{figure}[H]
   \centering
     \includegraphics[scale=0.2]{images/WhileStatement.png}
 	\label{WhileStatement}
@@ -79,8 +107,8 @@ Ein While-Statement besteht aus einer Expression, die in der Variable \textit{ex
 
 \subsubsection{If-Statement}
 \lstset{caption={If-Statement}}
-\lstinputlisting{src/IfStatement.vhd}
-\begin{figure}
+\lstinputlisting{src/ast/IfStatement.vhd}
+\begin{figure}[H]
   \centering
     \includegraphics[scale=0.15]{images/IfStatement.png}
 	\label{IfStatement}
@@ -89,9 +117,9 @@ Ein While-Statement besteht aus einer Expression, die in der Variable \textit{ex
 Ein If-Abfrage besteht aus mehreren Zweigen, wobei die einzelnen Zweige Instanzen der Klasse IfThenPart sind, in der die Bedingung und die Liste der Statements gespeichert werden. Die Variable elseStatements enthält die Statements aus dem else-Zweig.
 
 \subsubsection{Logical Expression}
-\lstset{caption={Logical Expression}}
-\lstinputlisting{src/LogicalExpression.vhd}
-\begin{figure}
+\lstset{caption={Logical Expression}, numbers=none}
+\lstinputlisting{src/ast/LogicalExpression.vhd}
+\begin{figure}[H]
   \centering
     \includegraphics[scale=0.15]{images/LogicalExpression.png}
 	\label{LogicalExpression}
@@ -100,9 +128,9 @@ Ein If-Abfrage besteht aus mehreren Zweigen, wobei die einzelnen Zweige Instanze
 Eine logischer Ausdruck besteht wie alle binären Ausdrücke aus einer linken und rechten Operanden und einem Operator der beide miteinader verknüpft.
 
 \subsubsection{Konstanten Deklaration}
-\lstset{caption={Konstanten Deklaration}}
-\lstinputlisting{src/ConstantDeclaration.vhd}
-\begin{figure}
+\lstset{caption={Konstanten Deklaration}, numbers=none}
+\lstinputlisting{src/ast/ConstantDeclaration.vhd}
+\begin{figure}[H]
   \centering
     \includegraphics[scale=0.15]{images/ConstantDeclaration.png}
 	\label{ConstantDeclaration}
@@ -110,12 +138,30 @@ Eine logischer Ausdruck besteht wie alle binären Ausdrücke aus einer linken und 
 \end{figure}
 Die Deklaration für eine Konstante besteht aus einer Liste von Identifiers, einer Type Beschreibung und einem Default-Wert.
 
-\subsection{AST Manipulation}
+\subsection{AST Transformation}
+\label{AST-Transformation}
 \todo{Text}
+In der zweiten Phasen, dem \textit{ASTNodeTransformer} werden die vom Parser erzeugten Knoten teilweise umgewandelt, um zu ...
+
+\begin{minipage}{.48\textwidth}
+	\lstset{caption={vorher}, numbers=left}
+	\lstinputlisting{src/astTransformation1From.vhd}
+\end{minipage}
+\hfill
+\begin{minipage}{.48\textwidth}
+	\lstset{caption={nacher}, numbers=left}
+	\lstinputlisting{src/astTransformation1To.vhd}
+\end{minipage}
+
+\begin{minipage}{.48\textwidth}
+	\lstset{caption={vorher}, numbers=left}
+	\lstinputlisting{src/astTransformation2From.vhd}
+\end{minipage}
+\hfill
+\begin{minipage}{.48\textwidth}
+	\lstset{caption={nacher}, numbers=left}
+	\lstinputlisting{src/astTransformation2To.vhd}
+\end{minipage}
+ 
 \section{Symboltabelle}
-\section{Codeerzeugung}
-Foreign Subprograms
-JVM Mapping von Datentypen (subtypes, Records, enums)
-Default Values
-Packages
-Statements
+
